@@ -35,4 +35,7 @@ public interface Expression extends J {
     default List<J> getSideEffects() {
         return emptyList();
     }
+
+    boolean reads(JavaType.Variable v, Side side);
+    boolean writes(JavaType.Variable v, Side side);
 }
