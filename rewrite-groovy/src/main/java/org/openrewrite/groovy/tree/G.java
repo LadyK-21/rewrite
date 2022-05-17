@@ -612,12 +612,12 @@ public interface G extends J {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getStrings().stream().map(s -> s instanceof Expression ? ((Expression)s).reads(v) : false).reduce(false, (a,b) -> a|b);
+            return getStrings().stream().map(s -> s instanceof Expression && ((Expression) s).reads(v)).reduce(false, (a, b) -> a|b);
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getStrings().stream().map(s -> s instanceof Expression ? ((Expression)s).writes(v) : false).reduce(false, (a,b) -> a|b);
+            return getStrings().stream().map(s -> s instanceof Expression && ((Expression) s).writes(v)).reduce(false, (a, b) -> a|b);
         }
 
         @Override

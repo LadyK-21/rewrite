@@ -1684,12 +1684,12 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getEnums().stream().map(n -> n.getInitializer() == null ? false : n.getInitializer().reads(v)).reduce(false, (a,b) -> a|b);
+            return getEnums().stream().map(n -> n.getInitializer() != null && n.getInitializer().reads(v)).reduce(false, (a, b) -> a|b);
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getEnums().stream().map(n -> n.getInitializer() == null ? false : n.getInitializer().writes(v)).reduce(false, (a,b) -> a|b);
+            return getEnums().stream().map(n -> n.getInitializer() != null && n.getInitializer().writes(v)).reduce(false, (a, b) -> a|b);
         }
 
         @Override
@@ -1792,11 +1792,11 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v, Side s) {
-            return (s == Side.RVALUE && type.equals(v)) || getTarget().reads(v, s);
+            return (s == Side.RVALUE && type != null && type.equals(v)) || getTarget().reads(v, s);
         }
 
         public boolean writes(JavaType.Variable v, Side s) {
-            return (s == Side.LVALUE && type.equals(v)) || getTarget().reads(v, s);
+            return (s == Side.LVALUE && type != null && type.equals(v)) || getTarget().reads(v, s);
         }
 
         /**
@@ -2310,12 +2310,12 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v, Side s) {
-            return (s == Side.RVALUE) && fieldType.equals(v);
+            return (s == Side.RVALUE) && fieldType != null && fieldType.equals(v);
         }
 
         @Override
         public boolean writes(JavaType.Variable v, Side s) {
-            return (s == Side.LVALUE) && fieldType.equals(v);
+            return (s == Side.LVALUE) && fieldType != null && fieldType.equals(v);
         }
     }
 
@@ -2368,12 +2368,12 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getIfCondition().reads(v) || getThenPart().reads(v) || (getElsePart() == null ? false : getElsePart().getBody().reads(v));
+            return getIfCondition().reads(v) || getThenPart().reads(v) || (getElsePart() != null && getElsePart().getBody().reads(v));
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getIfCondition().writes(v) || getThenPart().writes(v) || (getElsePart() == null ? false : getElsePart().getBody().writes(v));
+            return getIfCondition().writes(v) || getThenPart().writes(v) || (getElsePart() != null && getElsePart().getBody().writes(v));
         }
 
         @Override
@@ -2888,12 +2888,12 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getBody() instanceof  Expression ? ((Expression)getBody()).reads(v) : false;
+            return getBody() instanceof Expression && ((Expression) getBody()).reads(v);
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getBody() instanceof  Expression ? ((Expression)getBody()).writes(v) : false;
+            return getBody() instanceof Expression && ((Expression) getBody()).writes(v);
         }
 
         @Override
@@ -3652,7 +3652,7 @@ public interface J extends Tree {
             // This does not take into account the effects inside the method body.
             // As long as v is a local variable, we are guaranteed that it cannot be affected
             // as a side-effect of the method invocation.
-            return getSelect().reads(v)
+            return (getSelect() != null && getSelect().reads(v))
                     || getArguments().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b);
         }
 
@@ -3661,7 +3661,7 @@ public interface J extends Tree {
             // This does not take into account the effects inside the method body.
             // As long as v is a local variable, we are guaranteed that it cannot be affected
             // as a side-effect of the method invocation.
-            return getSelect().writes(v)
+            return (getSelect() != null && getSelect().writes(v))
                     || getArguments().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b);
         }
 
@@ -3909,13 +3909,13 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getInitializer().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b)
+            return (getInitializer() != null && getInitializer().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b))
                     || getDimensions().stream().map(e -> e.getIndex().reads(v)).reduce(false, (a,b) -> a|b);
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getInitializer().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b)
+            return (getInitializer() != null && getInitializer().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b))
                     || getDimensions().stream().map(e -> e.getIndex().writes(v)).reduce(false, (a,b) -> a|b);
         }
 
@@ -4137,28 +4137,16 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getEnclosing().reads(v)
-                    || getArguments().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b)
-                    || getBody().reads(v);
+            return (getEnclosing() != null && getEnclosing().reads(v))
+                    || (getArguments() != null && getArguments().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b))
+                    || (getBody() != null && getBody().reads(v));
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getEnclosing().writes(v)
-                    || getArguments().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b)
-                    || getBody().writes(v);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-            if(s == Side.LVALUE) throw new NodeCannotBeAnLValueException();
-            return getEnclosing().reads(v, Side.RVALUE) || getArguments().stream().map(e -> e.reads(v, Side.RVALUE)).reduce(false, (a,b) -> a | b);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v, Side s) {
-            if(s == Side.LVALUE) throw new NodeCannotBeAnLValueException();
-            return getEnclosing().reads(v, Side.RVALUE) || getArguments().stream().map(e -> e.writes(v, Side.RVALUE)).reduce(false, (a,b) -> a | b);
+            return (getEnclosing() != null && getEnclosing().writes(v))
+                    || (getArguments() != null && getArguments().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b))
+                    || (getBody() != null && getBody().writes(v));
         }
 
         public Padding getPadding() {
@@ -4498,29 +4486,17 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getTree() instanceof Expression ? ((Expression)getTree()).reads(v) : false;
+            return getTree() instanceof Expression && ((Expression) getTree()).reads(v);
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getTree() instanceof Expression ? ((Expression)getTree()).writes(v) : false;
+            return getTree() instanceof Expression && ((Expression) getTree()).writes(v);
         }
 
         @Override
         public List<J> getSideEffects() {
             return tree.getElement() instanceof Expression ? ((Expression) tree.getElement()).getSideEffects() : emptyList();
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-            if(s == Side.LVALUE) throw new NodeCannotBeAnLValueException();
-            return tree.getElement() instanceof Expression ? ((Expression) tree.getElement()).reads(v, Side.RVALUE) : false;
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v, Side s) {
-            if(s == Side.LVALUE) throw new NodeCannotBeAnLValueException();
-            return tree.getElement() instanceof Expression ? ((Expression) tree.getElement()).writes(v, Side.RVALUE) : false;
         }
 
         @Override
@@ -4663,12 +4639,12 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getExpression() == null ? false : getExpression().reads(v);
+            return getExpression() != null && getExpression().reads(v);
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getExpression() == null ? false : getExpression().writes(v);
+            return getExpression() != null && getExpression().writes(v);
         }
 
         @Override
@@ -4982,18 +4958,18 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getResources().stream().map(c -> c.reads(v)).reduce(false, (a,b) -> a|b)
+            return (getResources() != null && getResources().stream().map(c -> c.reads(v)).reduce(false, (a,b) -> a|b))
                     || getBody().reads(v)
                     || getCatches().stream().map(c -> c.getBody().reads(v)).reduce(false, (a,b) -> a|b)
-                    || getFinally() == null ? false : getFinally().reads(v);
+                    || (getFinally() != null && getFinally().reads(v));
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getResources().stream().map(c -> c.writes(v)).reduce(false, (a,b) -> a|b)
+            return (getResources() != null && getResources().stream().map(c -> c.writes(v)).reduce(false, (a,b) -> a|b))
                     || getBody().reads(v)
                     || getCatches().stream().map(c -> c.getBody().writes(v)).reduce(false, (a,b) -> a|b)
-                    || getFinally() == null ? false : getFinally().writes(v);
+                    || (getFinally() != null && getFinally().writes(v));
         }
 
         @Override
@@ -5030,15 +5006,11 @@ public interface J extends Tree {
             }
 
             public boolean reads(JavaType.Variable v) {
-                return variableDeclarations instanceof J.VariableDeclarations
-                        ? ((J.VariableDeclarations)variableDeclarations).reads(v)
-                        : false;
+                return variableDeclarations instanceof VariableDeclarations && ((VariableDeclarations) variableDeclarations).reads(v);
             }
 
             public boolean writes(JavaType.Variable v) {
-                return variableDeclarations instanceof J.VariableDeclarations
-                        ? ((J.VariableDeclarations)variableDeclarations).writes(v)
-                        : false;
+                return variableDeclarations instanceof VariableDeclarations && ((VariableDeclarations) variableDeclarations).writes(v);
             }
         }
 
@@ -5500,12 +5472,12 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            return getVariables().stream().map(n -> n.getInitializer().reads(v)).reduce(false, (a,b) -> a|b);
+            return getVariables().stream().map(n -> n.getInitializer() != null && n.getInitializer().reads(v)).reduce(false, (a,b) -> a|b);
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            return getVariables().stream().map(n -> n.getInitializer().writes(v)).reduce(false, (a,b) -> a|b);
+            return getVariables().stream().map(n -> n.getInitializer() != null && n.getInitializer().writes(v)).reduce(false, (a,b) -> a|b);
         }
 
         @Override
