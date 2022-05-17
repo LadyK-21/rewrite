@@ -69,16 +69,20 @@ public class Java11EffectsAnalysisTest implements RewriteTest {
                 })),
                 java(
                         "" +
-                                "class C { void m() { " +
+                                "class C { int m(int p) { " +
                                 "  int x = 0, y = x;" +
                                 "  x = 1;" +
+                                "  x = m(y);" +
                                 "  x = y;" +
+                                "  return p;" +
                                 "}}",
                         "" +
-                                "class C { void m() { " +
+                                "class C { int m(int p) { " +
                                 "  int x = 0, y = x;" +
                                 "  x = 1;" +
+                                "  /*~~(reads y)~~>*/x = m(y);" +
                                 "  /*~~(reads y)~~>*/x = y;" +
+                                "  return p;" +
                                 "}}"
                 )
         );
