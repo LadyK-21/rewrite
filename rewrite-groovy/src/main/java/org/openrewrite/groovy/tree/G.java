@@ -364,6 +364,18 @@ public interface G extends J {
             return m;
         }
 
+        @Override
+        public boolean reads(JavaType.Variable v) {
+            return getKey().reads(v) || getValue().reads(v);
+        }
+
+        @Override
+        public boolean writes(JavaType.Variable v) {
+            return getKey().writes(v) || getValue().writes(v);
+        }
+
+
+
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -442,6 +454,16 @@ public interface G extends J {
             G.MapLiteral m = this;
             m = m.withType(v.visitType(type, p));
             return m;
+        }
+
+        @Override
+        public boolean reads(JavaType.Variable v) {
+            return getElements().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b);
+        }
+
+        @Override
+        public boolean writes(JavaType.Variable v) {
+            return getElements().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b);
         }
 
         public Padding getPadding() {
@@ -523,6 +545,16 @@ public interface G extends J {
             return l;
         }
 
+        @Override
+        public boolean reads(JavaType.Variable v) {
+            return getElements().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b);
+        }
+
+        @Override
+        public boolean writes(JavaType.Variable v) {
+            return getElements().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b);
+        }
+
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -576,6 +608,16 @@ public interface G extends J {
             g = g.withStrings(ListUtils.map(strings, s -> v.visit(s, p)));
             g = g.withType(v.visitType(type, p));
             return g;
+        }
+
+        @Override
+        public boolean reads(JavaType.Variable v) {
+            return getStrings().stream().map(s -> s instanceof Expression ? ((Expression)s).reads(v) : false).reduce(false, (a,b) -> a|b);
+        }
+
+        @Override
+        public boolean writes(JavaType.Variable v) {
+            return getStrings().stream().map(s -> s instanceof Expression ? ((Expression)s).writes(v) : false).reduce(false, (a,b) -> a|b);
         }
 
         @Override
@@ -671,6 +713,15 @@ public interface G extends J {
 //            sideEffects.addAll(right.getSideEffects());
 //            return sideEffects;
 //        }
+
+        @Override
+        public boolean reads(JavaType.Variable v) {
+            return getLeft().reads(v) || getRight().reads(v);
+        }
+
+        public boolean writes(JavaType.Variable v) {
+            return getLeft().writes(v) || getRight().writes(v);
+        }
 
         public enum Type {
             Find,

@@ -37,4 +37,9 @@ public interface Statement extends J {
     }
 
     CoordinateBuilder.Statement getCoordinates();
+
+    /** @return True if this statement, when executed, may read variable v. */
+    boolean reads(JavaType.Variable v);
+    /** @return True if this statement, when executed, may write variable v. */
+    boolean writes(JavaType.Variable v);
 }
