@@ -625,12 +625,12 @@ public interface J extends Tree {
 
         @Override
         public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
+            return variable.reads(v, Side.LVALUE) || assignment.reads(v);
         }
 
         @Override
         public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
+            return variable.writes(v, Side.LVALUE) || assignment.writes(v);
         }
     }
 
@@ -5363,6 +5363,11 @@ public interface J extends Tree {
 
         @Override
         public boolean writes(JavaType.Variable v) {
+            if(Arrays.asList(new Type[]{ Type.PreIncrement, Type.PreDecrement, Type. PostIncrement, Type.PostDecrement })
+                        .contains(getOperator())) {
+                // expr = expr + 1, expr = 1 + expr, ...: expr appears on both sides
+                return expression.writes(v, Side.LVALUE) || expression.writes(v, Side.RVALUE);
+            }
             return expression.writes(v);
         }
 
