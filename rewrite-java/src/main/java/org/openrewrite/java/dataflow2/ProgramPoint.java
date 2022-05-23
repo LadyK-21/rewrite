@@ -1,6 +1,7 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
+import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 
 import java.util.Collection;
@@ -26,10 +27,10 @@ public interface ProgramPoint {
     // ProgramState out = transfer(in)
 
     default String printPP(Cursor cursor) {
-        if(this instanceof Statement) {
-            return ((Statement)this).print(cursor);
+        if(this instanceof J) {
+            return ((J)this).print(cursor);
         } else {
-            return this.getClass().getSimpleName() + ".printPP()";
+            throw new UnsupportedOperationException("printPP(" + this.getClass().getSimpleName() + ")");
         }
     }
 }

@@ -2,14 +2,12 @@ package org.openrewrite.java.dataflow2;
 
 import org.jetbrains.annotations.NotNull;
 import org.openrewrite.Cursor;
+import org.openrewrite.internal.lang.NonNull;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static java.util.List.of;
@@ -17,25 +15,27 @@ import static java.util.List.of;
 public class PreviousProgramPoint<P> {
     // Find the previous statement when the current statement is part of a sequence of statements
 
-    static Collection<ProgramPoint> previousInBlock(Cursor parentCursor, ProgramPoint p)
+    static @NonNull Collection<ProgramPoint> previousInBlock(Cursor parentCursor, ProgramPoint p)
     {
         J.Block parent = (J.Block) parentCursor.getValue();
         int index = parent.getStatements().indexOf(p);
         if(index > 0) {
             return Collections.singletonList(parent.getStatements().get(index-1));
-        } else {
+        } else if(index == 0) {
             return DataFlowGraph.previous(parentCursor);
         }
+        throw new IllegalStateException();
     }
 
-    public static Collection<ProgramPoint> previousInVariableDeclarations(Cursor parentCursor, ProgramPoint p) {
+    public static @NonNull Collection<ProgramPoint> previousInVariableDeclarations(Cursor parentCursor, ProgramPoint p) {
         J.VariableDeclarations parent = (J.VariableDeclarations) parentCursor.getValue();
         int index = parent.getVariables().indexOf(p);
         if(index > 0) {
             return Collections.singletonList(parent.getVariables().get(index-1));
-        } else {
+        } else if(index == 0) {
             return DataFlowGraph.previous(parentCursor);
         }
+        throw new IllegalStateException();
     }
 
 
@@ -51,12 +51,12 @@ public class PreviousProgramPoint<P> {
      * last of the previous position if given position is empty, or even the previous program point
      * of the for-loop if all preceding positions are empty.
      */
-    static Collection<ProgramPoint> last(Cursor parentCursor, ForLoopPosition position) {
+    static @NonNull Collection<ProgramPoint> last(Cursor parentCursor, ForLoopPosition position) {
 
         J.ForLoop.Control parent = (J.ForLoop.Control) parentCursor.getValue();
 
         List<Statement> init = parent.getInit();
-        List<Statement> update = parent.getInit();
+        List<Statement> update = parent.getUpdate();
 
         if(position == ForLoopPosition.UPDATE) {
             if(update.size() > 0) {
@@ -66,90 +66,99 @@ public class PreviousProgramPoint<P> {
             }
         }
         if(position == ForLoopPosition.INIT) {
-            if(update.size() > 0) {
-                return Collections.singletonList(update.get(update.size()-1));
+            if(init.size() > 0) {
+                return Collections.singletonList(init.get(init.size()-1));
             } else {
                 return DataFlowGraph.previous(parentCursor);
             }
         }
-        return null;
+        throw new IllegalStateException();
     }
 
-    static Collection<ProgramPoint> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {
 
         J.MethodInvocation parent = (J.MethodInvocation) parentCursor.getValue();
 
-        // TODO
-
-        return null;
+//        int index = parent.getArguments().indexOf(p);
+//        if(index > 0) {
+                // an argument is an expression
+//            return Collections.singletonList(parent.getArguments().get(index-1));
+//        } else if(index == 0) {
+//            return DataFlowGraph.previous(parentCursor);
+//        }
+        return Collections.emptyList();
     }
-    static Collection<ProgramPoint> previousInIf(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInIf(Cursor parentCursor, ProgramPoint p) {
 
         J.If parent = (J.If) parentCursor.getValue();
 
-        // TODO
-
-        return null;
+        throw new UnsupportedOperationException("TODO");
     }
 
-    static Collection<ProgramPoint> previousInIfElse(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInIfElse(Cursor parentCursor, ProgramPoint p) {
 
         J.If.Else parent = (J.If.Else) parentCursor.getValue();
 
-        // TODO
-
-        return null;
+        throw new UnsupportedOperationException("TODO");
     }
 
-    static Collection<ProgramPoint> previousInWhileLoop(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInWhileLoop(Cursor parentCursor, ProgramPoint p) {
 
         J.WhileLoop parent = (J.WhileLoop) parentCursor.getValue();
 
-        // TODO
-
-        return null;
+        throw new UnsupportedOperationException("TODO");
     }
 
-    static Collection<ProgramPoint> previousInForLoop(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInForLoop(Cursor forLoopCursor, ProgramPoint p) {
 
-        J.ForLoop parent = (J.ForLoop) parentCursor.getValue();
+        // init: List<Statement>
+        // while(cond: Expression) {
+        //   body: Statement
+        //   update: List<Statement>
+        // }
 
-        if(p == parent.getBody()) {
-            List<ProgramPoint> result = new ArrayList<>();
-            result.add(parent.getBody());
-            Cursor controlCursor = new Cursor(parentCursor, parent.getControl());
+        // TODO: expression
+
+        J.ForLoop forLoop = (J.ForLoop) forLoopCursor.getValue();
+
+        if(p == forLoop.getControl()) {
+            return DataFlowGraph.previous(forLoopCursor);
+        }
+        if(p == forLoop.getBody()) {
+            Cursor controlCursor = new Cursor(forLoopCursor, forLoop.getControl());
+            Set<ProgramPoint> result = new HashSet<>();
+            result.addAll(last(controlCursor, ForLoopPosition.INIT));
             result.addAll(last(controlCursor, ForLoopPosition.UPDATE));
             return result;
         }
 
-        return null;
+        throw new IllegalStateException();
     }
 
-    static Collection<ProgramPoint> previousInForLoopControl(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInForLoopControl(Cursor forLoopControlCursor, ProgramPoint p) {
 
-        J.ForLoop.Control parent = (J.ForLoop.Control) parentCursor.getValue();
+        J.ForLoop.Control forLoopControl = (J.ForLoop.Control) forLoopControlCursor.getValue();
 
-        List<Statement> init = parent.getInit();
-        List<Statement> update = parent.getInit();
+        List<Statement> init = forLoopControl.getInit();
+        List<Statement> update = forLoopControl.getUpdate();
 
         int index;
-        ProgramPoint previous;
 
         index = update.indexOf(p);
         if(index > 0) {
             return Collections.singletonList(update.get(index - 1));
         } else if(index == 0) {
-            return last(parentCursor, ForLoopPosition.INIT);
+            return last(forLoopControlCursor, ForLoopPosition.INIT);
         }
 
         index = init.indexOf(p);
         if(index > 0) {
             return Collections.singletonList(init.get(index - 1));
         } else if(index == 0) {
-            return DataFlowGraph.previous(parentCursor);
+            return DataFlowGraph.previous(forLoopControlCursor);
         }
 
-        return null;
+        throw new IllegalStateException();
     }
 
 
@@ -171,8 +180,7 @@ public class PreviousProgramPoint<P> {
 
         @Override
         public J.Case visitCase(J.Case _case, P p) {
-            // TODO
-            return super.visitCase(_case, p);
+            throw new UnsupportedOperationException("TODO");
         }
 
         @Override
@@ -183,8 +191,7 @@ public class PreviousProgramPoint<P> {
 
         @Override
         public J.@NotNull MethodDeclaration visitMethodDeclaration(J.@NotNull MethodDeclaration method, P p) {
-            // TODO
-            return super.visitMethodDeclaration(method, p);
+            throw new UnsupportedOperationException("TODO");
         }
 
     }
