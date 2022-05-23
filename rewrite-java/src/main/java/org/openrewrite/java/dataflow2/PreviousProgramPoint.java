@@ -148,7 +148,8 @@ public class PreviousProgramPoint<P> {
         if(index > 0) {
             return Collections.singletonList(update.get(index - 1));
         } else if(index == 0) {
-            return last(forLoopControlCursor, ForLoopPosition.INIT);
+            Statement body = ((J.ForLoop)forLoopControlCursor.getParent().getValue()).getBody();
+            return Collections.singletonList(body);
         }
 
         index = init.indexOf(p);
