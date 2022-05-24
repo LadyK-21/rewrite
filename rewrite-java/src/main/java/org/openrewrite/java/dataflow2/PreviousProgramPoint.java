@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.openrewrite.Cursor;
 import org.openrewrite.internal.lang.NonNull;
 import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 
@@ -125,11 +126,12 @@ public class PreviousProgramPoint<P> {
             return DataFlowGraph.previous(forLoopCursor);
         }
         if(p == forLoop.getBody()) {
-            Cursor controlCursor = new Cursor(forLoopCursor, forLoop.getControl());
-            Set<ProgramPoint> result = new HashSet<>();
-            result.addAll(last(controlCursor, ForLoopPosition.INIT));
-            result.addAll(last(controlCursor, ForLoopPosition.UPDATE));
-            return result;
+            return Collections.singletonList(forLoop.getControl().getCondition());
+//            Cursor controlCursor = new Cursor(forLoopCursor, forLoop.getControl());
+//            Set<ProgramPoint> result = new HashSet<>();
+//            result.addAll(last(controlCursor, ForLoopPosition.INIT));
+//            result.addAll(last(controlCursor, ForLoopPosition.UPDATE));
+//            return result;
         }
 
         throw new IllegalStateException();
@@ -140,9 +142,24 @@ public class PreviousProgramPoint<P> {
         J.ForLoop.Control forLoopControl = (J.ForLoop.Control) forLoopControlCursor.getValue();
 
         List<Statement> init = forLoopControl.getInit();
+        Expression cond = forLoopControl.getCondition();
         List<Statement> update = forLoopControl.getUpdate();
 
         int index;
+
+        index = init.indexOf(p);
+        if(index > 0) {
+            return Collections.singletonList(init.get(index - 1));
+        } else if(index == 0) {
+            return DataFlowGraph.previous(forLoopControlCursor);
+        }
+
+        if(p == cond) {
+            Set<ProgramPoint> result = new HashSet<>();
+            result.addAll(last(forLoopControlCursor, ForLoopPosition.INIT));
+            result.addAll(last(forLoopControlCursor, ForLoopPosition.UPDATE));
+            return result;
+        }
 
         index = update.indexOf(p);
         if(index > 0) {
@@ -152,15 +169,57 @@ public class PreviousProgramPoint<P> {
             return Collections.singletonList(body);
         }
 
-        index = init.indexOf(p);
-        if(index > 0) {
-            return Collections.singletonList(init.get(index - 1));
-        } else if(index == 0) {
-            return DataFlowGraph.previous(forLoopControlCursor);
-        }
+
+
 
         throw new IllegalStateException();
     }
+
+    public static Collection<ProgramPoint> previousInParentheses(Cursor parenthesesCursor, ProgramPoint current) {
+        J.Parentheses parentheses = (J.Parentheses) parenthesesCursor.getValue();
+
+        if(current == parentheses.getTree()) {
+            return DataFlowGraph.previous(parenthesesCursor);
+        }
+        throw new IllegalStateException();
+    }
+
+    public static Collection<ProgramPoint> previousInUnary(Cursor unaryCursor, ProgramPoint current) {
+        J.Unary unary = (J.Unary) unaryCursor.getValue();
+
+        if (current == unary.getExpression()) {
+            return DataFlowGraph.previous(unaryCursor);
+        }
+        throw new IllegalStateException();
+    }
+
+    public static Collection<ProgramPoint> previousInBinary(Cursor binaryCursor, ProgramPoint current) {
+        J.Binary binary = (J.Binary) binaryCursor.getValue();
+
+        Expression left = binary.getLeft();
+        Expression right = binary.getRight();
+
+        // TODO short-circuit operators &&, ||
+
+        if(current == right) {
+            return Collections.singletonList(left);
+        } else if(current == left) {
+            return DataFlowGraph.previous(binaryCursor);
+        }
+        throw new IllegalStateException();
+    }
+
+    public static Collection<ProgramPoint> previousInAssignment(Cursor assignmentCursor, ProgramPoint current) {
+        J.Assignment assignment = (J.Assignment) assignmentCursor.getValue();
+
+        Expression a = assignment.getAssignment();
+
+        if(current == a) {
+            return DataFlowGraph.previous(assignmentCursor);
+        }
+        throw new IllegalStateException();
+    }
+
 
 
     static class Visitor<P> extends JavaIsoVisitor<P> {

@@ -47,6 +47,16 @@ public class DataFlowGraph {
                     return PreviousProgramPoint.previousInBlock(parentCursor, current);
                 case "J$VariableDeclarations":
                     return PreviousProgramPoint.previousInVariableDeclarations(parentCursor, current);
+//                case "J$NamedVariable":
+//                    return PreviousProgramPoint.previousInVariableDeclarations(parentCursor, current);
+                case "J$Unary":
+                    return PreviousProgramPoint.previousInUnary(parentCursor, current);
+                case "J$Binary":
+                    return PreviousProgramPoint.previousInBinary(parentCursor, current);
+                case "J$Assignment":
+                    return PreviousProgramPoint.previousInAssignment(parentCursor, current);
+                case "J$Parentheses":
+                    return PreviousProgramPoint.previousInParentheses(parentCursor, current);
                 case "J$CompilationUnit":
                 case "J$ClassDeclaration":
                 case "J$MethodDeclaration":
