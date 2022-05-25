@@ -14,10 +14,11 @@ import java.util.Collection;
  * expressions, method declarations.
  */
 public interface ProgramPoint {
-    default Collection<ProgramPoint> previous(Cursor c) {
+
+    default Collection<Cursor> previous(Cursor c) {
         return DataFlowGraph.previous(c);
     }
-    default Collection<ProgramPoint> next(Cursor c) {
+    default Collection<Cursor> next(Cursor c) {
         return DataFlowGraph.next(c);
     }
 
@@ -33,4 +34,7 @@ public interface ProgramPoint {
             throw new UnsupportedOperationException("printPP(" + this.getClass().getSimpleName() + ")");
         }
     }
+
+    static ProgramPoint ENTRY = new ProgramPoint() {};
+    static ProgramPoint EXIT = new ProgramPoint() {};
 }
