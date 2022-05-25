@@ -33,7 +33,7 @@ public class DataFlowGraph {
     }
 
     public static @NonNull Collection<Cursor> last(Cursor cursor) {
-        return previous2(cursor, ProgramPoint.EXIT);
+        return previous3(cursor, ProgramPoint.EXIT);
     }
 
     public static @NonNull Collection<Cursor> last(Collection<Cursor> cc) {
@@ -45,9 +45,12 @@ public class DataFlowGraph {
     }
 
     public static @NonNull Collection<Cursor> previous2(Cursor cursor, ProgramPoint current) {
-        try {
+        Cursor parentCursor = cursor.dropParentUntil(t -> t instanceof J);
+        return previous3(parentCursor, current);
+    }
 
-            Cursor parentCursor = cursor.dropParentUntil(t -> t instanceof J);
+    public static @NonNull Collection<Cursor> previous3(Cursor parentCursor, ProgramPoint current) {
+        try {
             J parent = parentCursor.getValue();
             switch (parent.getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
                 case "J$MethodInvocation":
@@ -82,8 +85,11 @@ public class DataFlowGraph {
                 case "J$ClassDeclaration":
                 case "J$MethodDeclaration":
                     return Collections.emptyList();
+                case "J$VariableDeclarations$NamedVariable":
+                case "J$Identifier":
+                    return Collections.singletonList(parentCursor);
                 default:
-                    throw new Error(parent.getClass().getSimpleName());
+                    throw new Error(parent.getClass().getName());
             }
         } catch (Exception e) {
             return null;
