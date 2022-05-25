@@ -3,15 +3,13 @@ package org.openrewrite.java.dataflow2;
 import org.jetbrains.annotations.NotNull;
 import org.openrewrite.Cursor;
 import org.openrewrite.internal.lang.NonNull;
+import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Statement;
 
 import java.util.*;
-import java.util.function.Supplier;
-
-import static java.util.List.of;
 
 public class PreviousProgramPoint<P> {
     // Find the previous statement when the current statement is part of a sequence of statements
@@ -89,23 +87,49 @@ public class PreviousProgramPoint<P> {
 //        }
         return Collections.emptyList();
     }
-    static @NonNull Collection<ProgramPoint> previousInIf(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInIf(Cursor ifCursor, ProgramPoint p) {
 
-        J.If parent = (J.If) parentCursor.getValue();
+        J.If ifThenElse = (J.If) ifCursor.getValue();
+        J.ControlParentheses<Expression> cond = ifThenElse.getIfCondition();
+        Statement thenPart = ifThenElse.getThenPart();
+        J.If.@Nullable Else elsePart = ifThenElse.getElsePart();
 
-        throw new UnsupportedOperationException("TODO");
+        if(p == thenPart) {
+            return Collections.singletonList(cond);
+        } else if(p == elsePart) {
+            return Collections.singletonList(cond);
+        } else if(p == cond) {
+            return DataFlowGraph.previous(ifCursor);
+        }
+        throw new IllegalStateException();
     }
 
-    static @NonNull Collection<ProgramPoint> previousInIfElse(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInIfElse(Cursor ifElseCursor, ProgramPoint p) {
 
-        J.If.Else parent = (J.If.Else) parentCursor.getValue();
+        J.If.Else ifElse = (J.If.Else) ifElseCursor.getValue();
+        Statement elsePart = ifElse.getBody();
 
-        throw new UnsupportedOperationException("TODO");
+        if(p == elsePart) {
+            return DataFlowGraph.previous(ifElseCursor);
+        }
+        throw new IllegalStateException();
     }
 
-    static @NonNull Collection<ProgramPoint> previousInWhileLoop(Cursor parentCursor, ProgramPoint p) {
+    static @NonNull Collection<ProgramPoint> previousInWhileLoop(Cursor whileCursor, ProgramPoint p) {
 
-        J.WhileLoop parent = (J.WhileLoop) parentCursor.getValue();
+        J.WhileLoop _while = (J.WhileLoop) whileCursor.getValue();
+        J.ControlParentheses<Expression> cond = _while.getCondition();
+        Statement body = _while.getBody();
+        
+        // while(cond: Expression) {
+        //   body: Statement
+        // }
+
+        if(p == body) {
+            return Collections.singletonList(cond);
+        } else if(p == cond) {
+            return DataFlowGraph.previous(whileCursor);
+        }
 
         throw new UnsupportedOperationException("TODO");
     }
@@ -117,8 +141,6 @@ public class PreviousProgramPoint<P> {
         //   body: Statement
         //   update: List<Statement>
         // }
-
-        // TODO: expression
 
         J.ForLoop forLoop = (J.ForLoop) forLoopCursor.getValue();
 
@@ -177,6 +199,15 @@ public class PreviousProgramPoint<P> {
 
     public static Collection<ProgramPoint> previousInParentheses(Cursor parenthesesCursor, ProgramPoint current) {
         J.Parentheses parentheses = (J.Parentheses) parenthesesCursor.getValue();
+
+        if(current == parentheses.getTree()) {
+            return DataFlowGraph.previous(parenthesesCursor);
+        }
+        throw new IllegalStateException();
+    }
+
+    public static Collection<ProgramPoint> previousInControlParentheses(Cursor parenthesesCursor, ProgramPoint current) {
+        J.ControlParentheses parentheses = (J.ControlParentheses) parenthesesCursor.getValue();
 
         if(current == parentheses.getTree()) {
             return DataFlowGraph.previous(parenthesesCursor);

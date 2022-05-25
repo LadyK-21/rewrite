@@ -27,7 +27,7 @@ class DataFlowGraphTest {
                 void h() {} 
                 void m() {
                     a();
-                    for(int i=0, j=1; i<10 && j<10; i++, j++) {
+                    for(int i=0, j=1; i++<10 && j<10; i++, j++) {
                         f(); g(); h();
                     }
                     b();

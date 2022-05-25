@@ -57,6 +57,8 @@ public class DataFlowGraph {
                     return PreviousProgramPoint.previousInAssignment(parentCursor, current);
                 case "J$Parentheses":
                     return PreviousProgramPoint.previousInParentheses(parentCursor, current);
+                case "J$ControlParentheses":
+                    return PreviousProgramPoint.previousInControlParentheses(parentCursor, current);
                 case "J$CompilationUnit":
                 case "J$ClassDeclaration":
                 case "J$MethodDeclaration":

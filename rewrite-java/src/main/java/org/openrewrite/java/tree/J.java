@@ -2387,7 +2387,7 @@ public interface J extends Tree {
         @EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)
         @RequiredArgsConstructor
         @AllArgsConstructor(access = AccessLevel.PRIVATE)
-        public static final class Else implements J {
+        public static final class Else implements J, ProgramPoint {
             @Nullable
             @NonFinal
             transient WeakReference<Padding> padding;
