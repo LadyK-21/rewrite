@@ -2,11 +2,7 @@ package org.openrewrite.java.dataflow
 
 import org.junit.jupiter.api.Test;
 import org.assertj.core.api.Assertions.*;
-import org.openrewrite.Cursor
 import org.openrewrite.java.JavaParser
-import org.openrewrite.java.dataflow2.DataFlowGraph
-import org.openrewrite.java.tree.DefaultJavaTypeSignatureBuilderTest
-import org.openrewrite.java.tree.J
 
 class DataFlowGraphTest {
 
@@ -16,6 +12,33 @@ class DataFlowGraphTest {
         .build()
         .parse(src)[0];
 
+    @Test
+    fun previousInVariableInitializers() {
+        val src = """
+            class C {
+                void a() {} 
+                void b() {} 
+                int u, v;
+                void m() {
+                    a();
+                    int i = u + v, j = 1;
+                    b();
+                }
+            }
+        """;
+
+        val cu = parse(src);
+
+        FindProgramPoint.assertPrevious(cu,"b()","j = 1");
+        FindProgramPoint.assertPrevious(cu,"j = 1", "1");
+        FindProgramPoint.assertPrevious(cu,"1", "i = u + v");
+        FindProgramPoint.assertPrevious(cu,"i = u + v", "u + v");
+        FindProgramPoint.assertPrevious(cu,"u + v", "v");
+        FindProgramPoint.assertPrevious(cu,"v", "u");
+        FindProgramPoint.assertPrevious(cu,"u", "a()");
+        FindProgramPoint.assertPrevious(cu,"a()");
+
+    }
     @Test
     fun previousInForLoop() {
         val src = """

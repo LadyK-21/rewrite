@@ -1,7 +1,7 @@
 package org.openrewrite.java.dataflow;
 
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.openrewrite.Cursor;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.dataflow2.DataFlowGraph;
 import org.openrewrite.java.dataflow2.ProgramPoint;
@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+/**
+ *  A visitor to find a program point within a given compilation unit with the given string representation.
+ */
 public class FindProgramPoint extends JavaIsoVisitor {
 
     final String ppToFind;
@@ -30,13 +33,13 @@ public class FindProgramPoint extends JavaIsoVisitor {
         List<String> expectedPrevs = Arrays.asList(previous);
         Cursor c = FindProgramPoint.findProgramPoint(cu, pp);
         assert(c != null);
-        Collection<ProgramPoint> prevs = DataFlowGraph.previous(c);
+        Collection<Cursor> prevs = DataFlowGraph.previous(c);
         assert(prevs != null);
         List<String> actualPrevs = prevs.stream().map(prev -> print(prev)).collect(Collectors.toList());
 
         expectedPrevs.sort(String.CASE_INSENSITIVE_ORDER);
         actualPrevs.sort(String.CASE_INSENSITIVE_ORDER);
-        assertThat(actualPrevs).isEqualTo(expectedPrevs);
+        AssertionsForClassTypes.assertThat(actualPrevs).isEqualTo(expectedPrevs);
     }
 
     public static String print(Cursor c) {
