@@ -2,7 +2,6 @@ package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.Statement;
 
 import java.util.Collection;
 
@@ -16,7 +15,7 @@ import java.util.Collection;
 public interface ProgramPoint {
 
     default Collection<Cursor> previous(Cursor c) {
-        return DataFlowGraph.previous(c);
+        return DataFlowGraph.primitiveSources(c);
     }
     default Collection<Cursor> next(Cursor c) {
         return DataFlowGraph.next(c);

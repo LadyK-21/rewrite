@@ -1,4 +1,5 @@
-import org.assertj.core.api.AssertionsForClassTypes;
+package sandbox;
+
 import org.openrewrite.Cursor;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.dataflow2.DataFlowGraph;
@@ -32,7 +33,7 @@ public class FindProgramPoint extends JavaIsoVisitor {
         List<String> expected = Arrays.asList(previous);
         Cursor c = FindProgramPoint.findProgramPoint(cu, pp);
         assertThat(c).withFailMessage("program point <" + pp + "> not found").isNotNull();
-        Collection<Cursor> prevs = DataFlowGraph.previous(c);
+        Collection<Cursor> prevs = DataFlowGraph.primitiveSources(c);
         assertThat(c).withFailMessage("previous() returned null").isNotNull();
         List<String> actual = prevs.stream().map(prev -> print(prev)).collect(Collectors.toList());
 

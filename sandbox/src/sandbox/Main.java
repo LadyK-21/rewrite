@@ -1,3 +1,5 @@
+package sandbox;
+
 import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.InMemoryExecutionContext;
@@ -14,6 +16,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Main {
+
+    public static boolean debug = false;
 
     private static J.CompilationUnit parse(String src) {
         Java11Parser parser = new Java11Parser.Builder().build();
@@ -76,9 +80,9 @@ public class Main {
             "    void f() {} \n" +
             "    void g() {} \n" +
             "    void h() {} \n" +
-            "    void m() { \n" +
+            "    void method() { \n" +
             "       a(); \n" +
-            "       for(int i=0, j=1; i++<10 && j<10; i++, j++) { \n" +
+            "       for(int i=0, j=1; 2<3; m++, n++) { \n" +
             "           f(); g(); h(); \n" +
             "       } \n" +
             "       b(); \n" +
@@ -88,23 +92,27 @@ public class Main {
 
         J.CompilationUnit cu = parse(source);
 
-        // new MyVisitor().visit(cu, null);
+        new PrintProgramPointsVisitor().visit(cu, null);
 
         FindProgramPoint.assertPrevious(cu,"a()");
         FindProgramPoint.assertPrevious(cu,"int i=0, j=1", "a()");
         FindProgramPoint.assertPrevious(cu,"i=0", "0");
         FindProgramPoint.assertPrevious(cu,"0", "a()");
-        FindProgramPoint.assertPrevious(cu,"j=1", "i=0");
-        FindProgramPoint.assertPrevious(cu,"j++", "i++");
-        FindProgramPoint.assertPrevious(cu,"i++", "{ f(); g(); h(); }");
-        // "j++" instead of "i++, j++" since update is List<Statement>, i.e. not a ProgramPoint
-        FindProgramPoint.assertPrevious(cu,"{ f(); g(); h(); }", "int i=0, j=1", "j++");
-        // "j++" instead of "i++, j++" since update is List<Statement>, i.e. not a ProgramPoint
-        FindProgramPoint.assertPrevious(cu,"f()","int i=0, j=1", "j++");
-        FindProgramPoint.assertPrevious(cu,"g()", "f()");
+        FindProgramPoint.assertPrevious(cu,"j=1", "1");
+        FindProgramPoint.assertPrevious(cu,"1", "i=0");
+        FindProgramPoint.assertPrevious(cu,"n++", "n");
+        FindProgramPoint.assertPrevious(cu,"n", "m++");
+        FindProgramPoint.assertPrevious(cu,"m++", "m");
+        FindProgramPoint.assertPrevious(cu,"m", "h()");
         FindProgramPoint.assertPrevious(cu,"h()", "g()");
-        FindProgramPoint.assertPrevious(cu,"b()",
-                "for(int i=0, j=1; i<10 && j<10; i++, j++) { f(); g(); h(); }");
+        FindProgramPoint.assertPrevious(cu,"g()", "f()");
+        FindProgramPoint.assertPrevious(cu,"f()", "2<3");
+        FindProgramPoint.assertPrevious(cu,"{ f(); g(); h(); }", "2<3");
+        FindProgramPoint.assertPrevious(cu,"2<3", "3");
+        FindProgramPoint.assertPrevious(cu,"3", "2");
+        FindProgramPoint.assertPrevious(cu,"2", "j=1", "n++");
+//        FindProgramPoint.assertPrevious(cu,"b()",
+//                "for(int i=0, j=1; i<10 && j<10; i++, j++) { f(); g(); h(); }");
 
     }
 
@@ -181,13 +189,13 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
     @Override
     public Statement visitStatement(Statement statement, Object o) {
         System.out.println("statement = <" + print(getCursor()) + "> " + statement.getClass().getSimpleName());
-        if (print(getCursor()).equals("int x = 1 + 2")) {
+        if (print(getCursor()).equals("0")) {
             System.out.println();
         }
-        Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
+        Collection<Cursor> pp = DataFlowGraph.primitiveSources(getCursor());
         if (pp == null) {
             System.out.println("   (prevs = null)");
-            DataFlowGraph.previous(getCursor());
+            DataFlowGraph.primitiveSources(getCursor());
         } else {
             for (Cursor p : pp) {
                 System.out.println("   prev = " + print(p));
@@ -210,13 +218,13 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
                         print(new Cursor(getCursor(), b.getRight()))
                 );
             }
-            if (print(getCursor()).equals("u")) {
-                System.out.println();
+            if (print(getCursor()).equals("xxx")) {
+                Main.debug = true;
             }
-            Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
+            Collection<Cursor> pp = DataFlowGraph.primitiveSources(getCursor());
             if (pp == null) {
                 System.out.println("   (prevs = null)");
-                DataFlowGraph.previous(getCursor());
+                DataFlowGraph.primitiveSources(getCursor());
             } else {
                 for (Cursor p : pp) {
                     System.out.println("   prev = " + print(p));
@@ -229,10 +237,10 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
     @Override
     public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
         System.out.println("variable = <" + print(getCursor()) + "> " + variable.getClass().getSimpleName());
-        if (print(getCursor()).equals("u")) {
+        if (print(getCursor()).equals("0")) {
             System.out.println();
         }
-        Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
+        Collection<Cursor> pp = DataFlowGraph.primitiveSources(getCursor());
         if (pp == null) {
             System.out.println("   (null)");
         } else {
