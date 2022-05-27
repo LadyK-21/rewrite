@@ -27,7 +27,8 @@ public class DataFlowGraph {
      * preceding given program point in the dataflow graph.
      */
     public static @NonNull Collection<Cursor> previous(Cursor programPoint) {
-        return last(previousNonTerminal(programPoint));
+        Collection<Cursor> pp = previousNonTerminal(programPoint);
+        return last(pp);
     }
 
     /**
@@ -59,17 +60,24 @@ public class DataFlowGraph {
      */
     public static @NonNull Collection<Cursor> previousNonTerminal(Cursor programPoint) {
         ProgramPoint current = (ProgramPoint) programPoint.getValue();
+
         switch (current.getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
-//            case "J$VariableDeclarations$NamedVariable":
-//                return Collections.singletonList(new Cursor(programPoint,
-//                        ((J.VariableDeclarations.NamedVariable)current).getInitializer()));
-//            case "J$Binary":
-//                return Collections.singletonList(new Cursor(programPoint,
-//                        ((J.Binary)current).getRight()));
-            default:
-                Cursor parentCursor = programPoint.dropParentUntil(t -> t instanceof J);
-                return previousIn(parentCursor, current);
+            // either the previous PP is inside current...
+            case "J$VariableDeclarations$NamedVariable": {
+                J.VariableDeclarations.NamedVariable v = (J.VariableDeclarations.NamedVariable)current;
+                Expression init = v.getInitializer();
+                if(init != null) {
+                    return Collections.singletonList(new Cursor(programPoint, init));
+                }
+                break;
+            }
+            case "J$Binary":
+                return Collections.singletonList(new Cursor(programPoint,
+                        ((J.Binary)current).getRight()));
         }
+        // ... or it is the previous PP in the parent
+        Cursor parentCursor = programPoint.dropParentUntil(t -> t instanceof J);
+        return previousIn(parentCursor, current);
     }
 
     public static @NonNull Collection<Cursor> previousIn(Cursor parentCursor, ProgramPoint current) {
@@ -161,6 +169,8 @@ public class DataFlowGraph {
             } else {
                 return DataFlowGraph.previous(parentCursor);
             }
+        } else if(p == ProgramPoint.ENTRY) {
+            return DataFlowGraph.previous(parentCursor);
         } else {
             int index = parent.getVariables().indexOf(p);
             if (index > 0) {
@@ -376,7 +386,7 @@ public class DataFlowGraph {
         if(p == ProgramPoint.EXIT) {
             return Collections.singletonList(namedVariableCursor);
         } else if(p == ProgramPoint.ENTRY) {
-            return DataFlowGraph.previous(namedVariableCursor);
+            return DataFlowGraph.previousIn(namedVariableCursor.getParent(), namedVariableCursor.getValue());
         } else if(p == name) {
             // it is an accident that 'name' is an expression, asking for its previous program point doesn't really make sense
             return Collections.emptyList();

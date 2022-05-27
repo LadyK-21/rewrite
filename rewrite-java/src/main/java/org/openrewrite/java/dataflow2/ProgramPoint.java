@@ -35,6 +35,6 @@ public interface ProgramPoint {
         }
     }
 
-    static ProgramPoint ENTRY = new ProgramPoint() {};
-    static ProgramPoint EXIT = new ProgramPoint() {};
+    static ProgramPoint ENTRY = new ProgramPoint() { @Override public String toString() { return "ENTRY"; }};
+    static ProgramPoint EXIT = new ProgramPoint() { @Override public String toString() { return "EXIT"; }};
 }
