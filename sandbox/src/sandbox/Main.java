@@ -57,7 +57,7 @@ public class Main {
                         "    void m(String u, String v) { \n" +
                         "        a(); \n" +
                         "        __FRAGMENT__ \n" +
-                        "        b(); \n" +
+                        "        b(u,v); \n" +
                         "    }\n" +
                         "}\n" +
                         "" ;
@@ -68,7 +68,7 @@ public class Main {
 
         //new PrintProgramPointsVisitor().visit(cu, null);
 
-        String pp1 = "b()";
+        String pp1 = "b(u,v)";
         Cursor c1 = TestUtils.findProgramPoint(cu, pp1);
         assertThat(c1).withFailMessage("program point <" + pp1 + "> not found").isNotNull();
 

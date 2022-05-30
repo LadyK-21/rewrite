@@ -58,5 +58,9 @@ public class IsNullAnalysis extends DataFlowAnalysis<Ternary>
         J.Identifier pp = (J.Identifier)c.getValue();
         return inputState(c, pp.getFieldType());
     }
+
+    public Ternary transferEmpty(Cursor c, JavaType.Variable storeOfInterest) {
+        return inputState(c, storeOfInterest);
+    }
 }
 

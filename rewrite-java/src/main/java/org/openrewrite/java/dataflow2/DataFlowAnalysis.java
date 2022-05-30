@@ -60,6 +60,8 @@ public abstract class DataFlowAnalysis<S extends ProgramState>
                 return transferLiteral(pp, storeOfInterest);
             case "J$Identifier":
                 return transferIdentifier(pp, storeOfInterest);
+            case "J$Empty":
+                return transferEmpty(pp, storeOfInterest);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
             case "J$MethodDeclaration":
@@ -118,6 +120,9 @@ public abstract class DataFlowAnalysis<S extends ProgramState>
         return defaultTransfer(pp, storeOfInterest);
     }
     public <S extends ProgramState> S transferIdentifier(Cursor pp, JavaType.Variable storeOfInterest) {
+        return defaultTransfer(pp, storeOfInterest);
+    }
+    public <S extends ProgramState> S transferEmpty(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 }
