@@ -41,7 +41,17 @@ public class IsNullAnalysis extends DataFlowAnalysis<Ternary>
     }
 
     public Ternary transferMethodInvocation(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
+        J.MethodInvocation m = (J.MethodInvocation)c.getValue();
+        JavaType.Method type = m.getMethodType();
+        if(type == null) {
+            return Ternary.CantTell;
+        } else switch(type.toString()) {
+            case "java.lang.String{name=toUpperCase,return=java.lang.String,parameters=[]}":
+                return Ternary.DefinitelyNo;
+            default:
+                return Ternary.CantTell; // unknown method
+        }
+        // return inputState(c, storeOfInterest);
     }
 
     @Override

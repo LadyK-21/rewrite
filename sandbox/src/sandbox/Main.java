@@ -40,13 +40,14 @@ public class Main {
     }
 
     public static void testAPI() {
-//        testIsSNull("String s = null;");
-//        testIsSNull("String s = \"abc\";");
-//        testIsSNull("String q = null; String s = q;");
-//        testIsSNull("String q = \"abc\"; String s = q;");
-//        testIsSNull("String s = \"a\" + \"b\";");
+        testIsSNull("String s = null;");
+        testIsSNull("String s = \"abc\";");
+        testIsSNull("String q = null; String s = q;");
+        testIsSNull("String q = \"abc\"; String s = q;");
+        testIsSNull("String s = \"a\" + \"b\";");
         testIsSNull("String s = u;");
-        //testIsSNull("String s = \"a\".toUpper();");
+        testIsSNull("String s = \"a\".toUpperCase();");
+        //testIsSNull("String s; if(c) { s = null; } else { c = \"abc\"; }");
     }
 
     public static void testIsSNull(String fragment) {
