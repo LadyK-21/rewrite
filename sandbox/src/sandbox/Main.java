@@ -47,7 +47,11 @@ public class Main {
         testIsSNull("String s = \"a\" + \"b\";");
         testIsSNull("String s = u;");
         testIsSNull("String s = \"a\".toUpperCase();");
-        //testIsSNull("String s; if(c) { s = null; } else { c = \"abc\"; }");
+        testIsSNull("String s = \"a\".unknownMethod();");
+        testIsSNull("String s; if(c) { s = null; } else { s = null; }");
+        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }");
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }");
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }");
     }
 
     public static void testIsSNull(String fragment) {
@@ -78,7 +82,7 @@ public class Main {
         assertThat(v).isNotNull();
 
         Ternary state = new IsNullAnalysis().inputState(c1, v);
-        System.out.println(fragment + "\n    " + state);
+        System.out.println(fragment + "\n    Is s null when entering point 'b()' ? " + state);
     }
 
     public static void testVariableDeclarations()
