@@ -6,14 +6,19 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.Java11Parser;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.dataflow2.DataFlowGraph;
+import org.openrewrite.java.dataflow2.IsNullAnalysis;
 import org.openrewrite.java.dataflow2.ProgramPoint;
+import org.openrewrite.java.dataflow2.Ternary;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class Main {
 
@@ -29,8 +34,50 @@ public class Main {
 
     public static void main(String[] args)
     {
-        testVariableDeclarations();
-        testForLoop();
+        testAPI();
+        // testVariableDeclarations();
+        // testForLoop();
+    }
+
+    public static void testAPI() {
+//        testIsSNull("String s = null;");
+//        testIsSNull("String s = \"abc\";");
+//        testIsSNull("String q = null; String s = q;");
+//        testIsSNull("String q = \"abc\"; String s = q;");
+//        testIsSNull("String s = \"a\" + \"b\";");
+        testIsSNull("String s = u;");
+        //testIsSNull("String s = \"a\".toUpper();");
+    }
+
+    public static void testIsSNull(String fragment) {
+        String source =
+                "class C {\n" +
+                        "    void a() {} \n" +
+                        "    void b() {} \n" +
+                        "    void m(String u, String v) { \n" +
+                        "        a(); \n" +
+                        "        __FRAGMENT__ \n" +
+                        "        b(); \n" +
+                        "    }\n" +
+                        "}\n" +
+                        "" ;
+
+        source = source.replace("__FRAGMENT__", fragment);
+
+        J.CompilationUnit cu = parse(source);
+
+        //new PrintProgramPointsVisitor().visit(cu, null);
+
+        String pp1 = "b()";
+        Cursor c1 = TestUtils.findProgramPoint(cu, pp1);
+        assertThat(c1).withFailMessage("program point <" + pp1 + "> not found").isNotNull();
+
+        String pp2 = "s";
+        JavaType.Variable v = TestUtils.findVariable(cu, pp2);
+        assertThat(v).isNotNull();
+
+        Ternary state = new IsNullAnalysis().inputState(c1, v);
+        System.out.println(fragment + "\n    " + state);
     }
 
     public static void testVariableDeclarations()
@@ -52,21 +99,21 @@ public class Main {
 
         // new MyVisitor().visit(cu, null);
 
-        FindProgramPoint.assertLast(cu,"a()","a()");
-        FindProgramPoint.assertLast(cu,"int i = u + v, j = w","j = w");
-        FindProgramPoint.assertLast(cu,"i = u + v","i = u + v");
-        FindProgramPoint.assertLast(cu,"u + v","u + v");
-        FindProgramPoint.assertLast(cu,"u","u");
-        FindProgramPoint.assertLast(cu,"v","v");
+        TestUtils.assertLast(cu,"a()","a()");
+        TestUtils.assertLast(cu,"int i = u + v, j = w","j = w");
+        TestUtils.assertLast(cu,"i = u + v","i = u + v");
+        TestUtils.assertLast(cu,"u + v","u + v");
+        TestUtils.assertLast(cu,"u","u");
+        TestUtils.assertLast(cu,"v","v");
 
-        FindProgramPoint.assertPrevious(cu,"b()","j = w");
+        TestUtils.assertPrevious(cu,"b()","j = w");
         //FindProgramPoint.assertPrevious(cu,"j = w", "w");
         //FindProgramPoint.assertPrevious(cu,"w", "i = u + v");
-        FindProgramPoint.assertPrevious(cu,"i = u + v", "u + v");
-        FindProgramPoint.assertPrevious(cu,"u + v", "v");
-        FindProgramPoint.assertPrevious(cu,"v", "u");
-        FindProgramPoint.assertPrevious(cu,"u", "a()");
-        FindProgramPoint.assertPrevious(cu,"a()");
+        TestUtils.assertPrevious(cu,"i = u + v", "u + v");
+        TestUtils.assertPrevious(cu,"u + v", "v");
+        TestUtils.assertPrevious(cu,"v", "u");
+        TestUtils.assertPrevious(cu,"u", "a()");
+        TestUtils.assertPrevious(cu,"a()");
 
     }
 
@@ -90,27 +137,31 @@ public class Main {
             "} \n" +
             "" ;
 
+        // m(x,y)[i] = 1
+        // m(x,y).f = 1
+        // z = m(x,y).f
+
         J.CompilationUnit cu = parse(source);
 
         new PrintProgramPointsVisitor().visit(cu, null);
 
-        FindProgramPoint.assertPrevious(cu,"a()");
-        FindProgramPoint.assertPrevious(cu,"int i=0, j=1", "a()");
-        FindProgramPoint.assertPrevious(cu,"i=0", "0");
-        FindProgramPoint.assertPrevious(cu,"0", "a()");
-        FindProgramPoint.assertPrevious(cu,"j=1", "1");
-        FindProgramPoint.assertPrevious(cu,"1", "i=0");
-        FindProgramPoint.assertPrevious(cu,"n++", "n");
-        FindProgramPoint.assertPrevious(cu,"n", "m++");
-        FindProgramPoint.assertPrevious(cu,"m++", "m");
-        FindProgramPoint.assertPrevious(cu,"m", "h()");
-        FindProgramPoint.assertPrevious(cu,"h()", "g()");
-        FindProgramPoint.assertPrevious(cu,"g()", "f()");
-        FindProgramPoint.assertPrevious(cu,"f()", "2<3");
-        FindProgramPoint.assertPrevious(cu,"{ f(); g(); h(); }", "2<3");
-        FindProgramPoint.assertPrevious(cu,"2<3", "3");
-        FindProgramPoint.assertPrevious(cu,"3", "2");
-        FindProgramPoint.assertPrevious(cu,"2", "j=1", "n++");
+        TestUtils.assertPrevious(cu,"a()");
+        TestUtils.assertPrevious(cu,"int i=0, j=1", "a()");
+        TestUtils.assertPrevious(cu,"i=0", "0");
+        TestUtils.assertPrevious(cu,"0", "a()");
+        TestUtils.assertPrevious(cu,"j=1", "1");
+        TestUtils.assertPrevious(cu,"1", "i=0");
+        TestUtils.assertPrevious(cu,"n++", "n");
+        TestUtils.assertPrevious(cu,"n", "m++");
+        TestUtils.assertPrevious(cu,"m++", "m");
+        TestUtils.assertPrevious(cu,"m", "h()");
+        TestUtils.assertPrevious(cu,"h()", "g()");
+        TestUtils.assertPrevious(cu,"g()", "f()");
+        TestUtils.assertPrevious(cu,"f()", "2<3");
+        TestUtils.assertPrevious(cu,"{ f(); g(); h(); }", "2<3");
+        TestUtils.assertPrevious(cu,"2<3", "3");
+        TestUtils.assertPrevious(cu,"3", "2");
+        TestUtils.assertPrevious(cu,"2", "j=1", "n++");
 //        FindProgramPoint.assertPrevious(cu,"b()",
 //                "for(int i=0, j=1; i<10 && j<10; i++, j++) { f(); g(); h(); }");
 

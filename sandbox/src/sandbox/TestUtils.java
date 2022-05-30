@@ -1,11 +1,13 @@
 package sandbox;
 
 import org.openrewrite.Cursor;
+import org.openrewrite.internal.StringUtils;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.dataflow2.DataFlowGraph;
 import org.openrewrite.java.dataflow2.ProgramPoint;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
 
 import java.util.Arrays;
@@ -17,21 +19,28 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 /**
  *  A visitor to find a program point within a given compilation unit with the given string representation.
+ *  Used for specifying unit tests.
  */
-public class FindProgramPoint extends JavaIsoVisitor {
+public class TestUtils {
 
-    final String ppToFind;
-    Cursor result;
-
+    /**
+     * @return The first program point in given compilation unit whose print representation is equal to `ppToFind`.
+     */
     public static Cursor findProgramPoint(J.CompilationUnit cu, String ppToFind) {
-        FindProgramPoint visitor = new FindProgramPoint(ppToFind);
+        TestUtils.Visitor visitor = new TestUtils.Visitor(ppToFind);
+        visitor.visit(cu, null);
+        return visitor.result;
+    }
+
+    public static JavaType.Variable findVariable(J.CompilationUnit cu, String variableToFind) {
+        TestUtils.FindVariableVisitor visitor = new TestUtils.FindVariableVisitor(variableToFind);
         visitor.visit(cu, null);
         return visitor.result;
     }
 
     public static void assertPrevious(J.CompilationUnit cu, String pp, String... previous) {
         List<String> expected = Arrays.asList(previous);
-        Cursor c = FindProgramPoint.findProgramPoint(cu, pp);
+        Cursor c = TestUtils.findProgramPoint(cu, pp);
         assertThat(c).withFailMessage("program point <" + pp + "> not found").isNotNull();
         Collection<Cursor> prevs = DataFlowGraph.primitiveSources(c);
         assertThat(c).withFailMessage("previous() returned null").isNotNull();
@@ -46,7 +55,7 @@ public class FindProgramPoint extends JavaIsoVisitor {
 
     public static void assertLast(J.CompilationUnit cu, String pp, String... last) {
         List<String> expected = Arrays.asList(last);
-        Cursor c = FindProgramPoint.findProgramPoint(cu, pp);
+        Cursor c = TestUtils.findProgramPoint(cu, pp);
         assertThat(c).withFailMessage("program point <" + pp + "> not found").isNotNull();
         Collection<Cursor> lasts = DataFlowGraph.last(c);
         assertThat(c).withFailMessage("last() returned null").isNotNull();
@@ -73,34 +82,63 @@ public class FindProgramPoint extends JavaIsoVisitor {
     }
 
 
-    public FindProgramPoint(String ppToFind) {
-        this.ppToFind = ppToFind;
+    static class Visitor extends JavaIsoVisitor {
+
+        final String ppToFind;
+        Cursor result;
+
+
+        public Visitor(String ppToFind) {
+            this.ppToFind = ppToFind;
+        }
+
+        @Override
+        public Statement visitStatement(Statement statement, Object o) {
+            super.visitStatement(statement, o);
+            if (result == null && ppToFind.equals(print(statement, getCursor()))) {
+                result = getCursor();
+            }
+            return statement;
+        }
+
+        @Override
+        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
+            super.visitVariable(variable, o);
+            if (result == null && ppToFind.equals(print(variable, getCursor()))) {
+                result = getCursor();
+            }
+            return variable;
+        }
+
+        @Override
+        public Expression visitExpression(Expression expression, Object o) {
+            super.visitExpression(expression, o);
+            if (result == null && ppToFind.equals(print(expression, getCursor()))) {
+                result = getCursor();
+            }
+            return expression;
+        }
     }
 
-    @Override
-    public Statement visitStatement(Statement statement, Object o) {
-        super.visitStatement(statement, o);
-        if (result == null && ppToFind.equals(print(statement, getCursor()))) {
-            result = getCursor();
+
+    static class FindVariableVisitor extends JavaIsoVisitor {
+
+        final String variableToFind;
+        JavaType.Variable result;
+
+
+        public FindVariableVisitor(String variableToFind) {
+            this.variableToFind = variableToFind;
         }
-        return statement;
+
+        @Override
+        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
+            super.visitVariable(variable, o);
+            if (result == null && variableToFind.equals(variable.getName().getSimpleName())) {
+                result = variable.getVariableType();
+            }
+            return variable;
+        }
     }
 
-    @Override
-    public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
-        super.visitVariable(variable, o);
-        if (result == null && ppToFind.equals(print(variable, getCursor()))) {
-            result = getCursor();
-        }
-        return variable;
-    }
-
-    @Override
-    public Expression visitExpression(Expression expression, Object o) {
-        super.visitExpression(expression, o);
-        if (result == null && ppToFind.equals(print(expression, getCursor()))) {
-            result = getCursor();
-        }
-        return expression;
-    }
 }

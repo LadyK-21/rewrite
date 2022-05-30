@@ -24,7 +24,7 @@ public class DataFlowGraph {
     /**
      * @cursor A cursor whose value is a program point.
      * @return The set of primitive program points (i.e., not containing other program points)
-     * preceding given program point in the dataflow graph.
+     * directly preceding given program point in the dataflow graph.
      */
     public static @NonNull Collection<Cursor> primitiveSources(Cursor programPoint) {
         Collection<Cursor> pp = sources(programPoint);
@@ -174,6 +174,9 @@ public class DataFlowGraph {
             }
         } else if(p == ProgramPoint.ENTRY) {
             return DataFlowGraph.primitiveSources(parentCursor);
+        } else if(p == parent.getTypeExpression()) {
+            // p is not a program point
+            return Collections.emptyList();
         } else {
             int index = parent.getVariables().indexOf(p);
             if (index > 0) {
