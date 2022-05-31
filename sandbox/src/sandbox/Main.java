@@ -40,17 +40,20 @@ public class Main {
     }
 
     public static void testAPI() {
-        testIsSNull("String s = null;");
-        testIsSNull("String s = \"abc\";");
-        testIsSNull("String q = null; String s = q;");
-        testIsSNull("String q = \"abc\"; String s = q;");
-        testIsSNull("String s = \"a\" + \"b\";");
-        testIsSNull("String s = u;");
-        testIsSNull("String s = \"a\".toUpperCase();");
-        testIsSNull("String s = \"a\".unknownMethod();");
-        testIsSNull("String s; if(c) { s = null; } else { s = null; }");
-        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }");
-        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }");
+//        testIsSNull("String s = null;");
+//        testIsSNull("String s = \"abc\";");
+//        testIsSNull("String q = null; String s = q;");
+//        testIsSNull("String q = \"abc\"; String s = q;");
+//        testIsSNull("String s = null + null;");
+//        testIsSNull("String s = \"a\" + null;");
+//        testIsSNull("String s = null + \"b\";");
+//        testIsSNull("String s = \"a\" + \"b\";");
+//        testIsSNull("String s = u;");
+//        testIsSNull("String s = \"a\".toUpperCase();");
+//        testIsSNull("String s = \"a\".unknownMethod();");
+//        testIsSNull("String s; if(c) { s = null; } else { s = null; }");
+//        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }");
+//        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }");
         testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }");
     }
 
