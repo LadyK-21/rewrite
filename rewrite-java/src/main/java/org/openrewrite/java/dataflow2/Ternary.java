@@ -4,4 +4,6 @@ public enum Ternary implements ProgramState {
     DefinitelyYes,
     DefinitelyNo,
     CantTell
+
+
 }

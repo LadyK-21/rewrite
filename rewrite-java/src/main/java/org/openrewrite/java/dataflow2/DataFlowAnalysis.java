@@ -5,12 +5,12 @@ import org.openrewrite.java.tree.JavaType;
 
 import java.util.*;
 
-public abstract class DataFlowAnalysis<PS extends ProgramState> {
+public abstract class DataFlowAnalysis<S extends ProgramState> {
     /**
      * @return The *input* program state at given program point.
      */
-    public PS inputState(Cursor pp, JavaType.Variable storeOfInterest) {
-        List<PS> outs = new ArrayList<>();
+    public S inputState(Cursor pp, JavaType.Variable storeOfInterest) {
+        List<S> outs = new ArrayList<>();
         Collection<Cursor> sources = DataFlowGraph.primitiveSources(pp);
         for (Cursor source : sources) {
             outs.add(outputState(source, storeOfInterest));
@@ -18,14 +18,14 @@ public abstract class DataFlowAnalysis<PS extends ProgramState> {
         return join(outs);
     }
 
-    public abstract PS join(Collection<PS> outs);
+    public abstract S join(Collection<S> outs);
 
     @SafeVarargs
-    public final PS join(PS... outs) {
+    public final S join(S... outs) {
         return join(Arrays.asList(outs));
     }
 
-    public <S extends ProgramState> S outputState(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S outputState(Cursor pp, JavaType.Variable storeOfInterest) {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
                 return transferMethodInvocation(pp, storeOfInterest);
@@ -69,73 +69,73 @@ public abstract class DataFlowAnalysis<PS extends ProgramState> {
         }
     }
 
-    public abstract <S extends ProgramState> S defaultTransfer(Cursor pp, JavaType.Variable storeOfInterest);
+    public abstract S defaultTransfer(Cursor pp, JavaType.Variable storeOfInterest);
 
-    public <S extends ProgramState> S transferMethodInvocation(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferMethodInvocation(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferIf(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferIf(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferIfElse(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferIfElse(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferWhileLoop(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferWhileLoop(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferForLoop(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferForLoop(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferForLoopControl(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferForLoopControl(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferBlock(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferBlock(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferVariableDeclarations(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferVariableDeclarations(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferNamedVariable(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferNamedVariable(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferUnary(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferUnary(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferBinary(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferBinary(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferAssignment(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferAssignment(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferParentheses(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferParentheses(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferControlParentheses(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferControlParentheses(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferLiteral(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferLiteral(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferIdentifier(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferIdentifier(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 
-    public <S extends ProgramState> S transferEmpty(Cursor pp, JavaType.Variable storeOfInterest) {
+    public S transferEmpty(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
 }
