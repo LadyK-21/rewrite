@@ -18,18 +18,15 @@ public class IsNullAnalysis extends DataFlowAnalysis<Ternary> {
     public Ternary join(Collection<Ternary> outs) {
         Ternary result = null;
         for (Ternary out : outs) {
-            if (result == null) {
-                result = out;
-            } else {
-                if (result == Ternary.DefinitelyYes && out != Ternary.DefinitelyYes) {
-                    result = CantTell;
-                } else if (result == DefinitelyNo && out != DefinitelyNo) {
-                    result = CantTell;
-                }
+            if ((result == Ternary.DefinitelyYes && out != Ternary.DefinitelyYes) ||
+                    (result == DefinitelyNo && out != DefinitelyNo)) {
+                return CantTell;
+            } else if (result == CantTell) {
+                return result;
             }
+            result = out;
         }
-        if (result == null) result = CantTell;
-        return result;
+        return result == null ? CantTell : result;
     }
 
     public Ternary defaultTransfer(Cursor c, JavaType.Variable v) {
