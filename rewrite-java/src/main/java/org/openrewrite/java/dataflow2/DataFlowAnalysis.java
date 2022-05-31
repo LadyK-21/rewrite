@@ -64,6 +64,32 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
             case "J$MethodDeclaration":
+                // Assert
+                // ArrayAccess
+                // AssignmentOperation
+                // Break
+                // Case
+                // Continue
+                // DoWhileLoop
+                // EnumValue
+                // EnumValueSet
+                // FieldAccess
+                // ForeachLoop
+                // InstanceOf
+                // Label
+                // Lambda
+                // MemberReference
+                // MultiCatch
+                // NewArray
+                // ArrayDimension
+                // NewClass
+                // Return
+                // Switch
+                // Ternary
+                // Throw
+                // Try
+                // TypeCast
+                // WhileLoop
             default:
                 throw new Error(pp.getClass().getName());
         }

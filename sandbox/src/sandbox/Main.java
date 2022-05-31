@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.openrewrite.java.dataflow2.Ternary.*;
 
 public class Main {
 
@@ -40,24 +41,28 @@ public class Main {
     }
 
     public static void testAPI() {
-//        testIsSNull("String s = null;");
-//        testIsSNull("String s = \"abc\";");
-//        testIsSNull("String q = null; String s = q;");
-//        testIsSNull("String q = \"abc\"; String s = q;");
-//        testIsSNull("String s = null + null;");
-//        testIsSNull("String s = \"a\" + null;");
-//        testIsSNull("String s = null + \"b\";");
-//        testIsSNull("String s = \"a\" + \"b\";");
-//        testIsSNull("String s = u;");
-//        testIsSNull("String s = \"a\".toUpperCase();");
-//        testIsSNull("String s = \"a\".unknownMethod();");
-//        testIsSNull("String s; if(c) { s = null; } else { s = null; }");
-//        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }");
-//        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }");
-        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }");
+//        testIsSNull("String s = null;", DefinitelyYes);
+//        testIsSNull("String s = \"abc\";", DefinitelyNo);
+//        testIsSNull("String s; s = null; s = \"abc\";", DefinitelyNo);
+//        testIsSNull("String s; s = \"abc\"; s = null;", DefinitelyYes);
+//        testIsSNull("String q = null; String s = q;", DefinitelyYes);
+//        testIsSNull("String q = \"abc\"; String s = q;", DefinitelyNo);
+        testIsSNull("String s = null + null;", DefinitelyNo);
+        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
+        testIsSNull("String s = null + \"b\";", DefinitelyNo);
+        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
+        testIsSNull("String s = u;", CantTell);
+        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
+        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
+        testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
+        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
+        testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
+                DefinitelyYes);
     }
 
-    public static void testIsSNull(String fragment) {
+    public static void testIsSNull(String fragment, Ternary expected) {
         String source =
                 "class C {\n" +
                         "    void a() {} \n" +
@@ -86,6 +91,8 @@ public class Main {
 
         Ternary state = new IsNullAnalysis().inputState(c1, v);
         System.out.println(fragment + "\n    Is s null when entering point 'b()' ? " + state);
+
+        assertThat(state).isEqualTo(expected);
     }
 
     public static void testVariableDeclarations()

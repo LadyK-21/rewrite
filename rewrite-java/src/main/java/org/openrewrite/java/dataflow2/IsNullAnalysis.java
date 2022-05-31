@@ -6,37 +6,29 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.openrewrite.java.dataflow2.Ternary.CantTell;
-import static org.openrewrite.java.dataflow2.Ternary.DefinitelyNo;
+import static org.openrewrite.java.dataflow2.Ternary.*;
 
 public class IsNullAnalysis extends DataFlowAnalysis<Ternary> {
-    private static final MethodMatcher TO_UPPER_CASE = new MethodMatcher("java.lang.String toUpperCase()");
 
+    @Override
     public Ternary join(Collection<Ternary> outs) {
-        Ternary result = null;
-        for (Ternary out : outs) {
-            if ((result == Ternary.DefinitelyYes && out != Ternary.DefinitelyYes) ||
-                    (result == DefinitelyNo && out != DefinitelyNo)) {
-                return CantTell;
-            } else if (result == CantTell) {
-                return result;
-            }
-            result = out;
-        }
-        return result == null ? CantTell : result;
+        return Ternary.join(outs);
     }
 
+    @Override
     public Ternary defaultTransfer(Cursor c, JavaType.Variable v) {
+        // For development only, to make sure all cases are covered
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Ternary transferBinary(Cursor c, JavaType.Variable storeOfInterest) {
-        J.Binary pp = c.getValue();
-        return inputState(c, storeOfInterest);
+        return DefinitelyNo;
     }
 
     public Ternary transferNamedVariable(Cursor c, JavaType.Variable storeOfInterest) {
@@ -57,22 +49,32 @@ public class IsNullAnalysis extends DataFlowAnalysis<Ternary> {
         }
     }
 
+    private static final String[] definitelyNonNullReturningMethodSignatures = new String[] {
+        "java.lang.String toUpperCase()"
+    };
+
+    private static final List<MethodMatcher> definitelyNonNullReturningMethodMatchers =
+            Arrays.stream(definitelyNonNullReturningMethodSignatures).map(MethodMatcher::new).collect(Collectors.toList());
+
     public Ternary transferMethodInvocation(Cursor c, JavaType.Variable storeOfInterest) {
-        return TO_UPPER_CASE.matches((J.MethodInvocation) c.getValue()) ? DefinitelyNo : CantTell;
+        J.MethodInvocation method = c.getValue();
+        for(MethodMatcher matcher : definitelyNonNullReturningMethodMatchers) {
+            if (matcher.matches(method)) return DefinitelyNo;
+        }
+        return CantTell;
     }
 
     @Override
     public Ternary transferLiteral(Cursor c, JavaType.Variable storeOfInterest) {
         J.Literal pp = c.getValue();
         if (pp.getValue() == null) {
-            return Ternary.DefinitelyYes;
+            return DefinitelyYes;
         } else {
             return DefinitelyNo;
         }
     }
 
     public Ternary transferIdentifier(Cursor c, JavaType.Variable storeOfInterest) {
-        J.Identifier pp = c.getValue();
         return inputState(c, storeOfInterest);
     }
 
