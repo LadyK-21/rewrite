@@ -49,6 +49,11 @@ public class IsNullAnalysis extends DataFlowAnalysis<Ternary> {
         }
     }
 
+    @Override
+    public Ternary transferAssignmentOperation(Cursor pp, JavaType.Variable storeOfInterest) {
+        return defaultTransfer(pp, storeOfInterest);
+    }
+
     private static final String[] definitelyNonNullReturningMethodSignatures = new String[] {
         "java.lang.String toUpperCase()"
     };
@@ -102,6 +107,34 @@ public class IsNullAnalysis extends DataFlowAnalysis<Ternary> {
         } else {
             throw new UnsupportedOperationException(); // TODO
         }
+    }
+
+    public Ternary transferWhileLoop(Cursor c, JavaType.Variable storeOfInterest) {
+        return inputState(c, storeOfInterest);
+    }
+//
+//    public S transferForLoop(Cursor pp, JavaType.Variable storeOfInterest) {
+//        return defaultTransfer(pp, storeOfInterest);
+//    }
+//
+//    public S transferForLoopControl(Cursor pp, JavaType.Variable storeOfInterest) {
+//        return defaultTransfer(pp, storeOfInterest);
+//    }
+//
+//    public S transferVariableDeclarations(Cursor pp, JavaType.Variable storeOfInterest) {
+//        return defaultTransfer(pp, storeOfInterest);
+//    }
+//
+//    public S transferUnary(Cursor pp, JavaType.Variable storeOfInterest) {
+//        return defaultTransfer(pp, storeOfInterest);
+//    }
+
+    public Ternary transferParentheses(Cursor c, JavaType.Variable storeOfInterest) {
+        return inputState(c, storeOfInterest);
+    }
+
+    public Ternary transferControlParentheses(Cursor c, JavaType.Variable storeOfInterest) {
+        return inputState(c, storeOfInterest);
     }
 }
 

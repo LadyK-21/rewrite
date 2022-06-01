@@ -75,6 +75,10 @@ public class DataFlowGraph {
                 return Collections.singletonList(new Cursor(programPoint, ((J.Binary) current).getRight()));
             case "J$Unary":
                 return Collections.singletonList(new Cursor(programPoint, ((J.Unary) current).getExpression()));
+            case "J$ControlParentheses":
+                return Collections.singletonList(new Cursor(programPoint, ((J.ControlParentheses) current).getTree()));
+            case "J$Parentheses":
+                return Collections.singletonList(new Cursor(programPoint, ((J.Parentheses) current).getTree()));
             case "J$MethodInvocation": {
                 J.MethodInvocation m = (J.MethodInvocation) current;
                 List<Expression> args = m.getArguments();

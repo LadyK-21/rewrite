@@ -41,25 +41,40 @@ public class Main {
     }
 
     public static void testAPI() {
+//        testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
+//        testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
+        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
+
 //        testIsSNull("String s = null;", DefinitelyYes);
 //        testIsSNull("String s = \"abc\";", DefinitelyNo);
 //        testIsSNull("String s; s = null; s = \"abc\";", DefinitelyNo);
 //        testIsSNull("String s; s = \"abc\"; s = null;", DefinitelyYes);
 //        testIsSNull("String q = null; String s = q;", DefinitelyYes);
 //        testIsSNull("String q = \"abc\"; String s = q;", DefinitelyNo);
-        testIsSNull("String s = null + null;", DefinitelyNo);
-        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
-        testIsSNull("String s = null + \"b\";", DefinitelyNo);
-        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
-        testIsSNull("String s = u;", CantTell);
-        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
-        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
-        testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
-        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
-        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
-        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
-        testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
-                DefinitelyYes);
+//        testIsSNull("String s = null + null;", DefinitelyNo);
+//        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
+//        testIsSNull("String s = null + \"b\";", DefinitelyNo);
+//        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
+//        testIsSNull("String s = u;", CantTell);
+//        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
+//        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
+//        testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
+//        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
+//        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
+//        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
+//        testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
+//                DefinitelyYes);
+//        testIsSNull("String s = null; while(c) { s = \"a\"; }", CantTell);
+//        testIsSNull("String s = null; while(c) { s = null; }", DefinitelyYes);
+//        testIsSNull("String s = \"a\"; while(c) { s = null; }", CantTell);
+//        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", DefinitelyNo);
+//
+//        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", CantTell);
+
+//        testIsSNull("String s; while((s = null) == null) { s = null; }", DefinitelyYes);
+//        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
+//        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
+
     }
 
     public static void testIsSNull(String fragment, Ternary expected) {
@@ -70,7 +85,7 @@ public class Main {
                         "    void m(String u, String v) { \n" +
                         "        a(); \n" +
                         "        __FRAGMENT__ \n" +
-                        "        b(u,v); \n" +
+                        "        b(); \n" +
                         "    }\n" +
                         "}\n" +
                         "" ;
@@ -81,7 +96,7 @@ public class Main {
 
         //new PrintProgramPointsVisitor().visit(cu, null);
 
-        String pp1 = "b(u,v)";
+        String pp1 = "b()";
         Cursor c1 = TestUtils.findProgramPoint(cu, pp1);
         assertThat(c1).withFailMessage("program point <" + pp1 + "> not found").isNotNull();
 

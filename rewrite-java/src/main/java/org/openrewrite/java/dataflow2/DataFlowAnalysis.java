@@ -145,6 +145,10 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         return defaultTransfer(pp, storeOfInterest);
     }
 
+    public S transferAssignmentOperation(Cursor pp, JavaType.Variable storeOfInterest) {
+        return defaultTransfer(pp, storeOfInterest);
+    }
+
     public S transferParentheses(Cursor pp, JavaType.Variable storeOfInterest) {
         return defaultTransfer(pp, storeOfInterest);
     }
