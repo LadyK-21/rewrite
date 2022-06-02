@@ -5,14 +5,22 @@ import org.openrewrite.java.tree.JavaType;
 
 import java.util.Collection;
 
-public abstract class TaintAnalysis extends DataFlowAnalysis<Ternary> {
+import static org.openrewrite.java.dataflow2.Ternary.DefinitelyNo;
+
+public abstract class TaintAnalysis extends DataFlowAnalysis<ProgramState> {
 
     @Override
-    public Ternary join(Collection<Ternary> outs) {
-        return Ternary.join(outs);
+    public ProgramState join(Collection<ProgramState> outs) {
+        return ProgramState.join(outs);
     }
 
-    public Ternary defaultTransfer(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
+    public ProgramState defaultTransfer(Cursor c, ProgramState state) {
+        return inputState(c, state);
     }
+
+    @Override
+    public ProgramState transferBinary(Cursor programPoint, ProgramState state) {
+        return state.push(DefinitelyNo);
+    }
+
 }

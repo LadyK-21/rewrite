@@ -11,47 +11,52 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.openrewrite.java.dataflow2.Ternary.*;
+import static org.openrewrite.java.dataflow2.ProgramState.*;
+import static org.openrewrite.java.dataflow2.Ternary.DefinitelyNo;
+import static org.openrewrite.java.dataflow2.Ternary.DefinitelyYes;
 
-public class IsNullAnalysis extends DataFlowAnalysis<Ternary> {
+public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
 
     @Override
-    public Ternary join(Collection<Ternary> outs) {
-        return Ternary.join(outs);
+    public ProgramState join(Collection<ProgramState> outs) {
+        return ProgramState.join(outs);
     }
 
     @Override
-    public Ternary defaultTransfer(Cursor c, JavaType.Variable v) {
+    public ProgramState defaultTransfer(Cursor c, ProgramState state) {
         // For development only, to make sure all cases are covered
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Ternary transferBinary(Cursor c, JavaType.Variable storeOfInterest) {
-        return DefinitelyNo;
+    public ProgramState transferBinary(Cursor c, ProgramState state) {
+        return state.push(DefinitelyNo);
     }
 
-    public Ternary transferNamedVariable(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
+    public ProgramState transferNamedVariable(Cursor c, ProgramState state) {
+        return inputState(c, state);
     }
 
-    public Ternary transferAssignment(Cursor c, JavaType.Variable storeOfInterest) {
+    @Override
+    public ProgramState transferAssignment(Cursor c, ProgramState state) {
         J.Assignment a = c.getValue();
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
-            if (ident.getFieldType() == storeOfInterest) {
-                return outputState(new Cursor(c, a.getAssignment()), storeOfInterest);
-            } else {
-                return inputState(c, storeOfInterest);
-            }
+//            if (ident.getFieldType() == state) {
+//                return outputState(new Cursor(c, a.getAssignment()), state);
+//            } else {
+//                return inputState(c, state);
+//            }
+            ProgramState s = outputState(new Cursor(c, a.getAssignment()), state);
+            return s.set(ident.getFieldType(), s.expr()).pop();
         } else {
-            return CantTell;
+            throw new UnsupportedOperationException();
         }
     }
 
     @Override
-    public Ternary transferAssignmentOperation(Cursor pp, JavaType.Variable storeOfInterest) {
-        return defaultTransfer(pp, storeOfInterest);
+    public ProgramState transferAssignmentOperation(Cursor pp, ProgramState state) {
+        return defaultTransfer(pp, state);
     }
 
     private static final String[] definitelyNonNullReturningMethodSignatures = new String[] {
@@ -61,80 +66,83 @@ public class IsNullAnalysis extends DataFlowAnalysis<Ternary> {
     private static final List<MethodMatcher> definitelyNonNullReturningMethodMatchers =
             Arrays.stream(definitelyNonNullReturningMethodSignatures).map(MethodMatcher::new).collect(Collectors.toList());
 
-    public Ternary transferMethodInvocation(Cursor c, JavaType.Variable storeOfInterest) {
+    public ProgramState transferMethodInvocation(Cursor c, ProgramState state) {
         J.MethodInvocation method = c.getValue();
         for(MethodMatcher matcher : definitelyNonNullReturningMethodMatchers) {
-            if (matcher.matches(method)) return DefinitelyNo;
+            if (matcher.matches(method)) {
+                return state.push(DefinitelyNo);
+            }
         }
-        return CantTell;
+        //return CantTell;
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public Ternary transferLiteral(Cursor c, JavaType.Variable storeOfInterest) {
+    public ProgramState transferLiteral(Cursor c, ProgramState state) {
         J.Literal pp = c.getValue();
         if (pp.getValue() == null) {
-            return DefinitelyYes;
+            return state.push(DefinitelyYes);
         } else {
-            return DefinitelyNo;
+            return state.push(DefinitelyNo);
         }
     }
 
-    public Ternary transferIdentifier(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
+    public ProgramState transferIdentifier(Cursor c, ProgramState state) {
+        return inputState(c, state);
     }
 
-    public Ternary transferEmpty(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
-    }
-
-    @Override
-    public Ternary transferIf(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
+    public ProgramState transferEmpty(Cursor c, ProgramState state) {
+        return inputState(c, state);
     }
 
     @Override
-    public Ternary transferIfElse(Cursor c, JavaType.Variable storeOfInterest) {
+    public ProgramState transferIf(Cursor c, ProgramState state) {
+        return inputState(c, state);
+    }
+
+    @Override
+    public ProgramState transferIfElse(Cursor c, ProgramState state) {
         J.If.Else ifElse = c.getValue();
-        return outputState(new Cursor(c, ifElse.getBody()), storeOfInterest);
+        return outputState(new Cursor(c, ifElse.getBody()), state);
     }
 
     @Override
-    public Ternary transferBlock(Cursor c, JavaType.Variable storeOfInterest) {
+    public ProgramState transferBlock(Cursor c, ProgramState state) {
         J.Block block = c.getValue();
         List<Statement> stmts = block.getStatements();
         if (stmts.size() > 0) {
-            return outputState(new Cursor(c, stmts.get(stmts.size() - 1)), storeOfInterest);
+            return outputState(new Cursor(c, stmts.get(stmts.size() - 1)), state);
         } else {
             throw new UnsupportedOperationException(); // TODO
         }
     }
 
-    public Ternary transferWhileLoop(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
+    public ProgramState transferWhileLoop(Cursor c, ProgramState state) {
+        return inputState(c, state);
     }
 //
-//    public S transferForLoop(Cursor pp, JavaType.Variable storeOfInterest) {
-//        return defaultTransfer(pp, storeOfInterest);
+//    public S transferForLoop(Cursor pp, ProgramState state) {
+//        return defaultTransfer(pp, state);
 //    }
 //
-//    public S transferForLoopControl(Cursor pp, JavaType.Variable storeOfInterest) {
-//        return defaultTransfer(pp, storeOfInterest);
+//    public S transferForLoopControl(Cursor pp, ProgramState state) {
+//        return defaultTransfer(pp, state);
 //    }
 //
-//    public S transferVariableDeclarations(Cursor pp, JavaType.Variable storeOfInterest) {
-//        return defaultTransfer(pp, storeOfInterest);
+//    public S transferVariableDeclarations(Cursor pp, ProgramState state) {
+//        return defaultTransfer(pp, state);
 //    }
 //
-//    public S transferUnary(Cursor pp, JavaType.Variable storeOfInterest) {
-//        return defaultTransfer(pp, storeOfInterest);
+//    public S transferUnary(Cursor pp, ProgramState state) {
+//        return defaultTransfer(pp, state);
 //    }
 
-    public Ternary transferParentheses(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
+    public ProgramState transferParentheses(Cursor c, ProgramState state) {
+        return inputState(c, state);
     }
 
-    public Ternary transferControlParentheses(Cursor c, JavaType.Variable storeOfInterest) {
-        return inputState(c, storeOfInterest);
+    public ProgramState transferControlParentheses(Cursor c, ProgramState state) {
+        return inputState(c, state);
     }
 }
 

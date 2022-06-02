@@ -2,7 +2,7 @@ package org.openrewrite.java.dataflow2;
 
 import java.util.Collection;
 
-public enum Ternary implements ProgramState {
+public enum Ternary {
     DefinitelyYes,
     DefinitelyNo,
     CantTell;
