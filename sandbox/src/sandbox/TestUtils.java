@@ -38,21 +38,22 @@ public class TestUtils {
         return visitor.result;
     }
 
-    public static void assertPrevious(J.CompilationUnit cu, String pp, String... previous) {
+    public static void assertPrevious(J.CompilationUnit cu, String pp, ProgramPoint entryOrExit, String... previous) {
         List<String> expected = Arrays.asList(previous);
         Cursor c = TestUtils.findProgramPoint(cu, pp);
         assertThat(c).withFailMessage("program point <" + pp + "> not found").isNotNull();
-        Collection<Cursor> prevs = DataFlowGraph.primitiveSources(c);
-        assertThat(c).withFailMessage("previous() returned null").isNotNull();
+        Collection<Cursor> prevs = DataFlowGraph.previousIn(c, entryOrExit);
+        assertThat(prevs).withFailMessage("previous() returned null").isNotNull();
         List<String> actual = prevs.stream().map(prev -> print(prev)).collect(Collectors.toList());
 
         expected.sort(String.CASE_INSENSITIVE_ORDER);
         actual.sort(String.CASE_INSENSITIVE_ORDER);
         assertThat(actual)
-                .withFailMessage("previous(" + pp + ")\nexpected: " + expected + "\n but was: " + actual)
+                .withFailMessage("previous(" + pp + ", " + entryOrExit + ")\nexpected: " + expected + "\n but was: " + actual)
                 .isEqualTo(expected);
     }
 
+    /*
     public static void assertLast(J.CompilationUnit cu, String pp, String... last) {
         List<String> expected = Arrays.asList(last);
         Cursor c = TestUtils.findProgramPoint(cu, pp);
@@ -67,7 +68,7 @@ public class TestUtils {
                 .withFailMessage("last(" + pp + ")\nexpected: " + expected + "\n but was: " + actual)
                 .isEqualTo(expected);
     }
-
+*/
     public static String print(Cursor c) {
         ProgramPoint p = (ProgramPoint)c.getValue();
         return ((J) p).print(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();

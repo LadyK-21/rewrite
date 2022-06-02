@@ -5,10 +5,7 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.Java11Parser;
 import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.dataflow2.DataFlowGraph;
-import org.openrewrite.java.dataflow2.IsNullAnalysis;
-import org.openrewrite.java.dataflow2.ProgramPoint;
-import org.openrewrite.java.dataflow2.Ternary;
+import org.openrewrite.java.dataflow2.*;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -19,6 +16,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
+import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
 import static org.openrewrite.java.dataflow2.Ternary.*;
 
 public class Main {
@@ -35,9 +34,9 @@ public class Main {
 
     public static void main(String[] args)
     {
-        testAPI();
-        // testVariableDeclarations();
-        // testForLoop();
+        //testAPI();
+        testVariableDeclarations();
+        testForLoop();
     }
 
     public static void testAPI() {
@@ -104,8 +103,8 @@ public class Main {
         JavaType.Variable v = TestUtils.findVariable(cu, pp2);
         assertThat(v).isNotNull();
 
-        Ternary state = new IsNullAnalysis().inputState(c1, v);
-        System.out.println(fragment + "\n    Is s null when entering point 'b()' ? " + state);
+        ProgramState state = new IsNullAnalysis().inputState(c1, new ProgramState()); // v
+        System.out.println(fragment + "\n    Is s null when entering point 'b()' ? " + state.get(v));
 
         assertThat(state).isEqualTo(expected);
     }
@@ -129,21 +128,26 @@ public class Main {
 
         // new MyVisitor().visit(cu, null);
 
-        TestUtils.assertLast(cu,"a()","a()");
-        TestUtils.assertLast(cu,"int i = u + v, j = w","j = w");
-        TestUtils.assertLast(cu,"i = u + v","i = u + v");
-        TestUtils.assertLast(cu,"u + v","u + v");
-        TestUtils.assertLast(cu,"u","u");
-        TestUtils.assertLast(cu,"v","v");
+//        TestUtils.assertLast(cu,"a()","a()");
+//        TestUtils.assertLast(cu,"int i = u + v, j = w","j = w");
+//        TestUtils.assertLast(cu,"i = u + v","i = u + v");
+//        TestUtils.assertLast(cu,"u + v","u + v");
+//        TestUtils.assertLast(cu,"u","u");
+//        TestUtils.assertLast(cu,"v","v");
 
-        TestUtils.assertPrevious(cu,"b()","j = w");
-        //FindProgramPoint.assertPrevious(cu,"j = w", "w");
-        //FindProgramPoint.assertPrevious(cu,"w", "i = u + v");
-        TestUtils.assertPrevious(cu,"i = u + v", "u + v");
-        TestUtils.assertPrevious(cu,"u + v", "v");
-        TestUtils.assertPrevious(cu,"v", "u");
-        TestUtils.assertPrevious(cu,"u", "a()");
-        TestUtils.assertPrevious(cu,"a()");
+        TestUtils.assertPrevious(cu,"b()", ENTRY, "w");
+//        TestUtils.assertPrevious(cu,"j = w", ENTRY, "v");
+        TestUtils.assertPrevious(cu,"j = w", EXIT, "w");
+//        TestUtils.assertPrevious(cu,"w", ENTRY,"i = u + v");
+        TestUtils.assertPrevious(cu,"w", EXIT,"w");
+        TestUtils.assertPrevious(cu,"i = u + v", EXIT, "v");
+        TestUtils.assertPrevious(cu,"i = u + v", ENTRY, "a");
+        TestUtils.assertPrevious(cu,"u + v", EXIT, "v");
+        TestUtils.assertPrevious(cu,"u + v", ENTRY, "a");
+        TestUtils.assertPrevious(cu,"v", EXIT, "v");
+        TestUtils.assertPrevious(cu,"v", ENTRY, "u");
+        TestUtils.assertPrevious(cu,"u", EXIT, "u");
+        TestUtils.assertPrevious(cu,"u", ENTRY, "a");
 
     }
 
@@ -175,23 +179,30 @@ public class Main {
 
         new PrintProgramPointsVisitor().visit(cu, null);
 
-        TestUtils.assertPrevious(cu,"a()");
-        TestUtils.assertPrevious(cu,"int i=0, j=1", "a()");
-        TestUtils.assertPrevious(cu,"i=0", "0");
-        TestUtils.assertPrevious(cu,"0", "a()");
-        TestUtils.assertPrevious(cu,"j=1", "1");
-        TestUtils.assertPrevious(cu,"1", "i=0");
-        TestUtils.assertPrevious(cu,"n++", "n");
-        TestUtils.assertPrevious(cu,"n", "m++");
-        TestUtils.assertPrevious(cu,"m++", "m");
-        TestUtils.assertPrevious(cu,"m", "h()");
-        TestUtils.assertPrevious(cu,"h()", "g()");
-        TestUtils.assertPrevious(cu,"g()", "f()");
-        TestUtils.assertPrevious(cu,"f()", "2<3");
-        TestUtils.assertPrevious(cu,"{ f(); g(); h(); }", "2<3");
-        TestUtils.assertPrevious(cu,"2<3", "3");
-        TestUtils.assertPrevious(cu,"3", "2");
-        TestUtils.assertPrevious(cu,"2", "j=1", "n++");
+        //TestUtils.assertPrevious(cu,"a()");
+        TestUtils.assertPrevious(cu,"int i=0, j=1", ENTRY, "a");
+        TestUtils.assertPrevious(cu,"int i=0, j=1", EXIT, "1");
+        TestUtils.assertPrevious(cu,"i=0", ENTRY,"a");
+        TestUtils.assertPrevious(cu,"i=0", EXIT,"0");
+        TestUtils.assertPrevious(cu,"0", ENTRY,"a");
+        TestUtils.assertPrevious(cu,"0", EXIT,"0");
+        TestUtils.assertPrevious(cu,"j=1", ENTRY,"0");
+        TestUtils.assertPrevious(cu,"j=1", EXIT,"1");
+        TestUtils.assertPrevious(cu,"1", ENTRY, "0");
+        TestUtils.assertPrevious(cu,"1", EXIT,"1");
+//        TestUtils.assertPrevious(cu,"n++", "n");
+//        TestUtils.assertPrevious(cu,"n++", "n");
+//        TestUtils.assertPrevious(cu,"n", "m++");
+//        TestUtils.assertPrevious(cu,"m++", "m");
+//        TestUtils.assertPrevious(cu,"m", "h()");
+//        TestUtils.assertPrevious(cu,"h()", "g()");
+//        TestUtils.assertPrevious(cu,"g()", "f()");
+//        TestUtils.assertPrevious(cu,"f()", "2<3");
+//        TestUtils.assertPrevious(cu,"{ f(); g(); h(); }", "2<3");
+//        TestUtils.assertPrevious(cu,"2<3", "3");
+//        TestUtils.assertPrevious(cu,"3", "2");
+//        TestUtils.assertPrevious(cu,"2", "j=1", "n++");
+
 //        FindProgramPoint.assertPrevious(cu,"b()",
 //                "for(int i=0, j=1; i<10 && j<10; i++, j++) { f(); g(); h(); }");
 
@@ -273,10 +284,10 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
         if (print(getCursor()).equals("0")) {
             System.out.println();
         }
-        Collection<Cursor> pp = DataFlowGraph.primitiveSources(getCursor());
+        Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
         if (pp == null) {
             System.out.println("   (prevs = null)");
-            DataFlowGraph.primitiveSources(getCursor());
+            DataFlowGraph.previous(getCursor());
         } else {
             for (Cursor p : pp) {
                 System.out.println("   prev = " + print(p));
@@ -302,10 +313,10 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
             if (print(getCursor()).equals("xxx")) {
                 Main.debug = true;
             }
-            Collection<Cursor> pp = DataFlowGraph.primitiveSources(getCursor());
+            Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
             if (pp == null) {
                 System.out.println("   (prevs = null)");
-                DataFlowGraph.primitiveSources(getCursor());
+                DataFlowGraph.previous(getCursor());
             } else {
                 for (Cursor p : pp) {
                     System.out.println("   prev = " + print(p));
@@ -321,7 +332,7 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
         if (print(getCursor()).equals("0")) {
             System.out.println();
         }
-        Collection<Cursor> pp = DataFlowGraph.primitiveSources(getCursor());
+        Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
         if (pp == null) {
             System.out.println("   (null)");
         } else {

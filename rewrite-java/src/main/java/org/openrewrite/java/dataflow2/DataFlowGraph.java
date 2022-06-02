@@ -8,6 +8,8 @@ import org.openrewrite.java.tree.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.antlr.v4.analysis.LeftRecursiveRuleAnalyzer.ASSOC.right;
+
 public class DataFlowGraph {
 
     // edge(p,q) = p in q.previous() = q in p.next()
@@ -21,20 +23,23 @@ public class DataFlowGraph {
 
     // reminder : paths may contain loops
 
-    /**
+    /*
      * @param programPoint A cursor whose value is a program point.
      * @return The set of primitive program points (i.e., not containing other program points)
      * directly preceding given program point in the dataflow graph.
      */
+    /*
     public static @NonNull Collection<Cursor> primitiveSources(Cursor programPoint) {
-        Collection<Cursor> pp = sources(programPoint);
-        return last(pp);
+        Collection<Cursor> pp = previous(programPoint);
+        return pp;
+        //return last(pp);
     }
-
+*/
     /**
      * @return If cursor is a compound program point (e.g. a while loop), return the last
      * program point(s) inside that compound. Otherwise return the program point itself.
      */
+    /*
     public static @NonNull Collection<Cursor> last(Cursor cursor) {
         Collection<Cursor> result = previousSourcesIn(cursor, ProgramPoint.EXIT);
 //        System.out.print("    last(" + print(cursor) + ") = {");
@@ -52,54 +57,39 @@ public class DataFlowGraph {
         }
         return result;
     }
-
+*/
     /**
      * @param programPoint A cursor whose value is a program point.
      * @return The set of program points, possibly composite (i.e. containing other program points, such as
      * a while loop), preceding given program point in the dataflow graph.
      */
-    public static @NonNull Collection<Cursor> sources(Cursor programPoint) {
+    public static @NonNull Collection<Cursor> previous(Cursor programPoint) {
+        return previousIn(programPoint, ProgramPoint.ENTRY);
+/*
         ProgramPoint current = programPoint.getValue();
 
         switch (current.getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             // either the previous PP is inside current...
-            case "J$VariableDeclarations$NamedVariable": {
-                J.VariableDeclarations.NamedVariable v = (J.VariableDeclarations.NamedVariable) current;
-                Expression init = v.getInitializer();
-                if (init != null) {
-                    return Collections.singletonList(new Cursor(programPoint, init));
-                }
-                break;
-            }
-            case "J$Binary":
-                return Collections.singletonList(new Cursor(programPoint, ((J.Binary) current).getRight()));
-            case "J$Unary":
-                return Collections.singletonList(new Cursor(programPoint, ((J.Unary) current).getExpression()));
-            case "J$ControlParentheses":
-                return Collections.singletonList(new Cursor(programPoint, ((J.ControlParentheses) current).getTree()));
-            case "J$Parentheses":
-                return Collections.singletonList(new Cursor(programPoint, ((J.Parentheses) current).getTree()));
-            case "J$MethodInvocation": {
-                J.MethodInvocation m = (J.MethodInvocation) current;
-                List<Expression> args = m.getArguments();
-                if (args.size() > 0) {
-                    return Collections.singletonList(new Cursor(programPoint, args.get(args.size() - 1)));
-                } else {
-                    return Collections.singletonList(new Cursor(programPoint, m.getSelect()));
-                }
-            }
         }
+
         // ... or it is the previous PP in the parent
         Cursor parentCursor = programPoint.dropParentUntil(t -> t instanceof J);
         return previousSourcesIn(parentCursor, current);
+
+ */
     }
 
-    public static @NonNull Collection<Cursor> previousSourcesIn(Cursor parentCursor, ProgramPoint current) {
-        if (parentCursor.getValue() instanceof JLeftPadded) return previousSourcesIn(parentCursor.getParentOrThrow(), current);
-        if (parentCursor.getValue() instanceof JRightPadded)
-            return previousSourcesIn(parentCursor.getParentOrThrow(), current);
+    public static @NonNull Collection<Cursor> previousIn(Cursor parentCursor, ProgramPoint current) {
+//        if (parentCursor.getValue() instanceof JLeftPadded)
+//            return previousSourcesIn(parentCursor.getParentOrThrow(), current);
+//        if (parentCursor.getValue() instanceof JRightPadded)
+//            return previousSourcesIn(parentCursor.getParentOrThrow(), current);
+        while(!(parentCursor.getValue() instanceof J)) parentCursor = parentCursor.getParentOrThrow();
         try {
             J parent = parentCursor.getValue();
+            if(current == ProgramPoint.ENTRY) {
+                return DataFlowGraph.previousIn(parentCursor.getParentOrThrow(), parentCursor.getValue());
+            }
             switch (parent.getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
                 case "J$MethodInvocation":
                     return previousInMethodInvocation(parentCursor, current);
@@ -158,16 +148,17 @@ public class DataFlowGraph {
         List<Statement> stmts = parent.getStatements();
         if (p == ProgramPoint.EXIT) {
             if (stmts.size() > 0) {
-                return Collections.singletonList(new Cursor(parentCursor, stmts.get(stmts.size() - 1)));
+                //return Collections.singletonList(new Cursor(parentCursor, stmts.get(stmts.size() - 1)));
+                return previousIn(new Cursor(parentCursor, stmts.get(stmts.size() - 1)), ProgramPoint.EXIT);
             } else {
-                return DataFlowGraph.primitiveSources(parentCursor);
+                return DataFlowGraph.previous(parentCursor);
             }
         } else {
             int index = stmts.indexOf(p);
             if (index > 0) {
-                return Collections.singletonList(new Cursor(parentCursor, stmts.get(index - 1)));
+                return previousIn(new Cursor(parentCursor, stmts.get(index - 1)), ProgramPoint.EXIT);
             } else if (index == 0) {
-                return DataFlowGraph.primitiveSources(parentCursor);
+                return DataFlowGraph.previous(parentCursor);
             } else {
                 throw new IllegalStateException();
             }
@@ -179,21 +170,22 @@ public class DataFlowGraph {
         List<J.VariableDeclarations.NamedVariable> variables = parent.getVariables();
         if (p == ProgramPoint.EXIT) {
             if (variables.size() > 0) {
-                return Collections.singletonList(new Cursor(parentCursor, variables.get(variables.size() - 1)));
+                return previousIn(new Cursor(parentCursor, variables.get(variables.size() - 1)), ProgramPoint.EXIT);
             } else {
-                return DataFlowGraph.primitiveSources(parentCursor);
+                return DataFlowGraph.previous(parentCursor);
             }
         } else if (p == ProgramPoint.ENTRY) {
-            return DataFlowGraph.primitiveSources(parentCursor);
+            return DataFlowGraph.previous(parentCursor);
         } else if (p == parent.getTypeExpression()) {
             // p is not a program point
             return Collections.emptyList();
         } else {
             int index = parent.getVariables().indexOf(p);
             if (index > 0) {
-                return Collections.singletonList(new Cursor(parentCursor, variables.get(index - 1)));
+                //return Collections.singletonList(new Cursor(parentCursor, variables.get(index - 1)));
+                return previousIn(new Cursor(parentCursor, variables.get(index - 1)), ProgramPoint.EXIT);
             } else if (index == 0) {
-                return DataFlowGraph.primitiveSources(parentCursor);
+                return DataFlowGraph.previous(parentCursor);
             } else {
                 throw new IllegalStateException();
             }
@@ -232,7 +224,7 @@ public class DataFlowGraph {
             if (init.size() > 0) {
                 return Collections.singletonList(new Cursor(forLoopCursor, init.get(init.size() - 1)));
             } else {
-                return DataFlowGraph.primitiveSources(forLoopCursor);
+                return DataFlowGraph.previous(forLoopCursor);
             }
         }
         throw new IllegalStateException();
@@ -241,15 +233,31 @@ public class DataFlowGraph {
     static @NonNull Collection<Cursor> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {
 
         J.MethodInvocation parent = parentCursor.getValue();
+        Expression select = parent.getSelect();
+        List<Expression> args = parent.getArguments();
 
         if (p == ProgramPoint.EXIT) {
-            return Collections.singletonList(parentCursor);
+            //return Collections.singletonList(parentCursor);
+            //case "J$MethodInvocation": {
+            //J.MethodInvocation m = (J.MethodInvocation) current;
+            if (args.size() > 0 && !(args.get(0) instanceof J.Empty)) {
+                //return Collections.singletonList(new Cursor(parentCursor, );
+                return previousIn(new Cursor(parentCursor, right), args.get(args.size() - 1));
+
+            } else if(select != null) {
+                //return Collections.singletonList(new Cursor(programPoint, m.getSelect()));
+                return previousIn(new Cursor(parentCursor, select), ProgramPoint.EXIT);
+
+            } else {
+                return Collections.singletonList(new Cursor(parentCursor, parent.getName()));
+            }
+
+
         } else if (p == ProgramPoint.ENTRY) {
-            return previousSourcesIn(parentCursor.getParent(), parentCursor.getValue());
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else if (p == parent.getSelect()) {
-            return DataFlowGraph.primitiveSources(parentCursor);
+            return DataFlowGraph.previous(parentCursor);
         } else {
-            List<Expression> args = parent.getArguments();
             int index = args.indexOf(p);
             if (index > 0) {
                 return Collections.singletonList(new Cursor(parentCursor, args.get(index - 1)));
@@ -258,7 +266,7 @@ public class DataFlowGraph {
                     return Collections.singletonList(new Cursor(parentCursor, parent.getSelect()));
                 } else {
                     // implicit this
-                    return DataFlowGraph.previousSourcesIn(parentCursor, ProgramPoint.ENTRY);
+                    return DataFlowGraph.previousIn(parentCursor, ProgramPoint.ENTRY);
                 }
             } else {
                 throw new IllegalStateException();
@@ -285,7 +293,7 @@ public class DataFlowGraph {
         } else if (p == elsePart) {
             return Collections.singletonList(new Cursor(ifCursor, cond));
         } else if (p == cond) {
-            return DataFlowGraph.primitiveSources(ifCursor);
+            return DataFlowGraph.previous(ifCursor);
         }
         throw new IllegalStateException();
     }
@@ -298,7 +306,7 @@ public class DataFlowGraph {
         if (p == ProgramPoint.EXIT) {
             return Collections.singletonList(new Cursor(ifElseCursor, body));
         } else if (p == body) {
-            return DataFlowGraph.primitiveSources(ifElseCursor);
+            return DataFlowGraph.previous(ifElseCursor);
         }
         throw new IllegalStateException();
     }
@@ -321,7 +329,7 @@ public class DataFlowGraph {
         } else if (p == body) {
             return Collections.singletonList(new Cursor(whileCursor, cond));
         } else if (p == cond) {
-            return DataFlowGraph.primitiveSources(whileCursor);
+            return DataFlowGraph.previous(whileCursor);
         }
 
         throw new UnsupportedOperationException("TODO");
@@ -367,7 +375,7 @@ public class DataFlowGraph {
             if (index > 0) {
                 return Collections.singletonList(new Cursor(forLoopCursor, init.get(index - 1)));
             } else if (index == 0) {
-                return DataFlowGraph.primitiveSources(forLoopCursor);
+                return DataFlowGraph.previous(forLoopCursor);
             }
 
             index = update.indexOf(p);
@@ -392,9 +400,10 @@ public class DataFlowGraph {
         J tree = parentheses.getTree();
 
         if (p == ProgramPoint.EXIT) {
-            return Collections.singletonList(new Cursor(parenthesesCursor, tree));
+            //return Collections.singletonList(new Cursor(parenthesesCursor, tree));
+            return previousIn(new Cursor(parenthesesCursor, tree), ProgramPoint.EXIT);
         } else if (p == tree) {
-            return DataFlowGraph.primitiveSources(parenthesesCursor);
+            return DataFlowGraph.previous(parenthesesCursor);
         }
         throw new IllegalStateException();
     }
@@ -404,9 +413,11 @@ public class DataFlowGraph {
         J tree = parentheses.getTree();
 
         if (p == ProgramPoint.EXIT) {
-            return Collections.singletonList(new Cursor(parenthesesCursor, tree));
+            //return Collections.singletonList(new Cursor(parenthesesCursor, tree));
+            //case "J$ControlParentheses":
+            return previousIn(new Cursor(parenthesesCursor, tree), ProgramPoint.EXIT);
         } else if (p == tree) {
-            return DataFlowGraph.primitiveSources(parenthesesCursor);
+            return DataFlowGraph.previous(parenthesesCursor);
         }
         throw new IllegalStateException();
     }
@@ -417,14 +428,21 @@ public class DataFlowGraph {
         Expression initializer = namedVariable.getInitializer();
 
         if (p == ProgramPoint.EXIT) {
-            return Collections.singletonList(namedVariableCursor);
+            //return Collections.singletonList(namedVariableCursor);
+            //case "J$VariableDeclarations$NamedVariable": {
+                if (initializer != null) {
+                    return previousIn(new Cursor(namedVariableCursor, initializer), ProgramPoint.EXIT);
+                } else {
+                    return previousIn(namedVariableCursor.getParent(), namedVariable);
+                }
+
         } else if (p == ProgramPoint.ENTRY) {
-            return DataFlowGraph.previousSourcesIn(namedVariableCursor.getParentOrThrow(), namedVariableCursor.getValue());
+            return DataFlowGraph.previousIn(namedVariableCursor.getParentOrThrow(), namedVariableCursor.getValue());
         } else if (p == name) {
             // it is an accident that 'name' is an expression, asking for its previous program point doesn't really make sense
             return Collections.emptyList();
         } else if (p == initializer) {
-            return previousSourcesIn(namedVariableCursor.getParentOrThrow(), namedVariableCursor.getValue());
+            return previousIn(namedVariableCursor.getParentOrThrow(), namedVariableCursor.getValue());
             //return Collections.singletonList(new Cursor(namedVariableCursor, namedVariable.getInitializer()));
         }
         throw new IllegalStateException();
@@ -435,11 +453,14 @@ public class DataFlowGraph {
         Expression expr = unary.getExpression();
 
         if (p == ProgramPoint.ENTRY) {
-            return previousSourcesIn(unaryCursor.getParentOrThrow(), unaryCursor.getValue());
+            return previousIn(unaryCursor.getParentOrThrow(), unaryCursor.getValue());
         } else if (p == ProgramPoint.EXIT) {
-            return Collections.singletonList(unaryCursor);
+            //case "J$Unary":
+            return previousIn(new Cursor(unaryCursor, expr), ProgramPoint.EXIT);
+
+            //return Collections.singletonList(unaryCursor);
         } else if (p == unary.getExpression()) {
-            return previousSourcesIn(unaryCursor, ProgramPoint.ENTRY);
+            return previousIn(unaryCursor, ProgramPoint.ENTRY);
         }
         throw new IllegalStateException();
     }
@@ -451,10 +472,13 @@ public class DataFlowGraph {
         Expression right = binary.getRight();
         J.Binary.Type op = binary.getOperator();
 
+
         if (p == ProgramPoint.ENTRY) {
-            return previousSourcesIn(binaryCursor.getParentOrThrow(), binaryCursor.getValue());
+            return previousIn(binaryCursor.getParentOrThrow(), binaryCursor.getValue());
         } else if (p == ProgramPoint.EXIT) {
-            return Collections.singletonList(binaryCursor);
+            //case "J$Binary":
+                return previousIn(new Cursor(binaryCursor, right), ProgramPoint.EXIT);
+            //return Collections.singletonList(binaryCursor);
             /*
             if(op == J.Binary.Type.And || op == J.Binary.Type.Or) {
                 // short-circuit operators
@@ -470,7 +494,7 @@ public class DataFlowGraph {
             return Collections.singletonList(new Cursor(binaryCursor, left));
         } else if (p == left) {
             //return DataFlowGraph.previous(binaryCursor);
-            return previousSourcesIn(binaryCursor, ProgramPoint.ENTRY);
+            return previousIn(binaryCursor, ProgramPoint.ENTRY);
         }
         throw new IllegalStateException();
     }
@@ -482,7 +506,7 @@ public class DataFlowGraph {
         if (p == ProgramPoint.EXIT) {
             return Collections.singletonList(new Cursor(assignmentCursor, a));
         } else if (p == a) {
-            return DataFlowGraph.primitiveSources(assignmentCursor);
+            return DataFlowGraph.previous(assignmentCursor);
         }
         throw new IllegalStateException();
     }

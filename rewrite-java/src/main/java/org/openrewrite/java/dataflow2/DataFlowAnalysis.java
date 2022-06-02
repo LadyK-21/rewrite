@@ -11,7 +11,7 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
      */
     public S inputState(Cursor pp, ProgramState state) {
         List<S> outs = new ArrayList<>();
-        Collection<Cursor> sources = DataFlowGraph.primitiveSources(pp);
+        Collection<Cursor> sources = DataFlowGraph.previous(pp);
         for (Cursor source : sources) {
             outs.add(outputState(source, state));
         }

@@ -20,7 +20,7 @@ import java.util.Collection;
 public interface ProgramPoint {
 
     default Collection<Cursor> previous(Cursor c) {
-        return DataFlowGraph.primitiveSources(c);
+        return DataFlowGraph.previous(c);
     }
     default Collection<Cursor> next(Cursor c) {
         return DataFlowGraph.next(c);

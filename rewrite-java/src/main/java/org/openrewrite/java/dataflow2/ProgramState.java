@@ -8,10 +8,6 @@ import lombok.experimental.FieldDefaults;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
-@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
-@EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)
-@RequiredArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Data
 public class ProgramState {
 
@@ -20,6 +16,16 @@ public class ProgramState {
 
     @With
     HashMap<JavaType.Variable, Ternary> map;
+
+    public ProgramState() {
+        expressionStack  = null;
+        map = new HashMap<>();
+    }
+
+    private ProgramState(LinkedListElement expressionStack, HashMap<JavaType.Variable, Ternary> map) {
+        this.expressionStack  = expressionStack;
+        this.map = map;
+    }
 
     public Ternary expr() {
         return expressionStack.value;
@@ -31,6 +37,10 @@ public class ProgramState {
 
     public ProgramState pop() {
         return this.withExpressionStack(expressionStack.previous);
+    }
+
+    public Ternary get(JavaType.Variable ident) {
+        return map.get(ident);
     }
 
     public ProgramState set(JavaType.Variable ident, Ternary expr) {

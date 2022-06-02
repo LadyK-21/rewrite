@@ -13,7 +13,7 @@ public class DataFlowAnalysisVisitor<P extends ProgramState<P>> extends JavaVisi
      * @return The *input* program state at given program point.
      */
     public P inputState(Cursor pp, DataFlowExecutionContextView<P> ctx) {
-        Collection<Cursor> sources = DataFlowGraph.primitiveSources(pp);
+        Collection<Cursor> sources = DataFlowGraph.previous(pp);
         for (Cursor source : sources) {
             DataFlowExecutionContextView<P> sourceCtx = ctx.fork();
             visit(source.getValue(), sourceCtx, source.getParentOrThrow());
