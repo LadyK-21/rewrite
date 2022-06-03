@@ -34,9 +34,9 @@ public class Main {
 
     public static void main(String[] args)
     {
-        //testAPI();
-        testVariableDeclarations();
         testForLoop();
+        testVariableDeclarations();
+        //testAPI();
     }
 
     public static void testAPI() {
@@ -115,7 +115,6 @@ public class Main {
                     "class C {\n" +
                     "    void a() {} \n" +
                     "    void b() {} \n" +
-                    "    int w;\n" +
                     "    void m() {\n" +
                     "        a();\n" +
                     "        int i = u + v, j = w;\n" +
@@ -135,15 +134,15 @@ public class Main {
 //        TestUtils.assertLast(cu,"u","u");
 //        TestUtils.assertLast(cu,"v","v");
 
-        TestUtils.assertPrevious(cu,"b()", ENTRY, "w");
-//        TestUtils.assertPrevious(cu,"j = w", ENTRY, "v");
-        TestUtils.assertPrevious(cu,"j = w", EXIT, "w");
-//        TestUtils.assertPrevious(cu,"w", ENTRY,"i = u + v");
+        TestUtils.assertPrevious(cu,"b()", ENTRY, "j = w");
+        TestUtils.assertPrevious(cu,"j = w", EXIT, "j = w");
+        TestUtils.assertPrevious(cu,"j = w", ENTRY, "w");
         TestUtils.assertPrevious(cu,"w", EXIT,"w");
-        TestUtils.assertPrevious(cu,"i = u + v", EXIT, "v");
-        TestUtils.assertPrevious(cu,"i = u + v", ENTRY, "a");
-        TestUtils.assertPrevious(cu,"u + v", EXIT, "v");
-        TestUtils.assertPrevious(cu,"u + v", ENTRY, "a");
+        TestUtils.assertPrevious(cu,"w", ENTRY,"i = u + v");
+        TestUtils.assertPrevious(cu,"i = u + v", EXIT, "i = u + v");
+        TestUtils.assertPrevious(cu,"i = u + v", ENTRY, "u + v");
+        TestUtils.assertPrevious(cu,"u + v", EXIT, "u + v");
+        TestUtils.assertPrevious(cu,"u + v", ENTRY, "v");
         TestUtils.assertPrevious(cu,"v", EXIT, "v");
         TestUtils.assertPrevious(cu,"v", ENTRY, "u");
         TestUtils.assertPrevious(cu,"u", EXIT, "u");
@@ -171,24 +170,26 @@ public class Main {
             "} \n" +
             "" ;
 
-        // m(x,y)[i] = 1
-        // m(x,y).f = 1
-        // z = m(x,y).f
+        // init;
+        // if(cond) {
+        //     body;
+        //     update;
+        // }
 
         J.CompilationUnit cu = parse(source);
 
-        new PrintProgramPointsVisitor().visit(cu, null);
+//        new PrintProgramPointsVisitor().visit(cu, null);
 
         //TestUtils.assertPrevious(cu,"a()");
         TestUtils.assertPrevious(cu,"int i=0, j=1", ENTRY, "a");
-        TestUtils.assertPrevious(cu,"int i=0, j=1", EXIT, "1");
-        TestUtils.assertPrevious(cu,"i=0", ENTRY,"a");
-        TestUtils.assertPrevious(cu,"i=0", EXIT,"0");
+        TestUtils.assertPrevious(cu,"int i=0, j=1", EXIT, "j=1");
+        TestUtils.assertPrevious(cu,"i=0", ENTRY,"0");
+        TestUtils.assertPrevious(cu,"i=0", EXIT,"i=0");
         TestUtils.assertPrevious(cu,"0", ENTRY,"a");
         TestUtils.assertPrevious(cu,"0", EXIT,"0");
-        TestUtils.assertPrevious(cu,"j=1", ENTRY,"0");
-        TestUtils.assertPrevious(cu,"j=1", EXIT,"1");
-        TestUtils.assertPrevious(cu,"1", ENTRY, "0");
+        TestUtils.assertPrevious(cu,"j=1", ENTRY,"1");
+        TestUtils.assertPrevious(cu,"j=1", EXIT,"j=1");
+        TestUtils.assertPrevious(cu,"1", ENTRY, "i=0");
         TestUtils.assertPrevious(cu,"1", EXIT,"1");
 //        TestUtils.assertPrevious(cu,"n++", "n");
 //        TestUtils.assertPrevious(cu,"n++", "n");
