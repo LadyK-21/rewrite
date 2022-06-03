@@ -178,9 +178,36 @@ public class Main {
 
         J.CompilationUnit cu = parse(source);
 
-//        new PrintProgramPointsVisitor().visit(cu, null);
+        new PrintProgramPointsVisitor().visit(cu, null);
 
-        //TestUtils.assertPrevious(cu,"a()");
+        TestUtils.assertPrevious(cu,"b()", ENTRY,
+                "2<3", "n++");
+
+        TestUtils.assertPrevious(cu,"n++", ENTRY,"m++");
+        TestUtils.assertPrevious(cu,"n++", EXIT,"n");
+        TestUtils.assertPrevious(cu,"n", ENTRY, "m++");
+        TestUtils.assertPrevious(cu,"n", EXIT, "n");
+        TestUtils.assertPrevious(cu,"m++", ENTRY,"h");
+        TestUtils.assertPrevious(cu,"m++", EXIT,"m");
+        TestUtils.assertPrevious(cu,"m", ENTRY,"h");
+        TestUtils.assertPrevious(cu,"m", EXIT,"m");
+
+        TestUtils.assertPrevious(cu,"h()", ENTRY,"g");
+        TestUtils.assertPrevious(cu,"h()", EXIT,"h");
+        TestUtils.assertPrevious(cu,"g()", ENTRY,"f");
+        TestUtils.assertPrevious(cu,"g()", EXIT,"g");
+        TestUtils.assertPrevious(cu,"f()", ENTRY,"2<3");
+        TestUtils.assertPrevious(cu,"f()", EXIT,"f");
+        TestUtils.assertPrevious(cu,"{ f(); g(); h(); }", ENTRY,"2<3");
+        TestUtils.assertPrevious(cu,"{ f(); g(); h(); }", EXIT,"h");
+
+        TestUtils.assertPrevious(cu,"2<3", ENTRY,"3");
+        TestUtils.assertPrevious(cu,"2<3", EXIT,"2<3");
+        TestUtils.assertPrevious(cu,"3", ENTRY, "2");
+        TestUtils.assertPrevious(cu,"3", EXIT,"3");
+        TestUtils.assertPrevious(cu, "2", ENTRY, "j=1", "n++");
+        TestUtils.assertPrevious(cu, "2", EXIT, "2");
+
         TestUtils.assertPrevious(cu,"int i=0, j=1", ENTRY, "a");
         TestUtils.assertPrevious(cu,"int i=0, j=1", EXIT, "j=1");
         TestUtils.assertPrevious(cu,"i=0", ENTRY,"0");
@@ -191,22 +218,6 @@ public class Main {
         TestUtils.assertPrevious(cu,"j=1", EXIT,"j=1");
         TestUtils.assertPrevious(cu,"1", ENTRY, "i=0");
         TestUtils.assertPrevious(cu,"1", EXIT,"1");
-//        TestUtils.assertPrevious(cu,"n++", "n");
-//        TestUtils.assertPrevious(cu,"n++", "n");
-//        TestUtils.assertPrevious(cu,"n", "m++");
-//        TestUtils.assertPrevious(cu,"m++", "m");
-//        TestUtils.assertPrevious(cu,"m", "h()");
-//        TestUtils.assertPrevious(cu,"h()", "g()");
-//        TestUtils.assertPrevious(cu,"g()", "f()");
-//        TestUtils.assertPrevious(cu,"f()", "2<3");
-//        TestUtils.assertPrevious(cu,"{ f(); g(); h(); }", "2<3");
-//        TestUtils.assertPrevious(cu,"2<3", "3");
-//        TestUtils.assertPrevious(cu,"3", "2");
-//        TestUtils.assertPrevious(cu,"2", "j=1", "n++");
-
-//        FindProgramPoint.assertPrevious(cu,"b()",
-//                "for(int i=0, j=1; i<10 && j<10; i++, j++) { f(); g(); h(); }");
-
     }
 
     public static void main2()

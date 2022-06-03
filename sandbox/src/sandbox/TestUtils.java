@@ -70,17 +70,24 @@ public class TestUtils {
     }
 */
     public static String print(Cursor c) {
-        ProgramPoint p = (ProgramPoint)c.getValue();
-        return ((J) p).print(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();
+        if(c.getValue() instanceof ProgramPoint) {
+            ProgramPoint p = c.getValue();
+            return print(p,c);
+        } else if(c.getValue() instanceof List) {
+            List<ProgramPoint> l = c.getValue();
+            return "[" + l.stream().map(e -> print(e, c)).collect(Collectors.joining(", ")) + "]";
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public static String print(ProgramPoint p, Cursor c) {
         return ((J) p).print(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();
     }
 
-    public static String print(ProgramPoint p) {
-        return ((J) p).print().replace("\n", " ").replaceAll("[ ]+", " ").trim();
-    }
+//    public static String print(ProgramPoint p) {
+//        return ((J) p).print().replace("\n", " ").replaceAll("[ ]+", " ").trim();
+//    }
 
 
     static class Visitor extends JavaIsoVisitor {
