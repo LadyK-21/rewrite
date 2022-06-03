@@ -11,5 +11,6 @@
     <orderEntry type="module" module-name="rewrite.rewrite-java.main" />
     <orderEntry type="module" module-name="rewrite.rewrite-java-11.main" />
     <orderEntry type="library" name="Gradle: org.assertj:assertj-core:3.22.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.assertj:assertj-core:3.23.1" level="project" />
   </component>
 </module>
