@@ -23,31 +23,31 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState defaultTransfer(Cursor c, ProgramState state) {
+    public ProgramState defaultTransfer(Cursor c) {
         // For development only, to make sure all cases are covered
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ProgramState transferBinary(Cursor c, ProgramState state) {
-        return state.push(DefinitelyNo);
+    public ProgramState transferBinary(Cursor c) {
+        return inputState(c).push(DefinitelyNo);
     }
 
-    public ProgramState transferNamedVariable(Cursor c, ProgramState state) {
+    public ProgramState transferNamedVariable(Cursor c) {
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();
         if(v.getInitializer() != null) {
-            ProgramState s = outputState(new Cursor(c, v.getInitializer()), state);
+            ProgramState s = outputState(new Cursor(c, v.getInitializer()));
             return s.set(t, s.expr()).pop();
         } else {
-            ProgramState s = inputState(c, state);
+            ProgramState s = inputState(c);
             assert !s.getMap().containsKey(t);
             return s.set(t, DefinitelyYes);
         }
     }
 
     @Override
-    public ProgramState transferAssignment(Cursor c, ProgramState state) {
+    public ProgramState transferAssignment(Cursor c) {
 
         // id = expr
 
@@ -55,11 +55,11 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
 //            if (ident.getFieldType() == state) {
-//                return outputState(new Cursor(c, a.getAssignment()), state);
+//                return outputState(new Cursor(c, a.getAssignment()));
 //            } else {
-//                return inputState(c, state);
+//                return inputState(c);
 //            }
-            ProgramState s = outputState(new Cursor(c, a.getAssignment()), state);
+            ProgramState s = outputState(new Cursor(c, a.getAssignment()));
             return s.set(ident.getFieldType(), s.expr()).pop();
         } else {
             throw new UnsupportedOperationException();
@@ -67,8 +67,8 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState transferAssignmentOperation(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public ProgramState transferAssignmentOperation(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
     private static final String[] definitelyNonNullReturningMethodSignatures = new String[] {
@@ -78,20 +78,20 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     private static final List<MethodMatcher> definitelyNonNullReturningMethodMatchers =
             Arrays.stream(definitelyNonNullReturningMethodSignatures).map(MethodMatcher::new).collect(Collectors.toList());
 
-    public ProgramState transferMethodInvocation(Cursor c, ProgramState state) {
+    public ProgramState transferMethodInvocation(Cursor c) {
         J.MethodInvocation method = c.getValue();
         for(MethodMatcher matcher : definitelyNonNullReturningMethodMatchers) {
             if (matcher.matches(method)) {
-                return state.push(DefinitelyNo);
+                return inputState(c).push(DefinitelyNo);
             }
         }
-        return state.push(CantTell);
+        return inputState(c).push(CantTell);
     }
 
     @Override
-    public ProgramState transferLiteral(Cursor c, ProgramState state) {
+    public ProgramState transferLiteral(Cursor c) {
         J.Literal pp = c.getValue();
-        ProgramState s = inputState(c, state);
+        ProgramState s = inputState(c);
         if (pp.getValue() == null) {
             return s.push(DefinitelyYes);
         } else {
@@ -99,67 +99,67 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
         }
     }
 
-    public ProgramState transferIdentifier(Cursor c, ProgramState state) {
+    public ProgramState transferIdentifier(Cursor c) {
         J.Identifier i = c.getValue();
-        ProgramState s = inputState(c, state);
+        ProgramState s = inputState(c);
         Ternary v = s.get(i.getFieldType());
-        return inputState(c, state).push(v);
+        return inputState(c).push(v);
     }
 
-    public ProgramState transferEmpty(Cursor c, ProgramState state) {
-        return inputState(c, state);
-    }
-
-    @Override
-    public ProgramState transferIf(Cursor c, ProgramState state) {
-        return inputState(c, state);
+    public ProgramState transferEmpty(Cursor c) {
+        return inputState(c);
     }
 
     @Override
-    public ProgramState transferIfElse(Cursor c, ProgramState state) {
+    public ProgramState transferIf(Cursor c) {
+        return inputState(c);
+    }
+
+    @Override
+    public ProgramState transferIfElse(Cursor c) {
         J.If.Else ifElse = c.getValue();
-        return outputState(new Cursor(c, ifElse.getBody()), state);
+        return outputState(new Cursor(c, ifElse.getBody()));
     }
 
     @Override
-    public ProgramState transferBlock(Cursor c, ProgramState state) {
+    public ProgramState transferBlock(Cursor c) {
         J.Block block = c.getValue();
         List<Statement> stmts = block.getStatements();
         if (stmts.size() > 0) {
-            return outputState(new Cursor(c, stmts.get(stmts.size() - 1)), state);
+            return outputState(new Cursor(c, stmts.get(stmts.size() - 1)));
         } else {
             throw new UnsupportedOperationException(); // TODO
         }
     }
 
-    public ProgramState transferWhileLoop(Cursor c, ProgramState state) {
-        return inputState(c, state);
+    public ProgramState transferWhileLoop(Cursor c) {
+        return inputState(c);
     }
 //
-//    public S transferForLoop(Cursor pp, ProgramState state) {
-//        return defaultTransfer(pp, state);
+//    public S transferForLoop(Cursor pp) {
+//        return defaultTransfer(pp);
 //    }
 //
-//    public S transferForLoopControl(Cursor pp, ProgramState state) {
-//        return defaultTransfer(pp, state);
+//    public S transferForLoopControl(Cursor pp) {
+//        return defaultTransfer(pp);
 //    }
 //
-//    public S transferVariableDeclarations(Cursor pp, ProgramState state) {
-//        return defaultTransfer(pp, state);
+//    public S transferVariableDeclarations(Cursor pp) {
+//        return defaultTransfer(pp);
 //    }
 //
-//    public S transferUnary(Cursor pp, ProgramState state) {
-//        return defaultTransfer(pp, state);
+//    public S transferUnary(Cursor pp) {
+//        return defaultTransfer(pp);
 //    }
 
-    public ProgramState transferParentheses(Cursor c, ProgramState state) {
+    public ProgramState transferParentheses(Cursor c) {
         J.Parentheses paren = c.getValue();
-        return outputState(new Cursor(c, paren.getTree()), state);
-        //return inputState(c, state);
+        return outputState(new Cursor(c, paren.getTree()));
+        //return inputState(c);
     }
 
-    public ProgramState transferControlParentheses(Cursor c, ProgramState state) {
-        return inputState(c, state);
+    public ProgramState transferControlParentheses(Cursor c) {
+        return inputState(c);
     }
 }
 

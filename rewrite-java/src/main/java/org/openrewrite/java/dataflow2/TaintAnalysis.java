@@ -14,13 +14,13 @@ public abstract class TaintAnalysis extends DataFlowAnalysis<ProgramState> {
         return ProgramState.join(outs);
     }
 
-    public ProgramState defaultTransfer(Cursor c, ProgramState state) {
-        return inputState(c, state);
+    public ProgramState defaultTransfer(Cursor c) {
+        return inputState(c);
     }
 
     @Override
-    public ProgramState transferBinary(Cursor programPoint, ProgramState state) {
-        return state.push(DefinitelyNo);
+    public ProgramState transferBinary(Cursor programPoint) {
+        return inputState(programPoint).push(DefinitelyNo);
     }
 
 }

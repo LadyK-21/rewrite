@@ -46,19 +46,19 @@ public class Main {
 //        testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
 //        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
 
-//        testIsSNull("String s = null;", DefinitelyYes);
-//        testIsSNull("String s = \"abc\";", DefinitelyNo);
-//        testIsSNull("String s; s = null; s = \"abc\";", DefinitelyNo);
-//        testIsSNull("String s; s = \"abc\"; s = null;", DefinitelyYes);
-//        testIsSNull("String q = null; String s = q;", DefinitelyYes);
-//        testIsSNull("String q = \"abc\"; String s = q;", DefinitelyNo);
-//        testIsSNull("String s = null + null;", DefinitelyNo);
-//        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
-//        testIsSNull("String s = null + \"b\";", DefinitelyNo);
-//        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
-//        testIsSNull("String s = u;", null); // CantTell
-//        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
-//        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
+        testIsSNull("String s = null;", DefinitelyYes);
+        testIsSNull("String s = \"abc\";", DefinitelyNo);
+        testIsSNull("String s; s = null; s = \"abc\";", DefinitelyNo);
+        testIsSNull("String s; s = \"abc\"; s = null;", DefinitelyYes);
+        testIsSNull("String q = null; String s = q;", DefinitelyYes);
+        testIsSNull("String q = \"abc\"; String s = q;", DefinitelyNo);
+        testIsSNull("String s = null + null;", DefinitelyNo);
+        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
+        testIsSNull("String s = null + \"b\";", DefinitelyNo);
+        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
+        testIsSNull("String s = u;", null); // CantTell
+        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
+        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
         testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
         testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
         testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
@@ -108,7 +108,7 @@ public class Main {
         JavaType.Variable v = TestUtils.findVariable(cu, pp2);
         assertThat(v).isNotNull();
 
-        ProgramState state = new IsNullAnalysis().inputState(c1, new ProgramState()); // v
+        ProgramState state = new IsNullAnalysis().inputState(c1); // v
         System.out.println(fragment + "\n    Is s null when entering point 'b()' ? " + state.get(v));
 
         assertThat(state.get(v)).isEqualTo(expected);

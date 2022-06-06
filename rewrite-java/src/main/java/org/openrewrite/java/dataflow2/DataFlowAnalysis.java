@@ -9,11 +9,11 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
     /**
      * @return The *input* program state at given program point.
      */
-    public S inputState(Cursor pp, ProgramState state) {
+    public S inputState(Cursor pp) {
         List<S> outs = new ArrayList<>();
         Collection<Cursor> sources = DataFlowGraph.previous(pp);
         for (Cursor source : sources) {
-            outs.add(outputState(source, state));
+            outs.add(outputState(source));
         }
         return join(outs);
     }
@@ -25,42 +25,42 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         return join(Arrays.asList(outs));
     }
 
-    public S outputState(Cursor pp, ProgramState state) {
+    public S outputState(Cursor pp) {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
-                return transferMethodInvocation(pp, state);
+                return transferMethodInvocation(pp);
             case "J$If":
-                return transferIf(pp, state);
+                return transferIf(pp);
             case "J$If$Else":
-                return transferIfElse(pp, state);
+                return transferIfElse(pp);
             case "J$WhileLoop":
-                return transferWhileLoop(pp, state);
+                return transferWhileLoop(pp);
             case "J$ForLoop":
-                return transferForLoop(pp, state);
+                return transferForLoop(pp);
             case "J$ForLoop$Control":
-                return transferForLoopControl(pp, state);
+                return transferForLoopControl(pp);
             case "J$Block":
-                return transferBlock(pp, state);
+                return transferBlock(pp);
             case "J$VariableDeclarations":
-                return transferVariableDeclarations(pp, state);
+                return transferVariableDeclarations(pp);
             case "J$VariableDeclarations$NamedVariable":
-                return transferNamedVariable(pp, state);
+                return transferNamedVariable(pp);
             case "J$Unary":
-                return transferUnary(pp, state);
+                return transferUnary(pp);
             case "J$Binary":
-                return transferBinary(pp, state);
+                return transferBinary(pp);
             case "J$Assignment":
-                return transferAssignment(pp, state);
+                return transferAssignment(pp);
             case "J$Parentheses":
-                return transferParentheses(pp, state);
+                return transferParentheses(pp);
             case "J$ControlParentheses":
-                return transferControlParentheses(pp, state);
+                return transferControlParentheses(pp);
             case "J$Literal":
-                return transferLiteral(pp, state);
+                return transferLiteral(pp);
             case "J$Identifier":
-                return transferIdentifier(pp, state);
+                return transferIdentifier(pp);
             case "J$Empty":
-                return transferEmpty(pp, state);
+                return transferEmpty(pp);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
             case "J$MethodDeclaration":
@@ -95,77 +95,77 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         }
     }
 
-    public abstract S defaultTransfer(Cursor pp, ProgramState state);
+    public abstract S defaultTransfer(Cursor pp);
 
-    public S transferMethodInvocation(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferMethodInvocation(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferIf(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferIf(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferIfElse(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferIfElse(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferWhileLoop(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferWhileLoop(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferForLoop(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferForLoop(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferForLoopControl(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferForLoopControl(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferBlock(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferBlock(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferVariableDeclarations(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferVariableDeclarations(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferNamedVariable(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferNamedVariable(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferUnary(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferUnary(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferBinary(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferBinary(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferAssignment(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferAssignment(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferAssignmentOperation(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferAssignmentOperation(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferParentheses(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferParentheses(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferControlParentheses(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferControlParentheses(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferLiteral(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferLiteral(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferIdentifier(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferIdentifier(Cursor pp) {
+        return defaultTransfer(pp);
     }
 
-    public S transferEmpty(Cursor pp, ProgramState state) {
-        return defaultTransfer(pp, state);
+    public S transferEmpty(Cursor pp) {
+        return defaultTransfer(pp);
     }
 }
