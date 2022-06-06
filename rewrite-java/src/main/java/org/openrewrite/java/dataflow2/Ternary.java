@@ -1,5 +1,6 @@
 package org.openrewrite.java.dataflow2;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 public enum Ternary {
@@ -21,5 +22,7 @@ public enum Ternary {
         return result == null ? CantTell : result;
     }
 
-
+    public static Ternary join(Ternary... outs) {
+        return join(Arrays.asList(outs));
     }
+}

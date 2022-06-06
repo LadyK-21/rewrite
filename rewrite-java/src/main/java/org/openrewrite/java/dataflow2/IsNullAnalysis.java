@@ -1,6 +1,7 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
+import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -12,8 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.openrewrite.java.dataflow2.ProgramState.*;
-import static org.openrewrite.java.dataflow2.Ternary.DefinitelyNo;
-import static org.openrewrite.java.dataflow2.Ternary.DefinitelyYes;
+import static org.openrewrite.java.dataflow2.Ternary.*;
 
 public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
 
@@ -34,11 +34,23 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     public ProgramState transferNamedVariable(Cursor c, ProgramState state) {
-        return inputState(c, state);
+        J.VariableDeclarations.NamedVariable v = c.getValue();
+        JavaType.Variable t = v.getVariableType();
+        if(v.getInitializer() != null) {
+            ProgramState s = outputState(new Cursor(c, v.getInitializer()), state);
+            return s.set(t, s.expr()).pop();
+        } else {
+            ProgramState s = inputState(c, state);
+            assert !s.getMap().containsKey(t);
+            return s.set(t, DefinitelyYes);
+        }
     }
 
     @Override
     public ProgramState transferAssignment(Cursor c, ProgramState state) {
+
+        // id = expr
+
         J.Assignment a = c.getValue();
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
@@ -73,22 +85,25 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
                 return state.push(DefinitelyNo);
             }
         }
-        //return CantTell;
-        throw new UnsupportedOperationException();
+        return state.push(CantTell);
     }
 
     @Override
     public ProgramState transferLiteral(Cursor c, ProgramState state) {
         J.Literal pp = c.getValue();
+        ProgramState s = inputState(c, state);
         if (pp.getValue() == null) {
-            return state.push(DefinitelyYes);
+            return s.push(DefinitelyYes);
         } else {
-            return state.push(DefinitelyNo);
+            return s.push(DefinitelyNo);
         }
     }
 
     public ProgramState transferIdentifier(Cursor c, ProgramState state) {
-        return inputState(c, state);
+        J.Identifier i = c.getValue();
+        ProgramState s = inputState(c, state);
+        Ternary v = s.get(i.getFieldType());
+        return inputState(c, state).push(v);
     }
 
     public ProgramState transferEmpty(Cursor c, ProgramState state) {
@@ -138,7 +153,9 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
 //    }
 
     public ProgramState transferParentheses(Cursor c, ProgramState state) {
-        return inputState(c, state);
+        J.Parentheses paren = c.getValue();
+        return outputState(new Cursor(c, paren.getTree()), state);
+        //return inputState(c, state);
     }
 
     public ProgramState transferControlParentheses(Cursor c, ProgramState state) {

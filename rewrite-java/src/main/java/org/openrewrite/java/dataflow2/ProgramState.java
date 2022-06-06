@@ -22,6 +22,11 @@ public class ProgramState {
         map = new HashMap<>();
     }
 
+    private ProgramState(HashMap<JavaType.Variable, Ternary> map) {
+        this.expressionStack  = null;
+        this.map = map;
+    }
+
     private ProgramState(LinkedListElement expressionStack, HashMap<JavaType.Variable, Ternary> map) {
         this.expressionStack  = expressionStack;
         this.map = map;
@@ -51,8 +56,19 @@ public class ProgramState {
     }
 
     public static ProgramState join(Collection<ProgramState> outs) {
-        // TODO
-        return new ProgramState(null, new HashMap<>());
+        HashMap<JavaType.Variable, Ternary> m = new HashMap<>();
+        for(ProgramState out : outs) {
+            for(JavaType.Variable key : out.getMap().keySet()) {
+                Ternary v1 = out.getMap().get(key);
+                if(!m.containsKey(key)) {
+                    m.put(key, v1);
+                } else {
+                    Ternary v2 = m.get(key);
+                    m.put(key, Ternary.join(v1, v2));
+                }
+            }
+        }
+        return new ProgramState(m);
     }
 }
 

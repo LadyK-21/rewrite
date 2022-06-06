@@ -36,13 +36,15 @@ public class Main {
     {
         testForLoop();
         testVariableDeclarations();
-        //testAPI();
+        testAPI();
     }
 
     public static void testAPI() {
+        // Test the value of 's' at the end of given code fragment.
+
 //        testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
 //        testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
-        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
+//        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
 
 //        testIsSNull("String s = null;", DefinitelyYes);
 //        testIsSNull("String s = \"abc\";", DefinitelyNo);
@@ -54,28 +56,31 @@ public class Main {
 //        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
 //        testIsSNull("String s = null + \"b\";", DefinitelyNo);
 //        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
-//        testIsSNull("String s = u;", CantTell);
+//        testIsSNull("String s = u;", null); // CantTell
 //        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
 //        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
-//        testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
-//        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
-//        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
-//        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
-//        testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
-//                DefinitelyYes);
-//        testIsSNull("String s = null; while(c) { s = \"a\"; }", CantTell);
-//        testIsSNull("String s = null; while(c) { s = null; }", DefinitelyYes);
-//        testIsSNull("String s = \"a\"; while(c) { s = null; }", CantTell);
-//        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", DefinitelyNo);
-//
-//        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", CantTell);
+        testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
+        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
+        testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
+                DefinitelyYes);
+        testIsSNull("String s = null; while(c) { s = \"a\"; }", CantTell);
+        testIsSNull("String s = null; while(c) { s = null; }", DefinitelyYes);
+        testIsSNull("String s = \"a\"; while(c) { s = null; }", CantTell);
+        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", DefinitelyNo);
 
-//        testIsSNull("String s; while((s = null) == null) { s = null; }", DefinitelyYes);
-//        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
-//        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
+        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", CantTell);
+
+        testIsSNull("String s; while((s = null) == null) { s = null; }", DefinitelyYes);
+        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
+        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
 
     }
 
+    /**
+     * Test the value of 's' at the end of given code fragment.
+     */
     public static void testIsSNull(String fragment, Ternary expected) {
         String source =
                 "class C {\n" +
@@ -106,7 +111,7 @@ public class Main {
         ProgramState state = new IsNullAnalysis().inputState(c1, new ProgramState()); // v
         System.out.println(fragment + "\n    Is s null when entering point 'b()' ? " + state.get(v));
 
-        assertThat(state).isEqualTo(expected);
+        assertThat(state.get(v)).isEqualTo(expected);
     }
 
     public static void testVariableDeclarations()
@@ -125,14 +130,7 @@ public class Main {
 
         J.CompilationUnit cu = parse(source);
 
-        // new MyVisitor().visit(cu, null);
-
-//        TestUtils.assertLast(cu,"a()","a()");
-//        TestUtils.assertLast(cu,"int i = u + v, j = w","j = w");
-//        TestUtils.assertLast(cu,"i = u + v","i = u + v");
-//        TestUtils.assertLast(cu,"u + v","u + v");
-//        TestUtils.assertLast(cu,"u","u");
-//        TestUtils.assertLast(cu,"v","v");
+        new PrintProgramPointsVisitor().visit(cu, null);
 
         TestUtils.assertPrevious(cu,"b()", ENTRY, "j = w");
         TestUtils.assertPrevious(cu,"j = w", EXIT, "j = w");
@@ -180,8 +178,7 @@ public class Main {
 
         new PrintProgramPointsVisitor().visit(cu, null);
 
-        TestUtils.assertPrevious(cu,"b()", ENTRY,
-                "2<3", "n++");
+        TestUtils.assertPrevious(cu,"b()", ENTRY, "2<3", "n++");
 
         TestUtils.assertPrevious(cu,"n++", ENTRY,"m++");
         TestUtils.assertPrevious(cu,"n++", EXIT,"n");
