@@ -291,6 +291,8 @@ public class DataFlowGraph {
                 result.add(new Cursor(ifCursor, elsePart));
             }
             return result;
+        } else if (p == ENTRY) {
+            return previousIn(ifCursor.getParent(), ifThenElse);
         } else if (p == thenPart) {
             return Collections.singletonList(new Cursor(ifCursor, cond));
         } else if (p == elsePart) {
@@ -308,6 +310,8 @@ public class DataFlowGraph {
 
         if (p == EXIT) {
             return Collections.singletonList(new Cursor(ifElseCursor, body));
+        } else if (p == ENTRY) {
+            return previousIn(ifElseCursor.getParent(), ifElse);
         } else if (p == body) {
             return DataFlowGraph.previous(ifElseCursor);
         }
@@ -324,18 +328,32 @@ public class DataFlowGraph {
         //   body: Statement
         // }
 
+        // while(x == 0) {
+        //   body
+        // }
+        //
+        // ENTRY -> x
+        // x -> 0 -> ==
+        // == -> body
+        // == -> EXIT
+
         if (p == EXIT) {
             Set<Cursor> result = new HashSet<>();
             result.add(new Cursor(whileCursor, body));
             result.add(new Cursor(whileCursor, cond));
             return result;
+        } else if (p == ENTRY) {
+            return previousIn(whileCursor.getParent(), _while);
         } else if (p == body) {
             return Collections.singletonList(new Cursor(whileCursor, cond));
         } else if (p == cond) {
-            return DataFlowGraph.previous(whileCursor);
+            Set<Cursor> result = new HashSet<>();
+            result.add(new Cursor(whileCursor, body));
+            result.addAll(previousIn(whileCursor.getParent(), _while));
+            return result;
         }
 
-        throw new UnsupportedOperationException("TODO");
+        throw new IllegalStateException();
     }
 
     static @NonNull Collection<Cursor> previousInForLoop(Cursor forLoopCursor, ProgramPoint p) {
@@ -422,6 +440,8 @@ public class DataFlowGraph {
             //return Collections.singletonList(new Cursor(parenthesesCursor, tree));
             //case "J$ControlParentheses":
             return previousIn(new Cursor(parenthesesCursor, tree), EXIT);
+        } else if(p == ENTRY) {
+            return previousIn(parenthesesCursor.getParent(), parentheses);
         } else if (p == tree) {
             return DataFlowGraph.previous(parenthesesCursor);
         }

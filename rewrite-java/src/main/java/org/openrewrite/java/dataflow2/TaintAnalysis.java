@@ -22,5 +22,4 @@ public abstract class TaintAnalysis extends DataFlowAnalysis<ProgramState> {
     public ProgramState transferBinary(Cursor programPoint) {
         return inputState(programPoint).push(DefinitelyNo);
     }
-
 }

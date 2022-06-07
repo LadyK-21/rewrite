@@ -42,9 +42,9 @@ public class Main {
     public static void testAPI() {
         // Test the value of 's' at the end of given code fragment.
 
-//        testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
-//        testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
-//        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
+        testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
+        testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
+        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
 
         testIsSNull("String s = null;", DefinitelyYes);
         testIsSNull("String s = \"abc\";", DefinitelyNo);
@@ -65,16 +65,17 @@ public class Main {
         testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
         testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
                 DefinitelyYes);
-        testIsSNull("String s = null; while(c) { s = \"a\"; }", CantTell);
-        testIsSNull("String s = null; while(c) { s = null; }", DefinitelyYes);
-        testIsSNull("String s = \"a\"; while(c) { s = null; }", CantTell);
-        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", DefinitelyNo);
 
-        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", CantTell);
+//        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", CantTell);
 
-        testIsSNull("String s; while((s = null) == null) { s = null; }", DefinitelyYes);
-        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
-        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
+//        testIsSNull("String s = null; while(c) { s = \"a\"; }", CantTell);
+//        testIsSNull("String s = null; while(c) { s = null; }", DefinitelyYes);
+//        testIsSNull("String s = \"a\"; while(c) { s = null; }", CantTell);
+//        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", DefinitelyNo);
+//        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", CantTell);
+//        testIsSNull("String s; while((s = null) == null) { s = null; }", DefinitelyYes);
+//        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
+//        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
 
     }
 

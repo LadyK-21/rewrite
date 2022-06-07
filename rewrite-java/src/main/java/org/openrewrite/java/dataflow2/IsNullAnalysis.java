@@ -30,6 +30,8 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
 
     @Override
     public ProgramState transferBinary(Cursor c) {
+        J.Binary binary = c.getValue();
+
         return inputState(c).push(DefinitelyNo);
     }
 
@@ -60,7 +62,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
 //                return inputState(c);
 //            }
             ProgramState s = outputState(new Cursor(c, a.getAssignment()));
-            return s.set(ident.getFieldType(), s.expr()).pop();
+            return s.set(ident.getFieldType(), s.expr());
         } else {
             throw new UnsupportedOperationException();
         }
