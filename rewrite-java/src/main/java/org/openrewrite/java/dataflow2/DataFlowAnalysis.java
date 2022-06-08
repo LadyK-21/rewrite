@@ -9,13 +9,25 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
     /**
      * @return The *input* program state at given program point.
      */
-    public S inputState(Cursor pp) {
+    public S inputState(Cursor c, TraversalControl<S> t) {
+        ProgramPoint pp = c.getValue();
+        t.markVisited(pp);
         List<S> outs = new ArrayList<>();
-        Collection<Cursor> sources = DataFlowGraph.previous(pp);
+        Collection<Cursor> sources = DataFlowGraph.previous(c);
         for (Cursor source : sources) {
-            outs.add(outputState(source));
+            if(t.isVisited(source.getValue())) {
+                outs.add((S)new ProgramState());
+            } else {
+                outs.add(outputState(source, t));
+            }
         }
-        return join(outs);
+        S result = join(outs);
+        System.out.println(pp);
+        for(S out : outs) {
+            System.out.println("      " + out);
+        }
+        System.out.println("   -> " + result);
+        return result;
     }
 
     public abstract S join(Collection<S> outs);
@@ -25,42 +37,42 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         return join(Arrays.asList(outs));
     }
 
-    public S outputState(Cursor pp) {
+    public S outputState(Cursor pp, TraversalControl<S> t) {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
-                return transferMethodInvocation(pp);
+                return transferMethodInvocation(pp, t);
             case "J$If":
-                return transferIf(pp);
+                return transferIf(pp, t);
             case "J$If$Else":
-                return transferIfElse(pp);
+                return transferIfElse(pp, t);
             case "J$WhileLoop":
-                return transferWhileLoop(pp);
+                return transferWhileLoop(pp, t);
             case "J$ForLoop":
-                return transferForLoop(pp);
+                return transferForLoop(pp, t);
             case "J$ForLoop$Control":
-                return transferForLoopControl(pp);
+                return transferForLoopControl(pp, t);
             case "J$Block":
-                return transferBlock(pp);
+                return transferBlock(pp, t);
             case "J$VariableDeclarations":
-                return transferVariableDeclarations(pp);
+                return transferVariableDeclarations(pp, t);
             case "J$VariableDeclarations$NamedVariable":
-                return transferNamedVariable(pp);
+                return transferNamedVariable(pp, t);
             case "J$Unary":
-                return transferUnary(pp);
+                return transferUnary(pp, t);
             case "J$Binary":
-                return transferBinary(pp);
+                return transferBinary(pp, t);
             case "J$Assignment":
-                return transferAssignment(pp);
+                return transferAssignment(pp, t);
             case "J$Parentheses":
-                return transferParentheses(pp);
+                return transferParentheses(pp, t);
             case "J$ControlParentheses":
-                return transferControlParentheses(pp);
+                return transferControlParentheses(pp, t);
             case "J$Literal":
-                return transferLiteral(pp);
+                return transferLiteral(pp, t);
             case "J$Identifier":
-                return transferIdentifier(pp);
+                return transferIdentifier(pp, t);
             case "J$Empty":
-                return transferEmpty(pp);
+                return transferEmpty(pp, t);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
             case "J$MethodDeclaration":
@@ -95,77 +107,77 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         }
     }
 
-    public abstract S defaultTransfer(Cursor pp);
+    public abstract S defaultTransfer(Cursor pp, TraversalControl<S> t);
 
-    public S transferMethodInvocation(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferMethodInvocation(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferIf(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferIf(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferIfElse(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferIfElse(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferWhileLoop(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferWhileLoop(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferForLoop(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferForLoop(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferForLoopControl(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferForLoopControl(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferBlock(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferBlock(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferVariableDeclarations(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferVariableDeclarations(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferNamedVariable(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferNamedVariable(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferUnary(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferUnary(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferBinary(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferBinary(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferAssignment(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferAssignment(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferAssignmentOperation(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferAssignmentOperation(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferParentheses(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferParentheses(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferControlParentheses(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferControlParentheses(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferLiteral(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferLiteral(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferIdentifier(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferIdentifier(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 
-    public S transferEmpty(Cursor pp) {
-        return defaultTransfer(pp);
+    public S transferEmpty(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
     }
 }

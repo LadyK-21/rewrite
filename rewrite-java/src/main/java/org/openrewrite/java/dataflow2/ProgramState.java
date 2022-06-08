@@ -70,6 +70,22 @@ public class ProgramState {
         }
         return new ProgramState(m);
     }
+
+    @Override
+    public String toString() {
+        String s = "{";
+        for(LinkedListElement e = expressionStack; e != null; e = e.previous) {
+            s += " ";
+            s += e.value == null ? "null" : e.value.toString();
+        }
+        s += " |";
+        for(JavaType.Variable v : map.keySet()) {
+            Ternary t = map.get(v);
+            s += " " + v.getName() + " -> " + t;
+        }
+        s += " }";
+        return s;
+    }
 }
 
 @AllArgsConstructor

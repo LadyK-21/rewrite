@@ -285,7 +285,7 @@ public class DataFlowGraph {
         J.If.@Nullable Else elsePart = ifThenElse.getElsePart();
 
         if (p == EXIT) {
-            Set<Cursor> result = new HashSet<>();
+            List<Cursor> result = new ArrayList<>();
             result.add(new Cursor(ifCursor, thenPart));
             if (elsePart != null) {
                 result.add(new Cursor(ifCursor, elsePart));
@@ -338,7 +338,7 @@ public class DataFlowGraph {
         // == -> EXIT
 
         if (p == EXIT) {
-            Set<Cursor> result = new HashSet<>();
+            List<Cursor> result = new ArrayList<>();
             result.add(new Cursor(whileCursor, body));
             result.add(new Cursor(whileCursor, cond));
             return result;
@@ -347,7 +347,7 @@ public class DataFlowGraph {
         } else if (p == body) {
             return Collections.singletonList(new Cursor(whileCursor, cond));
         } else if (p == cond) {
-            Set<Cursor> result = new HashSet<>();
+            List<Cursor> result = new ArrayList<>();
             result.add(new Cursor(whileCursor, body));
             result.addAll(previousIn(whileCursor.getParent(), _while));
             return result;
@@ -372,7 +372,7 @@ public class DataFlowGraph {
 
 
         if (p == EXIT) {
-            Set<Cursor> result = new HashSet<>();
+            List<Cursor> result = new ArrayList<>();
             result.addAll(last(forLoopCursor, ForLoopPosition.UPDATE));
             result.add(new Cursor(forLoopCursor, cond));
             return result;
@@ -385,7 +385,7 @@ public class DataFlowGraph {
             return Collections.singletonList(new Cursor(forLoopCursor, cond));
 
         } else if (p == cond) {
-            Set<Cursor> result = new HashSet<>();
+            List<Cursor> result = new ArrayList<>();
             result.addAll(last(forLoopCursor, ForLoopPosition.INIT));
             result.addAll(last(forLoopCursor, ForLoopPosition.UPDATE));
             return result;
