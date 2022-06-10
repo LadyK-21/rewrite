@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.Collection;
 
 public enum Ternary {
+    // Bottom < DefinitelyYes, DefinitelyNo < CantTell
+    Bottom,
     DefinitelyYes,
     DefinitelyNo,
     CantTell;
@@ -11,6 +13,7 @@ public enum Ternary {
     public static Ternary join(Collection<Ternary> outs) {
         Ternary result = null;
         for (Ternary out : outs) {
+            if(out == Bottom) continue;
             if ((result == DefinitelyYes && out != DefinitelyYes) ||
                     (result == DefinitelyNo && out != DefinitelyNo)) {
                 return CantTell;
@@ -19,7 +22,7 @@ public enum Ternary {
             }
             result = out;
         }
-        return result == null ? CantTell : result;
+        return result == null ? Bottom : result;
     }
 
     public static Ternary join(Ternary... outs) {

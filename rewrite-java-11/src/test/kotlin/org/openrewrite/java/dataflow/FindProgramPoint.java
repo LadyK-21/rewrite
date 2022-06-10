@@ -30,10 +30,11 @@ public class FindProgramPoint extends JavaIsoVisitor {
     }
 
     public static void assertPrevious(J.CompilationUnit cu, String pp, String... previous) {
+        DataFlowGraph dfg = new DataFlowGraph(cu);
         List<String> expectedPrevs = Arrays.asList(previous);
         Cursor c = FindProgramPoint.findProgramPoint(cu, pp);
         assert(c != null);
-        Collection<Cursor> prevs = DataFlowGraph.previous(c);
+        Collection<Cursor> prevs = dfg.previous(c);
         assert(prevs != null);
         List<String> actualPrevs = prevs.stream().map(prev -> print(prev)).collect(Collectors.toList());
 

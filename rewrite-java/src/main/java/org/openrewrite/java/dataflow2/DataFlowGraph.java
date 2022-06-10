@@ -3,6 +3,8 @@ package org.openrewrite.java.dataflow2;
 import org.openrewrite.Cursor;
 import org.openrewrite.internal.lang.NonNull;
 import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.internal.JavaTypeCache;
 import org.openrewrite.java.tree.*;
 
 import java.util.*;
@@ -13,6 +15,27 @@ import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
 
 public class DataFlowGraph {
+
+    final J.CompilationUnit cu;
+    private Map<Cursor, Collection<Cursor>> previousMap;
+
+    public DataFlowGraph(J.CompilationUnit cu) {
+        this.cu = cu;
+        previousMap = new HashMap<>();
+        new CompilationUnitVisitor().visit(cu, null);
+
+        for(Cursor c : previousMap.keySet()) {
+            System.out.println("previous(" + print(c) + ")");
+            for(Cursor p : previousMap.get(c)) {
+                System.out.println("   -> " + print(p));
+                for(Cursor n : next(p)) {
+                    System.out.println("         next -> " + print(n));
+                }
+            }
+        }
+        System.out.println();
+    }
+
 
     // edge(p,q) = p in q.previous() = q in p.next()
 
@@ -31,7 +54,7 @@ public class DataFlowGraph {
      * directly preceding given program point in the dataflow graph.
      */
     /*
-    public static @NonNull Collection<Cursor> primitiveSources(Cursor programPoint) {
+    public @NonNull Collection<Cursor> primitiveSources(Cursor programPoint) {
         Collection<Cursor> pp = previous(programPoint);
         return pp;
         //return last(pp);
@@ -42,7 +65,7 @@ public class DataFlowGraph {
      * program point(s) inside that compound. Otherwise return the program point itself.
      */
     /*
-    public static @NonNull Collection<Cursor> last(Cursor cursor) {
+    public @NonNull Collection<Cursor> last(Cursor cursor) {
         Collection<Cursor> result = previousSourcesIn(cursor, EXIT);
 //        System.out.print("    last(" + print(cursor) + ") = {");
 //        for(Cursor r : result) {
@@ -52,7 +75,7 @@ public class DataFlowGraph {
         return result;
     }
 
-    public static @NonNull Collection<Cursor> last(Collection<Cursor> cc) {
+    public @NonNull Collection<Cursor> last(Collection<Cursor> cc) {
         Set<Cursor> result = new HashSet<>();
         for (Cursor c : cc) {
             result.addAll(last(c));
@@ -65,7 +88,7 @@ public class DataFlowGraph {
      * @return The set of program points, possibly composite (i.e. containing other program points, such as
      * a while loop), preceding given program point in the dataflow graph.
      */
-    public static @NonNull Collection<Cursor> previous(Cursor programPoint) {
+    public @NonNull Collection<Cursor> previous(Cursor programPoint) {
         return previousIn(programPoint, ENTRY);
 /*
         ProgramPoint current = programPoint.getValue();
@@ -81,7 +104,7 @@ public class DataFlowGraph {
  */
     }
 
-    public static @NonNull Collection<Cursor> previousIn(Cursor parentCursor, ProgramPoint current) {
+    public @NonNull Collection<Cursor> previousIn(Cursor parentCursor, ProgramPoint current) {
 //        if (parentCursor.getValue() instanceof JLeftPadded)
 //            return previousSourcesIn(parentCursor.getParentOrThrow(), current);
 //        if (parentCursor.getValue() instanceof JRightPadded)
@@ -123,6 +146,7 @@ public class DataFlowGraph {
             case "J$Literal":
             case "J$Identifier":
             case "J$Empty":
+            case "J$Primitive": // not actually a program point
                 return previousInTerminalNode(parentCursor, current);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
@@ -134,13 +158,37 @@ public class DataFlowGraph {
 
     }
 
-    public static @Nullable Collection<Cursor> next(Cursor cursor) {
-        // TODO
-        return null;
+    // Poor man's next(), to be replaced by the equivalent of the previousXXX() methods
+    public Collection<Cursor> next(Cursor cursor) {
+        List<Cursor> r1 = new ArrayList<>();
+        for(Cursor k : previousMap.keySet()) {
+            Collection<Cursor> v = previousMap.get(k);
+            if(v.contains(cursor)) {
+                r1.add(k);
+            }
+        }
+        List<Cursor> r2= new ArrayList<>();
+        for(int i=0; i<r1.size(); i++) {
+            Cursor p = r1.get(i);
+            boolean add = true;
+            for(int j=i+1; j<r1.size(); j++) {
+                Cursor q = r1.get(j);
+                if(p == q) add = false;
+                if(p.isScopeInPath(q.getValue())) {
+                    add = false;
+                } else if(q.isScopeInPath(p.getValue())) {
+                    r1.remove(q);
+                }
+            }
+            if(add) {
+                r2.add(p);
+            }
+        }
+        return r2;
     }
 
 
-    static @NonNull Collection<Cursor> previousInBlock(Cursor parentCursor, ProgramPoint p) {
+    @NonNull Collection<Cursor> previousInBlock(Cursor parentCursor, ProgramPoint p) {
         J.Block parent = parentCursor.getValue();
         List<Statement> stmts = parent.getStatements();
         if (p == EXIT) {
@@ -148,7 +196,7 @@ public class DataFlowGraph {
                 //return Collections.singletonList(new Cursor(parentCursor, stmts.get(stmts.size() - 1)));
                 return previousIn(new Cursor(parentCursor, stmts.get(stmts.size() - 1)), EXIT);
             } else {
-                return DataFlowGraph.previous(parentCursor);
+                return previous(parentCursor);
             }
         } else if(p == ENTRY) {
             return previousIn(parentCursor.getParent(), parent);
@@ -157,21 +205,21 @@ public class DataFlowGraph {
             if (index > 0) {
                 return previousIn(new Cursor(parentCursor, stmts.get(index - 1)), EXIT);
             } else if (index == 0) {
-                return DataFlowGraph.previous(parentCursor);
+                return previous(parentCursor);
             } else {
                 throw new IllegalStateException();
             }
         }
     }
 
-    public static @NonNull Collection<Cursor> previousInVariableDeclarations(Cursor parentCursor, ProgramPoint p) {
+    public @NonNull Collection<Cursor> previousInVariableDeclarations(Cursor parentCursor, ProgramPoint p) {
         J.VariableDeclarations parent = parentCursor.getValue();
         List<J.VariableDeclarations.NamedVariable> variables = parent.getVariables();
         if (p == EXIT) {
             if (variables.size() > 0) {
                 return previousIn(new Cursor(parentCursor, variables.get(variables.size() - 1)), EXIT);
             } else {
-                return DataFlowGraph.previous(parentCursor);
+                return previous(parentCursor);
             }
         } else if (p == ENTRY) {
             //return DataFlowGraph.previous(parentCursor);
@@ -206,7 +254,7 @@ public class DataFlowGraph {
      * last of the previous position if given position is empty, or even the previous program point
      * of the for-loop if all preceding positions are empty.
      */
-    static @NonNull Collection<Cursor> last(Cursor forLoopCursor, ForLoopPosition position) {
+    @NonNull Collection<Cursor> last(Cursor forLoopCursor, ForLoopPosition position) {
 
         J.ForLoop forLoop = forLoopCursor.getValue();
         J.ForLoop.Control control = forLoop.getControl();
@@ -225,13 +273,13 @@ public class DataFlowGraph {
             if (init.size() > 0) {
                 return previousIn(new Cursor(forLoopCursor, init.get(init.size() - 1)), EXIT);
             } else {
-                return DataFlowGraph.previous(forLoopCursor);
+                return previous(forLoopCursor);
             }
         }
         throw new IllegalStateException();
     }
 
-    static @NonNull Collection<Cursor> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {
+    @NonNull Collection<Cursor> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {
 
         J.MethodInvocation parent = parentCursor.getValue();
         Expression select = parent.getSelect();
@@ -257,7 +305,7 @@ public class DataFlowGraph {
         } else if (p == ENTRY) {
             return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else if (p == parent.getSelect()) {
-            return DataFlowGraph.previous(parentCursor);
+            return previous(parentCursor);
         } else if(p == parent.getName()) {
             return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else {
@@ -269,7 +317,7 @@ public class DataFlowGraph {
                     return Collections.singletonList(new Cursor(parentCursor, parent.getSelect()));
                 } else {
                     // implicit this
-                    return DataFlowGraph.previousIn(parentCursor, ENTRY);
+                    return previousIn(parentCursor, ENTRY);
                 }
             } else {
                 throw new IllegalStateException();
@@ -277,7 +325,7 @@ public class DataFlowGraph {
         }
     }
 
-    static @NonNull Collection<Cursor> previousInIf(Cursor ifCursor, ProgramPoint p) {
+    @NonNull Collection<Cursor> previousInIf(Cursor ifCursor, ProgramPoint p) {
 
         J.If ifThenElse = ifCursor.getValue();
         J.ControlParentheses<Expression> cond = ifThenElse.getIfCondition();
@@ -298,12 +346,12 @@ public class DataFlowGraph {
         } else if (p == elsePart) {
             return Collections.singletonList(new Cursor(ifCursor, cond));
         } else if (p == cond) {
-            return DataFlowGraph.previous(ifCursor);
+            return previous(ifCursor);
         }
         throw new IllegalStateException();
     }
 
-    static @NonNull Collection<Cursor> previousInIfElse(Cursor ifElseCursor, ProgramPoint p) {
+    @NonNull Collection<Cursor> previousInIfElse(Cursor ifElseCursor, ProgramPoint p) {
 
         J.If.Else ifElse = ifElseCursor.getValue();
         Statement body = ifElse.getBody();
@@ -313,12 +361,12 @@ public class DataFlowGraph {
         } else if (p == ENTRY) {
             return previousIn(ifElseCursor.getParent(), ifElse);
         } else if (p == body) {
-            return DataFlowGraph.previous(ifElseCursor);
+            return previous(ifElseCursor);
         }
         throw new IllegalStateException();
     }
 
-    static @NonNull Collection<Cursor> previousInWhileLoop(Cursor whileCursor, ProgramPoint p) {
+    @NonNull Collection<Cursor> previousInWhileLoop(Cursor whileCursor, ProgramPoint p) {
 
         J.WhileLoop _while = whileCursor.getValue();
         J.ControlParentheses<Expression> cond = _while.getCondition();
@@ -356,7 +404,7 @@ public class DataFlowGraph {
         throw new IllegalStateException();
     }
 
-    static @NonNull Collection<Cursor> previousInForLoop(Cursor forLoopCursor, ProgramPoint p) {
+    @NonNull Collection<Cursor> previousInForLoop(Cursor forLoopCursor, ProgramPoint p) {
 
         // init: List<Statement>
         // while(cond: Expression) {
@@ -397,7 +445,7 @@ public class DataFlowGraph {
             if (index > 0) {
                 return Collections.singletonList(new Cursor(forLoopCursor, init.get(index - 1)));
             } else if (index == 0) {
-                return DataFlowGraph.previous(forLoopCursor);
+                return previous(forLoopCursor);
             }
 
             index = update.indexOf(p);
@@ -411,13 +459,13 @@ public class DataFlowGraph {
         }
     }
 
-    static @NonNull Collection<Cursor> previousInForLoopControl(Cursor forLoopControlCursor, ProgramPoint p) {
+    @NonNull Collection<Cursor> previousInForLoopControl(Cursor forLoopControlCursor, ProgramPoint p) {
 
         J.ForLoop.Control forLoopControl = forLoopControlCursor.getValue();
         return previousInForLoop(forLoopControlCursor.getParentOrThrow(), p);
     }
 
-    public static Collection<Cursor> previousInParentheses(Cursor parenthesesCursor, ProgramPoint p) {
+    public Collection<Cursor> previousInParentheses(Cursor parenthesesCursor, ProgramPoint p) {
         J.Parentheses<?> parentheses = parenthesesCursor.getValue();
         J tree = parentheses.getTree();
 
@@ -432,7 +480,7 @@ public class DataFlowGraph {
         throw new IllegalStateException();
     }
 
-    public static Collection<Cursor> previousInControlParentheses(Cursor parenthesesCursor, ProgramPoint p) {
+    public Collection<Cursor> previousInControlParentheses(Cursor parenthesesCursor, ProgramPoint p) {
         J.ControlParentheses<?> parentheses = parenthesesCursor.getValue();
         J tree = parentheses.getTree();
 
@@ -443,12 +491,12 @@ public class DataFlowGraph {
         } else if(p == ENTRY) {
             return previousIn(parenthesesCursor.getParent(), parentheses);
         } else if (p == tree) {
-            return DataFlowGraph.previous(parenthesesCursor);
+            return previous(parenthesesCursor);
         }
         throw new IllegalStateException();
     }
 
-    public static Collection<Cursor> previousInNamedVariable(Cursor namedVariableCursor, ProgramPoint p) {
+    public Collection<Cursor> previousInNamedVariable(Cursor namedVariableCursor, ProgramPoint p) {
         J.VariableDeclarations.NamedVariable namedVariable = namedVariableCursor.getValue();
         J.Identifier name = namedVariable.getName();
         Expression initializer = namedVariable.getInitializer();
@@ -478,7 +526,7 @@ public class DataFlowGraph {
         throw new IllegalStateException();
     }
 
-    public static Collection<Cursor> previousInUnary(Cursor unaryCursor, ProgramPoint p) {
+    public Collection<Cursor> previousInUnary(Cursor unaryCursor, ProgramPoint p) {
         J.Unary unary = unaryCursor.getValue();
         Expression expr = unary.getExpression();
 
@@ -495,7 +543,7 @@ public class DataFlowGraph {
         throw new IllegalStateException();
     }
 
-    public static Collection<Cursor> previousInBinary(Cursor binaryCursor, ProgramPoint p) {
+    public Collection<Cursor> previousInBinary(Cursor binaryCursor, ProgramPoint p) {
         J.Binary binary = binaryCursor.getValue();
 
         Expression left = binary.getLeft();
@@ -535,9 +583,10 @@ public class DataFlowGraph {
         throw new IllegalStateException();
     }
 
-    public static Collection<Cursor> previousInAssignment(Cursor assignmentCursor, ProgramPoint p) {
+    public Collection<Cursor> previousInAssignment(Cursor assignmentCursor, ProgramPoint p) {
         J.Assignment assignment = assignmentCursor.getValue();
         Expression a = assignment.getAssignment();
+        Expression v = assignment.getVariable();
 
         if (p == EXIT) {
             return Collections.singletonList(assignmentCursor);
@@ -545,11 +594,14 @@ public class DataFlowGraph {
             return Collections.singletonList(new Cursor(assignmentCursor, a));
         } else if (p == a) {
             return previousIn(assignmentCursor.getParent(), assignmentCursor.getValue());
+        } else if (p == v) {
+            // Not actually an expression
+            return Collections.singletonList(new Cursor(assignmentCursor, a));
         }
         throw new IllegalStateException();
     }
 
-    public static Collection<Cursor> previousInTerminalNode(Cursor parentCursor, ProgramPoint p) {
+    public Collection<Cursor> previousInTerminalNode(Cursor parentCursor, ProgramPoint p) {
         if (p == EXIT) {
             return Collections.singletonList(parentCursor);
         } else if(p == ENTRY) {
@@ -558,7 +610,7 @@ public class DataFlowGraph {
         throw new IllegalStateException();
     }
 
-    public static String print(Cursor c) {
+    public String print(Cursor c) {
         if (c.getValue() instanceof ProgramPoint) {
             ProgramPoint p = c.getValue();
             return p.printPP(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();
@@ -566,6 +618,36 @@ public class DataFlowGraph {
             return ((Collection<?>) c.getValue()).stream().map(e -> print(new Cursor(c, e))).collect(Collectors.joining("; "));
         } else {
             throw new IllegalStateException();
+        }
+    }
+
+    class CompilationUnitVisitor extends JavaIsoVisitor {
+
+        private void process(ProgramPoint pp) {
+            Cursor c = getCursor();
+            Collection<Cursor> p = previous(c);
+            DataFlowGraph.this.previousMap.put(c, p);
+        }
+
+        @Override
+        public Statement visitStatement(Statement statement, Object o) {
+            super.visitStatement(statement, o);
+            process(statement);
+            return statement;
+        }
+
+        @Override
+        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
+            super.visitVariable(variable, o);
+            process(variable);
+            return variable;
+        }
+
+        @Override
+        public Expression visitExpression(Expression expression, Object o) {
+            super.visitExpression(expression, o);
+            process(expression);
+            return expression;
         }
     }
 }

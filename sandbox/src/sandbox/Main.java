@@ -43,38 +43,41 @@ public class Main {
         // Test the value of 's' at the end of given code fragment.
 
 
-        String source =
-                "class C {\n" +
-                        "    void a() {} \n" +
-                        "    void b() {} \n" +
-                        "    void m(String u, String v) { \n" +
-                        "        a(); \n" +
-                        "        String s = null; while(x == 0) { s = \"a\"; } \n" +
-                        "        b(); \n" +
-                        "    }\n" +
-                        "}\n" +
-                        "" ;
-
-        J.CompilationUnit cu = parse(source);
-
-        // body -> x == 0 -> 0 -> x -> { body, s = null } -> ...
-        TestUtils.assertPrevious(cu,"b()", ENTRY, "(x == 0)", "{ s = \"a\"; }");
-        TestUtils.assertPrevious(cu,"(x == 0)", EXIT, "x == 0");
-        TestUtils.assertPrevious(cu,"(x == 0)", ENTRY, "s = null", "{ s = \"a\"; }");
-        TestUtils.assertPrevious(cu,"x == 0", EXIT, "x == 0");
-        TestUtils.assertPrevious(cu,"x == 0", ENTRY, "0");
-        TestUtils.assertPrevious(cu,"0", EXIT, "0");
-        TestUtils.assertPrevious(cu,"0", ENTRY, "x");
-        TestUtils.assertPrevious(cu,"x", EXIT, "x");
-        TestUtils.assertPrevious(cu,"x", ENTRY, "s = null", "{ s = \"a\"; }");
-        TestUtils.assertPrevious(cu,"{ s = \"a\"; }", EXIT, "s = \"a\"");
-        TestUtils.assertPrevious(cu,"{ s = \"a\"; }", ENTRY, "(x == 0)");
-        TestUtils.assertPrevious(cu,"s = \"a\"", EXIT, "s = \"a\"");
-        TestUtils.assertPrevious(cu,"s = \"a\"", ENTRY, "\"a\"");
-        TestUtils.assertPrevious(cu,"\"a\"", EXIT, "\"a\"");
-        TestUtils.assertPrevious(cu,"\"a\"", ENTRY, "(x == 0)");
-
-        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", CantTell);
+//        String source =
+//                "class C {\n" +
+//                        "    void a() {} \n" +
+//                        "    void b() {} \n" +
+//                        "    void m(String u, String v) { \n" +
+//                        "        a(); \n" +
+//                        "        String s = null; while(x == 0) { s = \"a\"; } \n" +
+//                        "        b(); \n" +
+//                        "        if(!x.isValid()) { throw e; }" +
+//                        "        // state = { x is valid }" +
+//                        "        c();" +
+//                        "    }\n" +
+//                        "}\n" +
+//                        "" ;
+//
+//        J.CompilationUnit cu = parse(source);
+//
+//        // body -> x == 0 -> 0 -> x -> { body, s = null } -> ...
+//        TestUtils.assertPrevious(cu,"b()", ENTRY, "(x == 0)", "{ s = \"a\"; }");
+//        TestUtils.assertPrevious(cu,"(x == 0)", EXIT, "x == 0");
+//        TestUtils.assertPrevious(cu,"(x == 0)", ENTRY, "s = null", "{ s = \"a\"; }");
+//        TestUtils.assertPrevious(cu,"x == 0", EXIT, "x == 0");
+//        TestUtils.assertPrevious(cu,"x == 0", ENTRY, "0");
+//        TestUtils.assertPrevious(cu,"0", EXIT, "0");
+//        TestUtils.assertPrevious(cu,"0", ENTRY, "x");
+//        TestUtils.assertPrevious(cu,"x", EXIT, "x");
+//        TestUtils.assertPrevious(cu,"x", ENTRY, "s = null", "{ s = \"a\"; }");
+//        TestUtils.assertPrevious(cu,"{ s = \"a\"; }", EXIT, "s = \"a\"");
+//        TestUtils.assertPrevious(cu,"{ s = \"a\"; }", ENTRY, "(x == 0)");
+//        TestUtils.assertPrevious(cu,"s = \"a\"", EXIT, "s = \"a\"");
+//        TestUtils.assertPrevious(cu,"s = \"a\"", ENTRY, "\"a\"");
+//        TestUtils.assertPrevious(cu,"\"a\"", EXIT, "\"a\"");
+//        TestUtils.assertPrevious(cu,"\"a\"", ENTRY, "(x == 0)");
+//
+//        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", CantTell);
 
 //        testIsSNull("String s = null; while(c) { s = \"a\"; }", CantTell);
 //        testIsSNull("String s = null; while(c) { s = null; }", DefinitelyYes);
@@ -86,29 +89,29 @@ public class Main {
 //        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
 
 
-//        testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
-//        testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
-//        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
-//
-//        testIsSNull("String s = null;", DefinitelyYes);
-//        testIsSNull("String s = \"abc\";", DefinitelyNo);
-//        testIsSNull("String s; s = null; s = \"abc\";", DefinitelyNo);
-//        testIsSNull("String s; s = \"abc\"; s = null;", DefinitelyYes);
-//        testIsSNull("String q = null; String s = q;", DefinitelyYes);
-//        testIsSNull("String q = \"abc\"; String s = q;", DefinitelyNo);
-//        testIsSNull("String s = null + null;", DefinitelyNo);
-//        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
-//        testIsSNull("String s = null + \"b\";", DefinitelyNo);
-//        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
-//        testIsSNull("String s = u;", null); // CantTell
-//        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
-//        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
-//        testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
-//        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
-//        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
-//        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
-//        testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
-//                DefinitelyYes);
+        testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
+        testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
+        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
+
+        testIsSNull("String s = null;", DefinitelyYes);
+        testIsSNull("String s = \"abc\";", DefinitelyNo);
+        testIsSNull("String s; s = null; s = \"abc\";", DefinitelyNo);
+        testIsSNull("String s; s = \"abc\"; s = null;", DefinitelyYes);
+        testIsSNull("String q = null; String s = q;", DefinitelyYes);
+        testIsSNull("String q = \"abc\"; String s = q;", DefinitelyNo);
+        testIsSNull("String s = null + null;", DefinitelyNo);
+        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
+        testIsSNull("String s = null + \"b\";", DefinitelyNo);
+        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
+        testIsSNull("String s = u;", null); // CantTell
+        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
+        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
+        testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
+        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
+        testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
+                DefinitelyYes);
 
 
     }
@@ -143,7 +146,11 @@ public class Main {
         JavaType.Variable v = TestUtils.findVariable(cu, pp2);
         assertThat(v).isNotNull();
 
-        ProgramState state = new IsNullAnalysis().inputState(c1, new TraversalControl<>());
+        //ProgramState state = new IsNullAnalysis().inputState(c1, new TraversalControl<>());
+        DataFlowGraph dfg = new DataFlowGraph(cu);
+        IsNullAnalysis a = new IsNullAnalysis(dfg);
+        a.analyze(c1, new TraversalControl<>());
+        ProgramState state = a.inputState(c1, new TraversalControl<>());
         System.out.println(fragment + "\n    Is 's' null when entering point 'b()' ? " + state.get(v));
 
         assertThat(state.get(v)).isEqualTo(expected);
@@ -183,8 +190,8 @@ public class Main {
                     "";
 
         J.CompilationUnit cu = parse(source);
-
-        new PrintProgramPointsVisitor().visit(cu, null);
+        DataFlowGraph dfg = new DataFlowGraph(cu);
+        new PrintProgramPointsVisitor(dfg).visit(cu, null);
 
         TestUtils.assertPrevious(cu,"b()", ENTRY, "j = w");
         TestUtils.assertPrevious(cu,"j = w", EXIT, "j = w");
@@ -229,8 +236,8 @@ public class Main {
         // }
 
         J.CompilationUnit cu = parse(source);
-
-        new PrintProgramPointsVisitor().visit(cu, null);
+        DataFlowGraph dfg = new DataFlowGraph(cu);
+        new PrintProgramPointsVisitor(dfg).visit(cu, null);
 
         TestUtils.assertPrevious(cu,"b()", ENTRY, "2<3", "n++");
 
@@ -329,6 +336,13 @@ public class Main {
 }
 
 class PrintProgramPointsVisitor extends JavaIsoVisitor {
+
+    private final DataFlowGraph dfg;
+
+    public PrintProgramPointsVisitor(DataFlowGraph dfg) {
+        this.dfg = dfg;
+    }
+    
     public static String print(Cursor c)
     {
         if(c.getValue() instanceof ProgramPoint) {
@@ -347,10 +361,10 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
         if (print(getCursor()).equals("0")) {
             System.out.println();
         }
-        Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
+        Collection<Cursor> pp = dfg.previous(getCursor());
         if (pp == null) {
             System.out.println("   (prevs = null)");
-            DataFlowGraph.previous(getCursor());
+            dfg.previous(getCursor());
         } else {
             for (Cursor p : pp) {
                 System.out.println("   prev = " + print(p));
@@ -376,10 +390,10 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
             if (print(getCursor()).equals("xxx")) {
                 Main.debug = true;
             }
-            Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
+            Collection<Cursor> pp = dfg.previous(getCursor());
             if (pp == null) {
                 System.out.println("   (prevs = null)");
-                DataFlowGraph.previous(getCursor());
+                dfg.previous(getCursor());
             } else {
                 for (Cursor p : pp) {
                     System.out.println("   prev = " + print(p));
@@ -395,7 +409,7 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
         if (print(getCursor()).equals("0")) {
             System.out.println();
         }
-        Collection<Cursor> pp = DataFlowGraph.previous(getCursor());
+        Collection<Cursor> pp = dfg.previous(getCursor());
         if (pp == null) {
             System.out.println("   (null)");
         } else {

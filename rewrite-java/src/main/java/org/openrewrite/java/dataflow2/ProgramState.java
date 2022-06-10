@@ -2,10 +2,8 @@ package org.openrewrite.java.dataflow2;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Stack;
+
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
 @Data
@@ -33,7 +31,11 @@ public class ProgramState {
     }
 
     public Ternary expr() {
-        return expressionStack.value;
+        if(expressionStack == null) {
+            return Ternary.Bottom;
+        } else {
+            return expressionStack.value;
+        }
     }
 
     public ProgramState push(Ternary value) {
@@ -86,10 +88,21 @@ public class ProgramState {
         s += " }";
         return s;
     }
+
+    public <S extends ProgramState> boolean isEqualTo(S other) {
+        return this.map.equals(other.map) && LinkedListElement.isEqual(this.expressionStack, other.expressionStack);
+    }
 }
 
 @AllArgsConstructor
 class LinkedListElement {
     LinkedListElement previous;
     Ternary value;
+
+    public static boolean isEqual(LinkedListElement a, LinkedListElement b) {
+        if(a == b) return true;
+        if(a == null) return b == null;
+        if(b == null) return a == null;
+        return a.value == b.value && isEqual(a.previous, b.previous);
+    }
 }

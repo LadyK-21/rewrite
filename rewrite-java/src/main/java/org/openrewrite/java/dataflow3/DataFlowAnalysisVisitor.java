@@ -9,11 +9,17 @@ import java.util.Collection;
 
 public class DataFlowAnalysisVisitor<P extends ProgramState<P>> extends JavaVisitor<DataFlowExecutionContextView<P>> {
 
+    final DataFlowGraph dfg;
+
+    public DataFlowAnalysisVisitor(DataFlowGraph dfg) {
+        this.dfg = dfg;
+    }
+
     /**
      * @return The *input* program state at given program point.
      */
     public P inputState(Cursor pp, DataFlowExecutionContextView<P> ctx) {
-        Collection<Cursor> sources = DataFlowGraph.previous(pp);
+        Collection<Cursor> sources = dfg.previous(pp);
         for (Cursor source : sources) {
             DataFlowExecutionContextView<P> sourceCtx = ctx.fork();
             visit(source.getValue(), sourceCtx, source.getParentOrThrow());

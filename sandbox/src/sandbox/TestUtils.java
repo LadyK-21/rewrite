@@ -39,10 +39,11 @@ public class TestUtils {
     }
 
     public static void assertPrevious(J.CompilationUnit cu, String pp, ProgramPoint entryOrExit, String... previous) {
+        DataFlowGraph dfg = new DataFlowGraph(cu);
         List<String> expected = Arrays.asList(previous);
         Cursor c = TestUtils.findProgramPoint(cu, pp);
         assertThat(c).withFailMessage("program point <" + pp + "> not found").isNotNull();
-        Collection<Cursor> prevs = DataFlowGraph.previousIn(c, entryOrExit);
+        Collection<Cursor> prevs = dfg.previousIn(c, entryOrExit);
         assertThat(prevs).withFailMessage("previous() returned null").isNotNull();
         List<String> actual = prevs.stream().map(prev -> print(prev)).collect(Collectors.toList());
 

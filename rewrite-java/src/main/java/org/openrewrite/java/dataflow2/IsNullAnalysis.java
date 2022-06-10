@@ -17,6 +17,10 @@ import static org.openrewrite.java.dataflow2.Ternary.*;
 
 public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
 
+    public IsNullAnalysis(DataFlowGraph dfg) {
+        super(dfg);
+    }
+
     @Override
     public ProgramState join(Collection<ProgramState> outs) {
         return ProgramState.join(outs);
@@ -40,7 +44,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();
         if(v.getInitializer() != null) {
-            ProgramState s = outputState(new Cursor(c, v.getInitializer()), tc);
+            ProgramState s = outputState(new Cursor(c, v.getInitializer()), tc, 1);
             return s.set(t, s.expr()).pop();
         } else {
             ProgramState s = inputState(c, tc);

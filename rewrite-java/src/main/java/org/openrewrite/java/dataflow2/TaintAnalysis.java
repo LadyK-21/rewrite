@@ -9,6 +9,10 @@ import static org.openrewrite.java.dataflow2.Ternary.DefinitelyNo;
 
 public abstract class TaintAnalysis extends DataFlowAnalysis<ProgramState> {
 
+    public TaintAnalysis(DataFlowGraph dfg) {
+        super(dfg);
+    }
+
     @Override
     public ProgramState join(Collection<ProgramState> outs) {
         return ProgramState.join(outs);

@@ -7,18 +7,6 @@ import java.util.Set;
 
 public class TraversalControl<S extends ProgramState> {
 
-    Set<ProgramPoint> visited = new HashSet<>();
-
-    public void markVisited(ProgramPoint pp) {
-        visited.add(pp);
-    }
-
-    public boolean isVisited(ProgramPoint pp) {
-        boolean result = visited.contains(pp);
-        System.out.println("isVisited(" + pp + ") = " + result);
-        return result;
-    }
-
 //    Map<ProgramPoint, State> map = new HashMap<>();
 //
 //    public boolean noNeedToVisitAgain(ProgramPoint pp) {
