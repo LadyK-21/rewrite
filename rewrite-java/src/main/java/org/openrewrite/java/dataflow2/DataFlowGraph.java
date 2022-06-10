@@ -17,6 +17,9 @@ import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
 public class DataFlowGraph {
 
     final J.CompilationUnit cu;
+
+    // To be removed. This is a temporary hack to compute next from previous
+    // until the next() methods are implemented.
     private Map<Cursor, Collection<Cursor>> previousMap;
 
     public DataFlowGraph(J.CompilationUnit cu) {
@@ -335,16 +338,24 @@ public class DataFlowGraph {
         if (p == EXIT) {
             List<Cursor> result = new ArrayList<>();
             result.add(new Cursor(ifCursor, thenPart));
-            if (elsePart != null) {
+            if (elsePart == null) {
+                Cursor c = new Cursor(ifCursor, cond);
+                c.putMessage("ifThenElseBranch", "exit");
+                return Collections.singletonList(c);
+            } else {
                 result.add(new Cursor(ifCursor, elsePart));
             }
             return result;
         } else if (p == ENTRY) {
             return previousIn(ifCursor.getParent(), ifThenElse);
         } else if (p == thenPart) {
-            return Collections.singletonList(new Cursor(ifCursor, cond));
+            Cursor c = new Cursor(ifCursor, cond);
+            c.putMessage("ifThenElseBranch", "then");
+            return Collections.singletonList(c);
         } else if (p == elsePart) {
-            return Collections.singletonList(new Cursor(ifCursor, cond));
+            Cursor c = new Cursor(ifCursor, cond);
+            c.putMessage("ifThenElseBranch", "else");
+            return Collections.singletonList(c);
         } else if (p == cond) {
             return previous(ifCursor);
         }

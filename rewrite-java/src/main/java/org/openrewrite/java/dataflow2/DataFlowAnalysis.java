@@ -1,6 +1,7 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
 import java.util.*;
@@ -15,59 +16,74 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         this.dfg = dfg;
     }
 
-    public void analyze( Cursor init, TraversalControl<S> t) {
+//    public void analyze( Cursor init, TraversalControl<S> t) {
+//
+//        initialize(init, t);
+//
+//        // iterate
+//        while(!workList.isEmpty()) {
+//            Cursor c = workList.extract();
+//            S currentState = outputState(c, t); // lookup
+//            S newState = transfer(c, t); // computation
+//            if(!newState.isEqualTo(currentState)) {
+//                analysis.put(c, newState);
+//                workList.insertAll(dfg.next(c));
+//            }
+//        }
+//    }
+//
+//    private void initialize(Cursor c, TraversalControl<S> t) {
+//        workList.insert(c);
+//        Collection<Cursor> sources = dependencies(c, t);
+//        for (Cursor source : sources) {
+//            if(!workList.contains(source)) {
+//                initialize(source, t);
+//            }
+//        }
+//    }
 
-        initialize(init, t);
+//    public S outputState(Cursor c, TraversalControl<S> t) {
+//        return outputState(c, t, 0);
+//    }
 
-        // iterate
-        while(!workList.isEmpty()) {
-            Cursor c = workList.extract();
-            S currentState = outputState(c, t); // lookup
-            S newState = transfer(c, t); // computation
-            if(!newState.isEqualTo(currentState)) {
-                analysis.put(c, newState);
-                workList.insertAll(dfg.next(c));
-            }
-        }
-    }
-
-    private void initialize(Cursor c, TraversalControl<S> t) {
-        workList.insert(c);
-        Collection<Cursor> sources = dependencies(c, t);
-        for (Cursor source : sources) {
-            if(!workList.contains(source)) {
-                initialize(source, t);
-            }
-        }
-    }
-
-    public S outputState(Cursor c, TraversalControl<S> t) {
-        return outputState(c, t, 0);
-    }
-
-    public S outputState(Cursor c, TraversalControl<S> t, int exprCount) {
-        ProgramPoint pp = c.getValue();
-        S result = analysis.get(c);
-        if(result == null) {
-            result = (S) new ProgramState();
-            analysis.put(c, result);
-        }
-        int actual = 0;
-        for(LinkedListElement e = result.expressionStack; e != null; e = e.previous) actual++;
-        while(exprCount > actual) {
-            LinkedListElement e = new LinkedListElement(result.expressionStack, Ternary.Bottom);
-            result.expressionStack = e;
-            exprCount--;
-        }
-        return result;
-    }
+//    public S outputState(Cursor c, TraversalControl<S> t, int exprCount) {
+//        ProgramPoint pp = c.getValue();
+//        S result = analysis.get(c);
+//        if(result == null) {
+//            result = (S) new ProgramState();
+//            analysis.put(c, result);
+//        }
+//        int actual = 0;
+//        for(LinkedListElement e = result.expressionStack; e != null; e = e.previous) actual++;
+//        while(exprCount > actual) {
+//            LinkedListElement e = new LinkedListElement(result.expressionStack, Ternary.Bottom);
+//            result.expressionStack = e;
+//            exprCount--;
+//        }
+//        return result;
+//    }
 
     public S inputState(Cursor c, TraversalControl<S> t) {
         ProgramPoint pp = c.getValue();
         List<S> outs = new ArrayList<>();
         Collection<Cursor> sources = dfg.previous(c);
         for (Cursor source : sources) {
-            outs.add(outputState(source, t, 0));
+            // Since program points are represented by cursors with a tree node value,
+            // it is impossible to add program points when there is no corresponding tree node.
+            // To work around this limitation, we use cursor messages to express that a given
+            // edge goes through a virtual program point.
+
+            if(source.getMessage("ifThenElseBranch") != null) {
+
+                // This edge goes from the 'then', 'else' or 'exit' point of an if statement to its condition
+                // through the virtual 'then' or 'else' program points. This is used to implement guards.
+                J.If ifThenElse = source.firstEnclosing(J.If.class);
+                S s1 = outputState(source, t);
+                S s2 = ifThenElseGuard(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
+                outs.add(s2);
+            } else {
+                outs.add(outputState(source, t));
+            }
         }
         S result = join(outs);
 //        System.out.println(pp);
@@ -78,6 +94,29 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         return result;
     }
 
+    private S ifThenElseGuard(J.If ifThenElse, S s, String ifThenElseBranch) {
+        Expression cond = ifThenElse.getIfCondition().getTree();
+        if(cond instanceof J.Binary) {
+            J.Binary binary = (J.Binary)cond;
+            if(binary.getOperator() == J.Binary.Type.Equal) {
+                if(binary.getLeft() instanceof J.Identifier) {
+                    J.Identifier left = (J.Identifier) binary.getLeft();
+                    if (binary.getRight() instanceof J.Literal && ((J.Literal) binary.getRight()).getValue() == null) {
+                        // condition has the form 's == null'
+                        if(ifThenElseBranch.equals("then")) {
+                            // in the 'then' branch, s is null
+                            s = (S) s.set(left.getFieldType(), Ternary.DefinitelyYes);
+                        } else {
+                            // in the 'else' branch or the 'exit' branch, s is not null
+                            s = (S) s.set(left.getFieldType(), Ternary.DefinitelyNo);
+                        }
+                    }
+                }
+            }
+        }
+        return s;
+    }
+
     public abstract S join(Collection<S> outs);
 
     @SafeVarargs
@@ -85,7 +124,7 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         return join(Arrays.asList(outs));
     }
 
-    public S transfer(Cursor pp, TraversalControl<S> t) {
+    public S outputState(Cursor pp, TraversalControl<S> t) {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
                 return transferMethodInvocation(pp, t);

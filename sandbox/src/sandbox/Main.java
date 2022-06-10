@@ -35,8 +35,8 @@ public class Main {
     public static void main(String[] args)
     {
         testAPI();
-        testForLoop();
-        testVariableDeclarations();
+        //testForLoop();
+        //testVariableDeclarations();
     }
 
     public static void testAPI() {
@@ -76,7 +76,7 @@ public class Main {
 //        TestUtils.assertPrevious(cu,"s = \"a\"", ENTRY, "\"a\"");
 //        TestUtils.assertPrevious(cu,"\"a\"", EXIT, "\"a\"");
 //        TestUtils.assertPrevious(cu,"\"a\"", ENTRY, "(x == 0)");
-//
+
 //        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", CantTell);
 
 //        testIsSNull("String s = null; while(c) { s = \"a\"; }", CantTell);
@@ -88,6 +88,8 @@ public class Main {
 //        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
 //        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
 
+        testIsSNull("String s; s = null; if(s == null) { s = \"a\"; }", DefinitelyNo);
+        testIsSNull("String s; s = null; if(s == \"b\") { s = \"a\"; }", DefinitelyYes);
 
         testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
         testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
@@ -146,11 +148,14 @@ public class Main {
         JavaType.Variable v = TestUtils.findVariable(cu, pp2);
         assertThat(v).isNotNull();
 
-        //ProgramState state = new IsNullAnalysis().inputState(c1, new TraversalControl<>());
         DataFlowGraph dfg = new DataFlowGraph(cu);
-        IsNullAnalysis a = new IsNullAnalysis(dfg);
-        a.analyze(c1, new TraversalControl<>());
-        ProgramState state = a.inputState(c1, new TraversalControl<>());
+        ProgramState state = new IsNullAnalysis(dfg).inputState(c1, new TraversalControl<>());
+
+//
+//        IsNullAnalysis a = new IsNullAnalysis(dfg);
+//        a.analyze(c1, new TraversalControl<>());
+//        ProgramState state = a.inputState(c1, new TraversalControl<>());
+
         System.out.println(fragment + "\n    Is 's' null when entering point 'b()' ? " + state.get(v));
 
         assertThat(state.get(v)).isEqualTo(expected);

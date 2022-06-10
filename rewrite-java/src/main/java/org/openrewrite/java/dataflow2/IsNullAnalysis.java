@@ -44,7 +44,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();
         if(v.getInitializer() != null) {
-            ProgramState s = outputState(new Cursor(c, v.getInitializer()), tc, 1);
+            ProgramState s = outputState(new Cursor(c, v.getInitializer()), tc);
             return s.set(t, s.expr()).pop();
         } else {
             ProgramState s = inputState(c, tc);
