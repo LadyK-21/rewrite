@@ -1,6 +1,7 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
+import org.openrewrite.Incubating;
 import org.openrewrite.java.tree.J;
 
 import java.util.Collection;
@@ -17,13 +18,11 @@ import java.util.Collection;
  * In Java, program points are statements, variable declarations, assignment expressions, increment and decrement
  * expressions, method declarations.
  */
+@Incubating(since = "7.24.0")
 public interface ProgramPoint {
 
     default Collection<Cursor> previous(DataFlowGraph dfg, Cursor c) {
         return dfg.previous(c);
-    }
-    default Collection<Cursor> next(DataFlowGraph dfg, Cursor c) {
-        return dfg.next(c);
     }
 
     default String printPP(Cursor cursor) {

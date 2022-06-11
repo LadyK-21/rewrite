@@ -4,8 +4,10 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import lombok.*;
+import org.openrewrite.Incubating;
 import org.openrewrite.java.tree.JavaType;
 
+@Incubating(since = "7.24.0")
 @Data
 public class ProgramState {
 
@@ -13,32 +15,32 @@ public class ProgramState {
     LinkedListElement expressionStack;
 
     @With
-    HashMap<JavaType.Variable, Ternary> map;
+    HashMap<JavaType.Variable, ModalBoolean> map;
 
     public ProgramState() {
         expressionStack  = null;
         map = new HashMap<>();
     }
 
-    private ProgramState(HashMap<JavaType.Variable, Ternary> map) {
+    private ProgramState(HashMap<JavaType.Variable, ModalBoolean> map) {
         this.expressionStack  = null;
         this.map = map;
     }
 
-    private ProgramState(LinkedListElement expressionStack, HashMap<JavaType.Variable, Ternary> map) {
+    private ProgramState(LinkedListElement expressionStack, HashMap<JavaType.Variable, ModalBoolean> map) {
         this.expressionStack  = expressionStack;
         this.map = map;
     }
 
-    public Ternary expr() {
+    public ModalBoolean expr() {
         if(expressionStack == null) {
-            return Ternary.Bottom;
+            return ModalBoolean.NoIdea;
         } else {
             return expressionStack.value;
         }
     }
 
-    public ProgramState push(Ternary value) {
+    public ProgramState push(ModalBoolean value) {
         return this.withExpressionStack(new LinkedListElement(expressionStack, value));
     }
 
@@ -46,27 +48,27 @@ public class ProgramState {
         return this.withExpressionStack(expressionStack.previous);
     }
 
-    public Ternary get(JavaType.Variable ident) {
+    public ModalBoolean get(JavaType.Variable ident) {
         return map.get(ident);
     }
 
-    public ProgramState set(JavaType.Variable ident, Ternary expr) {
+    public ProgramState set(JavaType.Variable ident, ModalBoolean expr) {
         // TODO : Horrible
-        HashMap<JavaType.Variable, Ternary> m = (HashMap<JavaType.Variable, Ternary>) map.clone();
+        HashMap<JavaType.Variable, ModalBoolean> m = (HashMap<JavaType.Variable, ModalBoolean>) map.clone();
         m.put(ident, expr);
         return this.withMap(m);
     }
 
     public static ProgramState join(Collection<ProgramState> outs) {
-        HashMap<JavaType.Variable, Ternary> m = new HashMap<>();
+        HashMap<JavaType.Variable, ModalBoolean> m = new HashMap<>();
         for(ProgramState out : outs) {
             for(JavaType.Variable key : out.getMap().keySet()) {
-                Ternary v1 = out.getMap().get(key);
+                ModalBoolean v1 = out.getMap().get(key);
                 if(!m.containsKey(key)) {
                     m.put(key, v1);
                 } else {
-                    Ternary v2 = m.get(key);
-                    m.put(key, Ternary.join(v1, v2));
+                    ModalBoolean v2 = m.get(key);
+                    m.put(key, ModalBoolean.join(v1, v2));
                 }
             }
         }
@@ -82,7 +84,7 @@ public class ProgramState {
         }
         s += " |";
         for(JavaType.Variable v : map.keySet()) {
-            Ternary t = map.get(v);
+            ModalBoolean t = map.get(v);
             s += " " + v.getName() + " -> " + t;
         }
         s += " }";
@@ -94,10 +96,11 @@ public class ProgramState {
     }
 }
 
+@Incubating(since = "7.24.0")
 @AllArgsConstructor
 class LinkedListElement {
     LinkedListElement previous;
-    Ternary value;
+    ModalBoolean value;
 
     public static boolean isEqual(LinkedListElement a, LinkedListElement b) {
         if(a == b) return true;

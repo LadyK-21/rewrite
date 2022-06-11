@@ -1,8 +1,9 @@
-package org.openrewrite.java.dataflow2;
+package org.openrewrite.java.dataflow2.examples;
 
 import org.openrewrite.Cursor;
-import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.Incubating;
 import org.openrewrite.java.MethodMatcher;
+import org.openrewrite.java.dataflow2.*;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -13,13 +14,23 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.openrewrite.java.dataflow2.ProgramState.*;
-import static org.openrewrite.java.dataflow2.Ternary.*;
+import static org.openrewrite.java.dataflow2.ModalBoolean.*;
 
+@Incubating(since = "7.24.0")
 public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
 
     public IsNullAnalysis(DataFlowGraph dfg) {
         super(dfg);
+    }
+
+    /**
+     * @return Whether the variable v is known to be null before given program point.
+     */
+    public ModalBoolean isNullBefore(Cursor programPoint, JavaType.Variable v)
+    {
+        ProgramState state = inputState(programPoint, new TraversalControl<>());
+        ModalBoolean result = state.get(v);
+        return result;
     }
 
     @Override
@@ -28,7 +39,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState transferIfThenElseBranches(J.If ifThenElse, ProgramState s, String ifThenElseBranch) {
+    public ProgramState transferToIfThenElseBranches(J.If ifThenElse, ProgramState s, String ifThenElseBranch) {
         Expression cond = ifThenElse.getIfCondition().getTree();
         if(cond instanceof J.Binary) {
             J.Binary binary = (J.Binary)cond;
@@ -39,10 +50,10 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
                         // condition has the form 's == null'
                         if(ifThenElseBranch.equals("then")) {
                             // in the 'then' branch, s is null
-                            s = s.set(left.getFieldType(), Ternary.DefinitelyYes);
+                            s = s.set(left.getFieldType(), ModalBoolean.True);
                         } else {
                             // in the 'else' branch or the 'exit' branch, s is not null
-                            s = s.set(left.getFieldType(), Ternary.DefinitelyNo);
+                            s = s.set(left.getFieldType(), ModalBoolean.False);
                         }
                     }
                 }
@@ -53,15 +64,12 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
 
     @Override
     public ProgramState defaultTransfer(Cursor c, TraversalControl<ProgramState> t) {
-        // For development only, to make sure all cases are covered
-        throw new UnsupportedOperationException();
+        return inputState(c, t);
     }
 
     @Override
     public ProgramState transferBinary(Cursor c, TraversalControl<ProgramState> t) {
-        J.Binary binary = c.getValue();
-
-        return inputState(c, t).push(DefinitelyNo);
+        return inputState(c, t).push(False);
     }
 
     @Override
@@ -74,33 +82,21 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
         } else {
             ProgramState s = inputState(c, tc);
             assert !s.getMap().containsKey(t);
-            return s.set(t, DefinitelyYes);
+            return s.set(t, True);
         }
     }
 
     @Override
     public ProgramState transferAssignment(Cursor c, TraversalControl<ProgramState> t) {
 
-        // id = expr
-
         J.Assignment a = c.getValue();
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
-//            if (ident.getFieldType() == state) {
-//                return outputState(new Cursor(c, a.getAssignment()));
-//            } else {
-//                return inputState(c);
-//            }
             ProgramState s = outputState(new Cursor(c, a.getAssignment()), t);
             return s.set(ident.getFieldType(), s.expr());
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Override
-    public ProgramState transferAssignmentOperation(Cursor pp, TraversalControl<ProgramState> t) {
-        return defaultTransfer(pp, t);
     }
 
     private static final String[] definitelyNonNullReturningMethodSignatures = new String[] {
@@ -115,10 +111,10 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
         J.MethodInvocation method = c.getValue();
         for(MethodMatcher matcher : definitelyNonNullReturningMethodMatchers) {
             if (matcher.matches(method)) {
-                return inputState(c, t).push(DefinitelyNo);
+                return inputState(c, t).push(False);
             }
         }
-        return inputState(c, t).push(CantTell);
+        return inputState(c, t).push(Conflict);
     }
 
     @Override
@@ -126,9 +122,9 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
         J.Literal pp = c.getValue();
         ProgramState s = inputState(c, t);
         if (pp.getValue() == null) {
-            return s.push(DefinitelyYes);
+            return s.push(True);
         } else {
-            return s.push(DefinitelyNo);
+            return s.push(False);
         }
     }
 
@@ -136,18 +132,8 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     public ProgramState transferIdentifier(Cursor c, TraversalControl<ProgramState> t) {
         J.Identifier i = c.getValue();
         ProgramState s = inputState(c, t);
-        Ternary v = s.get(i.getFieldType());
+        ModalBoolean v = s.get(i.getFieldType());
         return inputState(c, t).push(v);
-    }
-
-    @Override
-    public ProgramState transferEmpty(Cursor c, TraversalControl<ProgramState> t) {
-        return inputState(c, t);
-    }
-
-    @Override
-    public ProgramState transferIf(Cursor c, TraversalControl<ProgramState> t) {
-        return inputState(c, t);
     }
 
     @Override
@@ -168,36 +154,9 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState transferWhileLoop(Cursor c, TraversalControl<ProgramState> t) {
-        return inputState(c, t);
-    }
-//
-//    public S transferForLoop(Cursor pp) {
-//        return defaultTransfer(pp);
-//    }
-//
-//    public S transferForLoopControl(Cursor pp) {
-//        return defaultTransfer(pp);
-//    }
-//
-//    public S transferVariableDeclarations(Cursor pp) {
-//        return defaultTransfer(pp);
-//    }
-//
-//    public S transferUnary(Cursor pp) {
-//        return defaultTransfer(pp);
-//    }
-
-    @Override
     public ProgramState transferParentheses(Cursor c, TraversalControl<ProgramState> t) {
         J.Parentheses paren = c.getValue();
         return outputState(new Cursor(c, paren.getTree()), t);
-        //return inputState(c);
-    }
-
-    @Override
-    public ProgramState transferControlParentheses(Cursor c, TraversalControl<ProgramState> t) {
-        return inputState(c, t);
     }
 }
 

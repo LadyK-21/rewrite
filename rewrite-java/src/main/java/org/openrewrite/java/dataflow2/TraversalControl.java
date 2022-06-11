@@ -1,48 +1,14 @@
 package org.openrewrite.java.dataflow2;
 
+import org.openrewrite.Incubating;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@Incubating(since = "7.24.0")
 public class TraversalControl<S extends ProgramState> {
 
-//    Map<ProgramPoint, State> map = new HashMap<>();
-//
-//    public boolean noNeedToVisitAgain(ProgramPoint pp) {
-//        State s = map.get(pp);
-//        return s != null && s.noNeedToVisitAgain;
-//    }
-//
-//    public S previousResult(ProgramPoint pp) {
-//        State<S> s = map.get(pp);
-//        assert s != null;
-//        return s.value;
-//    }
-//
-//    public boolean alreadyVisited(ProgramPoint pp) {
-//        State<S> s = map.get(pp);
-//        return s != null;
-//    }
-//
-//    public void setNoNeedToVisitAgain(ProgramPoint pp) {
-//        State s = map.get(pp);
-//        assert s != null && !s.noNeedToVisitAgain;
-//        s.noNeedToVisitAgain = true;
-//    }
-//
-//    public void setPreviousResult(ProgramPoint pp, S result) {
-//        assert map.get(pp) == null;
-//        State s = new State(result);
-//        map.put(pp, s);
-//    }
-//
-//    static class State<S extends ProgramState> {
-//        S value = null;
-//        boolean noNeedToVisitAgain = false;
-//
-//        public State(S value) {
-//            this.value = value;
-//        }
-//    }
+    public static TraversalControl DEFAULT = new TraversalControl<>();
 }

@@ -1,12 +1,13 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
-import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.Incubating;
 
 import java.util.Collection;
 
-import static org.openrewrite.java.dataflow2.Ternary.DefinitelyNo;
+import static org.openrewrite.java.dataflow2.ModalBoolean.False;
 
+@Incubating(since = "7.24.0")
 public abstract class TaintAnalysis extends DataFlowAnalysis<ProgramState> {
 
     public TaintAnalysis(DataFlowGraph dfg) {
@@ -25,6 +26,6 @@ public abstract class TaintAnalysis extends DataFlowAnalysis<ProgramState> {
 
     @Override
     public ProgramState transferBinary(Cursor programPoint, TraversalControl<ProgramState> t) {
-        return inputState(programPoint, t).push(DefinitelyNo);
+        return inputState(programPoint, t).push(False);
     }
 }

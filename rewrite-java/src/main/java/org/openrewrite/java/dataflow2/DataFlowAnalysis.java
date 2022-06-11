@@ -1,11 +1,12 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
-import org.openrewrite.java.tree.Expression;
+import org.openrewrite.Incubating;
 import org.openrewrite.java.tree.J;
 
 import java.util.*;
 
+@Incubating(since = "7.24.0")
 public abstract class DataFlowAnalysis<S extends ProgramState> {
 
     final DataFlowGraph dfg;
@@ -15,53 +16,6 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
     public DataFlowAnalysis(DataFlowGraph dfg) {
         this.dfg = dfg;
     }
-
-//    public void analyze( Cursor init, TraversalControl<S> t) {
-//
-//        initialize(init, t);
-//
-//        // iterate
-//        while(!workList.isEmpty()) {
-//            Cursor c = workList.extract();
-//            S currentState = outputState(c, t); // lookup
-//            S newState = transfer(c, t); // computation
-//            if(!newState.isEqualTo(currentState)) {
-//                analysis.put(c, newState);
-//                workList.insertAll(dfg.next(c));
-//            }
-//        }
-//    }
-//
-//    private void initialize(Cursor c, TraversalControl<S> t) {
-//        workList.insert(c);
-//        Collection<Cursor> sources = dependencies(c, t);
-//        for (Cursor source : sources) {
-//            if(!workList.contains(source)) {
-//                initialize(source, t);
-//            }
-//        }
-//    }
-
-//    public S outputState(Cursor c, TraversalControl<S> t) {
-//        return outputState(c, t, 0);
-//    }
-
-//    public S outputState(Cursor c, TraversalControl<S> t, int exprCount) {
-//        ProgramPoint pp = c.getValue();
-//        S result = analysis.get(c);
-//        if(result == null) {
-//            result = (S) new ProgramState();
-//            analysis.put(c, result);
-//        }
-//        int actual = 0;
-//        for(LinkedListElement e = result.expressionStack; e != null; e = e.previous) actual++;
-//        while(exprCount > actual) {
-//            LinkedListElement e = new LinkedListElement(result.expressionStack, Ternary.Bottom);
-//            result.expressionStack = e;
-//            exprCount--;
-//        }
-//        return result;
-//    }
 
     public S inputState(Cursor c, TraversalControl<S> t) {
         ProgramPoint pp = c.getValue();
@@ -74,23 +28,15 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
             // edge goes through a virtual program point.
 
             if(source.getMessage("ifThenElseBranch") != null) {
-
-                // This edge goes from the 'then', 'else' or 'exit' point of an if statement to its condition
-                // through the virtual 'then' or 'else' program points. This is used to implement guards.
                 J.If ifThenElse = source.firstEnclosing(J.If.class);
                 S s1 = outputState(source, t);
-                S s2 = transferIfThenElseBranches(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
+                S s2 = transferToIfThenElseBranches(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
                 outs.add(s2);
             } else {
                 outs.add(outputState(source, t));
             }
         }
         S result = join(outs);
-//        System.out.println(pp);
-//        for(S out : outs) {
-//            System.out.println("      " + out);
-//        }
-//        System.out.println("   -> " + result);
         return result;
     }
 
@@ -171,77 +117,8 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         }
     }
 
-    public Collection<Cursor> dependencies(Cursor pp, TraversalControl<S> t) {
-        switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
-            case "J$MethodInvocation":
-                return dependenciesMethodInvocation(pp, t);
-            case "J$If":
-                return dependenciesIf(pp, t);
-            case "J$If$Else":
-                return dependenciesIfElse(pp, t);
-            case "J$WhileLoop":
-                return dependenciesWhileLoop(pp, t);
-            case "J$ForLoop":
-                return dependenciesForLoop(pp, t);
-            case "J$ForLoop$Control":
-                return dependenciesForLoopControl(pp, t);
-            case "J$Block":
-                return dependenciesBlock(pp, t);
-            case "J$VariableDeclarations":
-                return dependenciesVariableDeclarations(pp, t);
-            case "J$VariableDeclarations$NamedVariable":
-                return dependenciesNamedVariable(pp, t);
-            case "J$Unary":
-                return dependenciesUnary(pp, t);
-            case "J$Binary":
-                return dependenciesBinary(pp, t);
-            case "J$Assignment":
-                return dependenciesAssignment(pp, t);
-            case "J$Parentheses":
-                return dependenciesParentheses(pp, t);
-            case "J$ControlParentheses":
-                return dependenciesControlParentheses(pp, t);
-            case "J$Literal":
-                return dependenciesLiteral(pp, t);
-            case "J$Identifier":
-                return dependenciesIdentifier(pp, t);
-            case "J$Empty":
-                return dependenciesEmpty(pp, t);
-            case "J$CompilationUnit":
-            case "J$ClassDeclaration":
-            case "J$MethodDeclaration":
-                // Assert
-                // ArrayAccess
-                // AssignmentOperation
-                // Break
-                // Case
-                // Continue
-                // DoWhileLoop
-                // EnumValue
-                // EnumValueSet
-                // FieldAccess
-                // ForeachLoop
-                // InstanceOf
-                // Label
-                // Lambda
-                // MemberReference
-                // MultiCatch
-                // NewArray
-                // ArrayDimension
-                // NewClass
-                // Return
-                // Switch
-                // Ternary
-                // Throw
-                // Try
-                // TypeCast
-                // WhileLoop
-            default:
-                throw new Error(pp.getClass().getName());
-        }
-    }
 
-    public S transferIfThenElseBranches(J.If ifThenElse, S s, String ifThenElseBranch) {
+    public S transferToIfThenElseBranches(J.If ifThenElse, S s, String ifThenElseBranch) {
         return s;
     }
 
@@ -319,84 +196,6 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
     public S transferEmpty(Cursor pp, TraversalControl<S> t) {
         return defaultTransfer(pp, t);
     }
-
-
-    public Collection<Cursor> defaultDependencies(Cursor pp, TraversalControl<S> t) {
-        return dfg.previous(pp);
-    }
-
-    public Collection<Cursor> dependenciesMethodInvocation(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesIf(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesIfElse(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesWhileLoop(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesForLoop(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesForLoopControl(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesBlock(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesVariableDeclarations(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesNamedVariable(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesUnary(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesBinary(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesAssignment(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesAssignmentOperation(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesParentheses(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesControlParentheses(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesLiteral(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesIdentifier(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
-    public Collection<Cursor> dependenciesEmpty(Cursor pp, TraversalControl<S> t) {
-        return defaultDependencies(pp, t);
-    }
-
 
     static class WorkList<E> {
 

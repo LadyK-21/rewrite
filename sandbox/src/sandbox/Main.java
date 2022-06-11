@@ -6,6 +6,7 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.Java11Parser;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.dataflow2.*;
+import org.openrewrite.java.dataflow2.examples.IsNullAnalysis;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
-import static org.openrewrite.java.dataflow2.Ternary.*;
+import static org.openrewrite.java.dataflow2.ModalBoolean.*;
 
 public class Main {
 
@@ -89,32 +90,32 @@ public class Main {
 //        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
 //        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
 
-        testIsSNull("String s = f(); if(s == null) { s = \"a\"; }", DefinitelyNo);
-        testIsSNull("String s = null; if(s == \"b\") { s = \"a\"; }", DefinitelyYes);
+        testIsSNull("String s = f(); if(s == null) { s = \"a\"; }", False);
+        testIsSNull("String s = null; if(s == \"b\") { s = \"a\"; }", True);
 
-        testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
-        testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
-        testIsSNull("String s = \"a\", t, u; t = (u = null);", DefinitelyNo);
+        testIsSNull("String s, t; t = (s = null);", True);
+        testIsSNull("String s, t; s = (t = null);", True);
+        testIsSNull("String s = \"a\", t, u; t = (u = null);", False);
 
-        testIsSNull("String s = null;", DefinitelyYes);
-        testIsSNull("String s = \"abc\";", DefinitelyNo);
-        testIsSNull("String s; s = null; s = \"abc\";", DefinitelyNo);
-        testIsSNull("String s; s = \"abc\"; s = null;", DefinitelyYes);
-        testIsSNull("String q = null; String s = q;", DefinitelyYes);
-        testIsSNull("String q = \"abc\"; String s = q;", DefinitelyNo);
-        testIsSNull("String s = null + null;", DefinitelyNo);
-        testIsSNull("String s = \"a\" + null;", DefinitelyNo);
-        testIsSNull("String s = null + \"b\";", DefinitelyNo);
-        testIsSNull("String s = \"a\" + \"b\";", DefinitelyNo);
+        testIsSNull("String s = null;", True);
+        testIsSNull("String s = \"abc\";", False);
+        testIsSNull("String s; s = null; s = \"abc\";", False);
+        testIsSNull("String s; s = \"abc\"; s = null;", True);
+        testIsSNull("String q = null; String s = q;", True);
+        testIsSNull("String q = \"abc\"; String s = q;", False);
+        testIsSNull("String s = null + null;", False);
+        testIsSNull("String s = \"a\" + null;", False);
+        testIsSNull("String s = null + \"b\";", False);
+        testIsSNull("String s = \"a\" + \"b\";", False);
         testIsSNull("String s = u;", null); // CantTell
-        testIsSNull("String s = \"a\".toUpperCase();", DefinitelyNo);
-        testIsSNull("String s = \"a\".unknownMethod(s, null);", CantTell);
-        testIsSNull("String s; if(c) { s = null; } else { s = null; }", DefinitelyYes);
-        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", CantTell);
-        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", CantTell);
-        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", DefinitelyNo);
+        testIsSNull("String s = \"a\".toUpperCase();", False);
+        testIsSNull("String s = \"a\".unknownMethod(s, null);", Conflict);
+        testIsSNull("String s; if(c) { s = null; } else { s = null; }", True);
+        testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", Conflict);
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", Conflict);
+        testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", False);
         testIsSNull("String s, q; if((s = null) == null) { q = \"a\"; } else { q = null; }",
-                DefinitelyYes);
+                True);
 
 
     }
@@ -122,7 +123,7 @@ public class Main {
     /**
      * Test the value of 's' at the end of given code fragment.
      */
-    public static void testIsSNull(String fragment, Ternary expected) {
+    public static void testIsSNull(String fragment, ModalBoolean expected) {
         String source =
                 "class C {\n" +
                         "    void a() {} \n" +
@@ -142,11 +143,11 @@ public class Main {
         //new PrintProgramPointsVisitor().visit(cu, null);
 
         String pp1 = "b()";
-        Cursor c1 = TestUtils.findProgramPoint(cu, pp1);
+        Cursor c1 = Utils.findProgramPoint(cu, pp1);
         assertThat(c1).withFailMessage("program point <" + pp1 + "> not found").isNotNull();
 
         String pp2 = "s";
-        JavaType.Variable v = TestUtils.findVariable(cu, pp2);
+        JavaType.Variable v = Utils.findVariable(cu, pp2);
         assertThat(v).isNotNull();
 
         DataFlowGraph dfg = new DataFlowGraph(cu);
@@ -250,9 +251,9 @@ public class Main {
         new PrintProgramPointsVisitor(dfg).visit(cu, null);
 
         J.MethodDeclaration m = (J.MethodDeclaration) cu.getClasses().get(0).getBody().getStatements().get(0);
-        System.out.println(TestUtils.print(m));
+        System.out.println(Utils.print(m));
 
-        TestUtils.assertPrevious(cu,TestUtils.print(m), EXIT);
+        TestUtils.assertPrevious(cu,Utils.print(m), EXIT);
 
     }
 
