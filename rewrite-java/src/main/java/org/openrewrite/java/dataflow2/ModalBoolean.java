@@ -17,6 +17,19 @@ public enum ModalBoolean {
     False,
     Conflict; // The upper bound of the lattice
 
+    public static final Joiner<ModalBoolean> JOINER = new Joiner<ModalBoolean>() {
+
+        @Override
+        public ModalBoolean join(Collection<ModalBoolean> values) {
+            return ModalBoolean.join(values);
+        }
+
+        @Override
+        public ModalBoolean lowerBound() {
+            return NoIdea;
+        }
+    };
+
     public static ModalBoolean join(Collection<ModalBoolean> outs) {
         ModalBoolean result = NoIdea;
         for (ModalBoolean out : outs) {
@@ -32,7 +45,5 @@ public enum ModalBoolean {
         return result;
     }
 
-    public static ModalBoolean join(ModalBoolean... outs) {
-        return join(Arrays.asList(outs));
-    }
+
 }

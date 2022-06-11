@@ -8,24 +8,26 @@ import java.util.Collection;
 import static org.openrewrite.java.dataflow2.ModalBoolean.False;
 
 @Incubating(since = "7.24.0")
-public abstract class TaintAnalysis extends DataFlowAnalysis<ProgramState> {
+public abstract class TaintAnalysis extends DataFlowAnalysis<ProgramState<ModalBoolean>> {
+
+    private static final Joiner<ModalBoolean> JOINER = ModalBoolean.JOINER;
 
     public TaintAnalysis(DataFlowGraph dfg) {
         super(dfg);
     }
 
     @Override
-    public ProgramState join(Collection<ProgramState> outs) {
-        return ProgramState.join(outs);
+    public ProgramState<ModalBoolean> join(Collection<ProgramState<ModalBoolean>> outs) {
+        return ProgramState.join(JOINER, outs);
     }
 
     @Override
-    public ProgramState defaultTransfer(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> defaultTransfer(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         return inputState(c, t);
     }
 
     @Override
-    public ProgramState transferBinary(Cursor programPoint, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferBinary(Cursor programPoint, TraversalControl<ProgramState<ModalBoolean>> t) {
         return inputState(programPoint, t).push(False);
     }
 }

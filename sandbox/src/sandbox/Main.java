@@ -35,10 +35,11 @@ public class Main {
 
     public static void main(String[] args)
     {
-        //testAPI();
+        testZipSlip();
         testNonLocalExits();
-        //testForLoop();
-        //testVariableDeclarations();
+        testAPI();
+        testForLoop();
+        testVariableDeclarations();
     }
 
 

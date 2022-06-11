@@ -17,25 +17,27 @@ import java.util.stream.Collectors;
 import static org.openrewrite.java.dataflow2.ModalBoolean.*;
 
 @Incubating(since = "7.24.0")
-public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
+public class IsNullAnalysis extends DataFlowAnalysis<ProgramState<ModalBoolean>> {
 
     public IsNullAnalysis(DataFlowGraph dfg) {
         super(dfg);
     }
+
+    private static final Joiner<ModalBoolean> JOINER = ModalBoolean.JOINER;
 
     /**
      * @return Whether the variable v is known to be null before given program point.
      */
     public ModalBoolean isNullBefore(Cursor programPoint, JavaType.Variable v)
     {
-        ProgramState state = inputState(programPoint, new TraversalControl<>());
+        ProgramState<ModalBoolean> state = inputState(programPoint, new TraversalControl<>());
         ModalBoolean result = state.get(v);
         return result;
     }
 
     @Override
-    public ProgramState join(Collection<ProgramState> outs) {
-        return ProgramState.join(outs);
+    public ProgramState join(Collection<ProgramState<ModalBoolean>> outs) {
+        return ProgramState.join(JOINER, outs);
     }
 
     @Override
@@ -63,22 +65,22 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState defaultTransfer(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> defaultTransfer(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         return inputState(c, t);
     }
 
     @Override
-    public ProgramState transferBinary(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferBinary(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         return inputState(c, t).push(False);
     }
 
     @Override
-    public ProgramState transferNamedVariable(Cursor c, TraversalControl<ProgramState> tc) {
+    public ProgramState<ModalBoolean> transferNamedVariable(Cursor c, TraversalControl<ProgramState<ModalBoolean>> tc) {
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();
         if(v.getInitializer() != null) {
             ProgramState s = outputState(new Cursor(c, v.getInitializer()), tc);
-            return s.set(t, s.expr()).pop();
+            return s.set(t, s.expr(JOINER)).pop();
         } else {
             ProgramState s = inputState(c, tc);
             assert !s.getMap().containsKey(t);
@@ -87,13 +89,13 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState transferAssignment(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferAssignment(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
 
         J.Assignment a = c.getValue();
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
-            ProgramState s = outputState(new Cursor(c, a.getAssignment()), t);
-            return s.set(ident.getFieldType(), s.expr());
+            ProgramState<ModalBoolean> s = outputState(new Cursor(c, a.getAssignment()), t);
+            return s.set(ident.getFieldType(), s.expr(JOINER));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -107,7 +109,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
             Arrays.stream(definitelyNonNullReturningMethodSignatures).map(MethodMatcher::new).collect(Collectors.toList());
 
     @Override
-    public ProgramState transferMethodInvocation(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferMethodInvocation(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.MethodInvocation method = c.getValue();
         for(MethodMatcher matcher : definitelyNonNullReturningMethodMatchers) {
             if (matcher.matches(method)) {
@@ -118,7 +120,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState transferLiteral(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferLiteral(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.Literal pp = c.getValue();
         ProgramState s = inputState(c, t);
         if (pp.getValue() == null) {
@@ -129,21 +131,21 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState transferIdentifier(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferIdentifier(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.Identifier i = c.getValue();
-        ProgramState s = inputState(c, t);
+        ProgramState<ModalBoolean> s = inputState(c, t);
         ModalBoolean v = s.get(i.getFieldType());
         return inputState(c, t).push(v);
     }
 
     @Override
-    public ProgramState transferIfElse(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferIfElse(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.If.Else ifElse = c.getValue();
         return outputState(new Cursor(c, ifElse.getBody()), t);
     }
 
     @Override
-    public ProgramState transferBlock(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferBlock(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.Block block = c.getValue();
         List<Statement> stmts = block.getStatements();
         if (stmts.size() > 0) {
@@ -154,7 +156,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     }
 
     @Override
-    public ProgramState transferParentheses(Cursor c, TraversalControl<ProgramState> t) {
+    public ProgramState<ModalBoolean> transferParentheses(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.Parentheses paren = c.getValue();
         return outputState(new Cursor(c, paren.getTree()), t);
     }

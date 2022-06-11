@@ -1,4 +1,4 @@
-package org.openrewrite.java.security
+package org.openrewrite.java.dataflow2
 
 import org.junit.jupiter.api.Test
 import org.openrewrite.java.dataflow2.examples.ZipSlip
