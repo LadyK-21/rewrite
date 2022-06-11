@@ -41,6 +41,48 @@ public class Main {
         //testVariableDeclarations();
     }
 
+
+    public static void testZipSlip() {
+        String source1 =
+            "import java.io.File; \n" +
+            "import java.io.FileOutputStream; \n" +
+            "import java.io.RandomAccessFile; \n" +
+            "import java.io.FileWriter; \n" +
+            "import java.util.zip.ZipEntry; \n" +
+            "public class ZipTest { \n" +
+            "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+            "        String name = entry.getName(); \n" +
+            "        File file = new File(dir, name); \n" +
+            "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+            "        RandomAccessFile raf = new RandomAccessFile(file, \"rw\"); // ZipSlip \n" +
+            "        FileWriter fw = new FileWriter(file); // ZipSlip \n" +
+            "    } \n" +
+            "} \n" +
+            "";
+
+        String source2 =
+            "import java.io.File; \n" +
+            "import java.io.FileOutputStream; \n" +
+            "import java.io.RandomAccessFile; \n" +
+            "import java.io.FileWriter; \n" +
+            "import java.util.zip.ZipEntry; \n" +
+            "public class ZipTest { \n" +
+            "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+            "        String name = entry.getName(); \n" +
+            "        File file = new File(dir, name); \n" +
+            "        if (!file.toPath().startsWith(dir.toPath())) { \n" +
+            "            throw new UncheckedIOException(\"ZipSlip attack detected\"); \n" +
+            "        } \n" +
+            "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+            "        RandomAccessFile raf = new RandomAccessFile(file, \"rw\"); // ZipSlip \n" +
+            "        FileWriter fw = new FileWriter(file); // ZipSlip \n" +
+            "    } \n" +
+            "} \n" +
+            "";
+
+
+
+    }
     public static void testAPI() {
         // Test the value of 's' at the end of given code fragment.
 
