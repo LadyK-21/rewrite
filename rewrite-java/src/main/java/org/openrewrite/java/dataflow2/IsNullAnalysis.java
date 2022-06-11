@@ -3,6 +3,7 @@ package org.openrewrite.java.dataflow2;
 import org.openrewrite.Cursor;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.MethodMatcher;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
@@ -24,6 +25,30 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState> {
     @Override
     public ProgramState join(Collection<ProgramState> outs) {
         return ProgramState.join(outs);
+    }
+
+    @Override
+    public ProgramState transferIfThenElseBranches(J.If ifThenElse, ProgramState s, String ifThenElseBranch) {
+        Expression cond = ifThenElse.getIfCondition().getTree();
+        if(cond instanceof J.Binary) {
+            J.Binary binary = (J.Binary)cond;
+            if(binary.getOperator() == J.Binary.Type.Equal) {
+                if(binary.getLeft() instanceof J.Identifier) {
+                    J.Identifier left = (J.Identifier) binary.getLeft();
+                    if (binary.getRight() instanceof J.Literal && ((J.Literal) binary.getRight()).getValue() == null) {
+                        // condition has the form 's == null'
+                        if(ifThenElseBranch.equals("then")) {
+                            // in the 'then' branch, s is null
+                            s = s.set(left.getFieldType(), Ternary.DefinitelyYes);
+                        } else {
+                            // in the 'else' branch or the 'exit' branch, s is not null
+                            s = s.set(left.getFieldType(), Ternary.DefinitelyNo);
+                        }
+                    }
+                }
+            }
+        }
+        return s;
     }
 
     @Override

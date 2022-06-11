@@ -79,7 +79,7 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
                 // through the virtual 'then' or 'else' program points. This is used to implement guards.
                 J.If ifThenElse = source.firstEnclosing(J.If.class);
                 S s1 = outputState(source, t);
-                S s2 = ifThenElseGuard(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
+                S s2 = transferIfThenElseBranches(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
                 outs.add(s2);
             } else {
                 outs.add(outputState(source, t));
@@ -92,29 +92,6 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
 //        }
 //        System.out.println("   -> " + result);
         return result;
-    }
-
-    private S ifThenElseGuard(J.If ifThenElse, S s, String ifThenElseBranch) {
-        Expression cond = ifThenElse.getIfCondition().getTree();
-        if(cond instanceof J.Binary) {
-            J.Binary binary = (J.Binary)cond;
-            if(binary.getOperator() == J.Binary.Type.Equal) {
-                if(binary.getLeft() instanceof J.Identifier) {
-                    J.Identifier left = (J.Identifier) binary.getLeft();
-                    if (binary.getRight() instanceof J.Literal && ((J.Literal) binary.getRight()).getValue() == null) {
-                        // condition has the form 's == null'
-                        if(ifThenElseBranch.equals("then")) {
-                            // in the 'then' branch, s is null
-                            s = (S) s.set(left.getFieldType(), Ternary.DefinitelyYes);
-                        } else {
-                            // in the 'else' branch or the 'exit' branch, s is not null
-                            s = (S) s.set(left.getFieldType(), Ternary.DefinitelyNo);
-                        }
-                    }
-                }
-            }
-        }
-        return s;
     }
 
     public abstract S join(Collection<S> outs);
@@ -263,6 +240,11 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
                 throw new Error(pp.getClass().getName());
         }
     }
+
+    public S transferIfThenElseBranches(J.If ifThenElse, S s, String ifThenElseBranch) {
+        return s;
+    }
+
 
     public abstract S defaultTransfer(Cursor pp, TraversalControl<S> t);
 

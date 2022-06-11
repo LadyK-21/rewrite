@@ -86,6 +86,10 @@ public class TestUtils {
         return ((J) p).print(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();
     }
 
+    public static String print(ProgramPoint p) {
+        return ((J) p).print().replace("\n", " ").replaceAll("[ ]+", " ").trim();
+    }
+
 //    public static String print(ProgramPoint p) {
 //        return ((J) p).print().replace("\n", " ").replaceAll("[ ]+", " ").trim();
 //    }

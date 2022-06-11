@@ -34,7 +34,8 @@ public class Main {
 
     public static void main(String[] args)
     {
-        testAPI();
+        //testAPI();
+        testNonLocalExits();
         //testForLoop();
         //testVariableDeclarations();
     }
@@ -88,8 +89,8 @@ public class Main {
 //        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
 //        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
 
-        testIsSNull("String s; s = null; if(s == null) { s = \"a\"; }", DefinitelyNo);
-        testIsSNull("String s; s = null; if(s == \"b\") { s = \"a\"; }", DefinitelyYes);
+        testIsSNull("String s = f(); if(s == null) { s = \"a\"; }", DefinitelyNo);
+        testIsSNull("String s = null; if(s == \"b\") { s = \"a\"; }", DefinitelyYes);
 
         testIsSNull("String s, t; t = (s = null);", DefinitelyYes);
         testIsSNull("String s, t; s = (t = null);", DefinitelyYes);
@@ -214,6 +215,46 @@ public class Main {
 
     }
 
+    public static void testNonLocalExits()
+    {
+        String source =
+                "class C {\n" +
+                        "    void m() { \n" +
+                        "        a(); \n" +
+                        "        if(x) return; \n" +
+                        "        b(); \n" +
+//                        "        if(y) throw e; \n" +
+//                        "        try { \n" +
+//                        "            throw new Exception(1); \n" +
+//                        "        } catch(Exception e) {" +
+//                        "        } \n" +
+//                        "        try { \n" +
+//                        "            throw new Exception(2); \n" +
+//                        "        } catch(IllegalStateException e) {" +
+//                        "        } \n" +
+                        // also add loops with break and continue
+                        "         \n" +
+                        "         \n" +
+                        "         \n" +
+                        "         \n" +
+                        "         \n" +
+                        "         \n" +
+                        "        b(); \n" +
+                        // implicit return
+                        "    } \n" +
+                        "} \n" +
+                        "";
+
+        J.CompilationUnit cu = parse(source);
+        DataFlowGraph dfg = new DataFlowGraph(cu);
+        new PrintProgramPointsVisitor(dfg).visit(cu, null);
+
+        J.MethodDeclaration m = (J.MethodDeclaration) cu.getClasses().get(0).getBody().getStatements().get(0);
+        System.out.println(TestUtils.print(m));
+
+        TestUtils.assertPrevious(cu,TestUtils.print(m), EXIT);
+
+    }
 
     public static void testForLoop()
     {
@@ -426,4 +467,5 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
         //return variable.withInitializer(visitExpression(variable.getInitializer(), null));
     }
 }
+
 

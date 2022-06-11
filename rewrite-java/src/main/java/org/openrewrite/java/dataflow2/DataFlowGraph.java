@@ -22,8 +22,13 @@ public class DataFlowGraph {
     // until the next() methods are implemented.
     private Map<Cursor, Collection<Cursor>> previousMap;
 
+    List<Cursor> nonLocalExits = new ArrayList<>();
+
     public DataFlowGraph(J.CompilationUnit cu) {
         this.cu = cu;
+
+        new CollectNonLocalExitsVisitor().visit(cu, null);
+
         previousMap = new HashMap<>();
         new CompilationUnitVisitor().visit(cu, null);
 
@@ -146,14 +151,17 @@ public class DataFlowGraph {
                 return previousInControlParentheses(parentCursor, current);
             case "J$VariableDeclarations$NamedVariable":
                 return previousInNamedVariable(parentCursor, current);
+            case "J$Return":
+                return previousInReturn(parentCursor, current);
             case "J$Literal":
             case "J$Identifier":
             case "J$Empty":
             case "J$Primitive": // not actually a program point
                 return previousInTerminalNode(parentCursor, current);
+            case "J$MethodDeclaration":
+                return previousInMethoddeclaration(parentCursor, current);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
-            case "J$MethodDeclaration":
                 return Collections.emptyList();
             default:
                 throw new Error(parent.getClass().getName());
@@ -280,6 +288,13 @@ public class DataFlowGraph {
             }
         }
         throw new IllegalStateException();
+    }
+
+
+    @NonNull Collection<Cursor> previousInMethoddeclaration(Cursor parentCursor, ProgramPoint p) {
+        J.MethodDeclaration parent = parentCursor.getValue();
+
+        return Collections.emptyList();
     }
 
     @NonNull Collection<Cursor> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {
@@ -612,6 +627,23 @@ public class DataFlowGraph {
         throw new IllegalStateException();
     }
 
+    public Collection<Cursor> previousInReturn(Cursor parentCursor, ProgramPoint p) {
+        J.Return _return = parentCursor.getValue();
+        @Nullable Expression expr = _return.getExpression();
+        if (p == EXIT) {
+            if(expr == null) {
+                return Collections.singletonList(parentCursor);
+            } else {
+                return Collections.singletonList(new Cursor(parentCursor, expr));
+            }
+        } else if(p == ENTRY) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
+        } else if(p == expr) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
+        }
+        throw new IllegalStateException();
+    }
+
     public Collection<Cursor> previousInTerminalNode(Cursor parentCursor, ProgramPoint p) {
         if (p == EXIT) {
             return Collections.singletonList(parentCursor);
@@ -659,6 +691,27 @@ public class DataFlowGraph {
             super.visitExpression(expression, o);
             process(expression);
             return expression;
+        }
+    }
+
+    class CollectNonLocalExitsVisitor extends JavaIsoVisitor {
+
+        @Override
+        public Statement visitStatement(Statement statement, Object o) {
+            if(statement instanceof J.Return) {
+                nonLocalExits.add(getCursor());
+            }
+            return super.visitStatement(statement, o);
+        }
+
+        @Override
+        public Expression visitExpression(Expression expr, Object o) {
+            return super.visitExpression(expr, o);
+        }
+
+        @Override
+        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
+            return super.visitVariable(variable, o);
         }
     }
 }
