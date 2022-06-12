@@ -43,6 +43,8 @@ public class DataFlowGraph {
         switch (parent.getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
                 return previousInMethodInvocation(parentCursor, current);
+            case "J$NewClass":
+                return previousInNewClass(parentCursor, current);
             case "J$If":
                 return previousInIf(parentCursor, current);
             case "J$If$Else":
@@ -216,6 +218,34 @@ public class DataFlowGraph {
                     // implicit this
                     return previousIn(parentCursor, ENTRY);
                 }
+            } else {
+                throw new IllegalStateException();
+            }
+        }
+    }
+
+    @NonNull Collection<Cursor> previousInNewClass(Cursor parentCursor, ProgramPoint p) {
+
+        J.NewClass parent = parentCursor.getValue();
+        List<Expression> args = parent.getArguments();
+
+        if (p == EXIT) {
+            if (args.size() > 0 && !(args.get(0) instanceof J.Empty)) {
+                return previousIn(new Cursor(parentCursor, right), args.get(args.size() - 1));
+
+            } else {
+                return previousIn(parentCursor.getParent(), parentCursor.getValue());
+            }
+
+
+        } else if (p == ENTRY) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
+        } else {
+            int index = args.indexOf(p);
+            if (index > 0) {
+                return Collections.singletonList(new Cursor(parentCursor, args.get(index - 1)));
+            } else if (index == 0) {
+                return previousIn(parentCursor, ENTRY);
             } else {
                 throw new IllegalStateException();
             }

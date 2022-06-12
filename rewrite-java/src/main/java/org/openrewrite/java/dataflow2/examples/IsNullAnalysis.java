@@ -80,7 +80,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState<ModalBoolean>>
         JavaType.Variable t = v.getVariableType();
         if(v.getInitializer() != null) {
             ProgramState s = outputState(new Cursor(c, v.getInitializer()), tc);
-            return s.set(t, s.expr(JOINER)).pop();
+            return s.set(t, s.expr()).pop();
         } else {
             ProgramState s = inputState(c, tc);
             assert !s.getMap().containsKey(t);
@@ -95,7 +95,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState<ModalBoolean>>
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
             ProgramState<ModalBoolean> s = outputState(new Cursor(c, a.getAssignment()), t);
-            return s.set(ident.getFieldType(), s.expr(JOINER));
+            return s.set(ident.getFieldType(), s.expr());
         } else {
             throw new UnsupportedOperationException();
         }

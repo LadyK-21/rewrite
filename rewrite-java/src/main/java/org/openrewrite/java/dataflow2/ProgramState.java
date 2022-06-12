@@ -32,12 +32,12 @@ public class ProgramState<T> {
         this.map = map;
     }
 
-    public T expr(Joiner<T> joiner) {
+    public T expr() {
         if(expressionStack == null) {
-            return joiner.lowerBound();
-        } else {
-            return expressionStack.value;
+            // If this happens, it means that some expression didn't push its value
+            throw new NullPointerException("Empty expression stack");
         }
+        return expressionStack.value;
     }
 
     public ProgramState push(T value) {

@@ -5,8 +5,11 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.java.Java11Parser;
 import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.dataflow2.*;
 import org.openrewrite.java.dataflow2.examples.IsNullAnalysis;
+import org.openrewrite.java.dataflow2.examples.ZipSlip;
+import org.openrewrite.java.dataflow2.examples.ZipSlipValue;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -36,10 +39,10 @@ public class Main {
     public static void main(String[] args)
     {
         testZipSlip();
-        testNonLocalExits();
-        testAPI();
-        testForLoop();
-        testVariableDeclarations();
+        //testNonLocalExits();
+        //testAPI();
+        //testForLoop();
+        //testVariableDeclarations();
     }
 
 
@@ -81,8 +84,28 @@ public class Main {
             "} \n" +
             "";
 
+        MethodMatcher m = new MethodMatcher("java.io.FileOutputStream <constructor>(java.io.File)");
+        J.CompilationUnit cu = parse(source1);
 
+        JavaIsoVisitor myVisitor = new JavaIsoVisitor() {
 
+            @Override
+            public J.NewClass visitNewClass(J.NewClass newClass, Object o) {
+                if(m.matches(newClass)) {
+                    System.out.println("Found constructor invocation " + newClass.print(getCursor()));
+
+                    Expression arg = newClass.getArguments().get(0);
+
+                    // We're interested in the expr() of the output state of arg
+                    ZipSlip zipSlip = new ZipSlip(new DataFlowGraph(cu));
+                    ProgramState<ZipSlipValue> state = zipSlip.outputState(new Cursor(new Cursor(getCursor(), newClass.getArguments()), arg), null);
+                    System.out.println("state.expr() = " + state.expr());
+                }
+                return super.visitNewClass(newClass, o);
+            }
+        };
+
+        myVisitor.visit(cu, null);
     }
     public static void testAPI() {
         // Test the value of 's' at the end of given code fragment.

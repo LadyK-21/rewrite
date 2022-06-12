@@ -28,6 +28,11 @@ public enum ModalBoolean {
         public ModalBoolean lowerBound() {
             return NoIdea;
         }
+
+        @Override
+        public ModalBoolean defaultInitialization() {
+            return False; // TODO boolean and Boolean have different defaults
+        }
     };
 
     public static ModalBoolean join(Collection<ModalBoolean> outs) {

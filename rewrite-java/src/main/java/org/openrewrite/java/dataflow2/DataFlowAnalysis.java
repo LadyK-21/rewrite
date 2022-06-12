@@ -51,6 +51,8 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
                 return transferMethodInvocation(pp, t);
+            case "J$NewClass":
+                return transferNewClass(pp, t);
             case "J$If":
                 return transferIf(pp, t);
             case "J$If$Else":
@@ -113,7 +115,7 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
                 // TypeCast
                 // WhileLoop
             default:
-                throw new Error(pp.getClass().getName());
+                throw new Error(pp.getValue().getClass().getName());
         }
     }
 
@@ -126,6 +128,10 @@ public abstract class DataFlowAnalysis<S extends ProgramState> {
     public abstract S defaultTransfer(Cursor pp, TraversalControl<S> t);
 
     public S transferMethodInvocation(Cursor pp, TraversalControl<S> t) {
+        return defaultTransfer(pp, t);
+    }
+
+    public S transferNewClass(Cursor pp, TraversalControl<S> t) {
         return defaultTransfer(pp, t);
     }
 
