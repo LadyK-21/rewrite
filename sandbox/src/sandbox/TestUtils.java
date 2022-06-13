@@ -2,6 +2,9 @@ package sandbox;
 
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.openrewrite.Cursor;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.InMemoryExecutionContext;
+import org.openrewrite.java.Java11Parser;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.dataflow2.DataFlowGraph;
 import org.openrewrite.java.dataflow2.ProgramPoint;
@@ -37,6 +40,14 @@ public class TestUtils {
         AssertionsForClassTypes.assertThat(actual)
                 .withFailMessage("previous(" + pp + ", " + entryOrExit + ")\nexpected: " + expected + "\n but was: " + actual)
                 .isEqualTo(expected);
+    }
+
+    public static J.CompilationUnit parse(String src) {
+        Java11Parser parser = new Java11Parser.Builder().build();
+        ExecutionContext ctx = new InMemoryExecutionContext();
+        List<J.CompilationUnit> cus = parser.parse(ctx, src);
+        J.CompilationUnit cu = cus.get(0);
+        return cu;
     }
 
     /*

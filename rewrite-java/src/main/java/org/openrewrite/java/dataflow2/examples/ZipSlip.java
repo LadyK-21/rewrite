@@ -56,8 +56,18 @@ public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
     }
 
     @Override
+    public ProgramState<ZipSlipValue> transferUnary(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
+        return inputState(c, t).push(ZipSlipValue.LOWER);
+    }
+
+    @Override
     public ProgramState<ZipSlipValue> transferBinary(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
         return inputState(c, t).push(ZipSlipValue.LOWER);
+    }
+
+    @Override
+    public ProgramState<ZipSlipValue> transferEmpty(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
+        return inputState(c, t);
     }
 
     @Override
@@ -96,12 +106,21 @@ public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
 
     @Override
     public ProgramState<ZipSlipValue> transferMethodInvocation(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
+        J.MethodInvocation m = c.getValue();
         return inputState(c, t).push(ZipSlipValue.JOINER.lowerBound());
     }
 
     @Override
     public ProgramState<ZipSlipValue> transferNewClass(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
-        return inputState(c, t).push(ZipSlipValue.JOINER.lowerBound());
+        J.NewClass newClass = c.getValue();
+        // new File(dir, name)
+        MethodMatcher m = new MethodMatcher("java.io.File <constructor>(java.io.File, java.lang.String)");
+        if(m.matches(newClass)) {
+            Expression dir = newClass.getArguments().get(0);
+            return inputState(c, t).push(new ZipSlipValue(null, dir));
+        } else {
+            return inputState(c, t).push(ZipSlipValue.JOINER.lowerBound());
+        }
     }
 
     @Override
@@ -114,7 +133,7 @@ public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
         J.Identifier i = c.getValue();
         ProgramState<ZipSlipValue> s = inputState(c, t);
         ZipSlipValue v = s.get(i.getFieldType());
-        return inputState(c, t).push(v);
+        return s.push(v);
     }
 
     @Override
@@ -137,6 +156,12 @@ public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
     @Override
     public ProgramState<ZipSlipValue> transferParentheses(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
         J.Parentheses paren = c.getValue();
+        return outputState(new Cursor(c, paren.getTree()), t);
+    }
+
+    @Override
+    public ProgramState<ZipSlipValue> transferControlParentheses(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
+        J.ControlParentheses paren = c.getValue();
         return outputState(new Cursor(c, paren.getTree()), t);
     }
 }

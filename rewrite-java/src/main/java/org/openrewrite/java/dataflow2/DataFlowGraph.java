@@ -151,7 +151,7 @@ public class DataFlowGraph {
      * last of the previous position if given position is empty, or even the previous program point
      * of the for-loop if all preceding positions are empty.
      */
-    @NonNull Collection<Cursor> last(Cursor forLoopCursor, ForLoopPosition position) {
+    @NonNull Collection<Cursor> lastInForLoop(Cursor forLoopCursor, ForLoopPosition position) {
 
         J.ForLoop forLoop = forLoopCursor.getValue();
         J.ForLoop.Control control = forLoop.getControl();
@@ -163,7 +163,7 @@ public class DataFlowGraph {
             if (update.size() > 0) {
                 return Collections.singletonList(new Cursor(forLoopCursor, update.get(update.size() - 1)));
             } else {
-                return last(forLoopCursor, ForLoopPosition.INIT);
+                return lastInForLoop(forLoopCursor, ForLoopPosition.INIT);
             }
         }
         if (position == ForLoopPosition.INIT) {
@@ -175,6 +175,7 @@ public class DataFlowGraph {
         }
         throw new IllegalStateException();
     }
+
 
 
     @NonNull Collection<Cursor> previousInMethoddeclaration(Cursor parentCursor, ProgramPoint p) {
@@ -190,22 +191,19 @@ public class DataFlowGraph {
         List<Expression> args = parent.getArguments();
 
         if (p == EXIT) {
+            return Collections.singletonList(parentCursor);
+        } else if (p == ENTRY) {
             if (args.size() > 0 && !(args.get(0) instanceof J.Empty)) {
                 return previousIn(new Cursor(parentCursor, right), args.get(args.size() - 1));
-
             } else if(select != null) {
                 return previousIn(new Cursor(parentCursor, select), EXIT);
-
             } else {
-                return Collections.singletonList(new Cursor(parentCursor, parent.getName()));
+                return previousIn(parentCursor.getParent(), parentCursor.getValue());
             }
-
-
-        } else if (p == ENTRY) {
-            return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else if (p == parent.getSelect()) {
-            return previous(parentCursor);
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else if(p == parent.getName()) {
+            // Not actually a program point
             return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else {
             int index = args.indexOf(p);
@@ -230,22 +228,19 @@ public class DataFlowGraph {
         List<Expression> args = parent.getArguments();
 
         if (p == EXIT) {
+            return Collections.singletonList(parentCursor);
+        } else if (p == ENTRY) {
             if (args.size() > 0 && !(args.get(0) instanceof J.Empty)) {
                 return previousIn(new Cursor(parentCursor, right), args.get(args.size() - 1));
-
             } else {
                 return previousIn(parentCursor.getParent(), parentCursor.getValue());
             }
-
-
-        } else if (p == ENTRY) {
-            return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else {
             int index = args.indexOf(p);
             if (index > 0) {
                 return Collections.singletonList(new Cursor(parentCursor, args.get(index - 1)));
             } else if (index == 0) {
-                return previousIn(parentCursor, ENTRY);
+                return previousIn(parentCursor.getParent(), parentCursor.getValue());
             } else {
                 throw new IllegalStateException();
             }
@@ -281,7 +276,7 @@ public class DataFlowGraph {
             c.putMessage("ifThenElseBranch", "else");
             return Collections.singletonList(c);
         } else if (p == cond) {
-            return previous(ifCursor);
+            return Collections.singletonList(new Cursor(ifCursor, cond));
         }
         throw new IllegalStateException();
     }
@@ -346,7 +341,7 @@ public class DataFlowGraph {
 
         if (p == EXIT) {
             List<Cursor> result = new ArrayList<>();
-            result.addAll(last(forLoopCursor, ForLoopPosition.UPDATE));
+            result.addAll(lastInForLoop(forLoopCursor, ForLoopPosition.UPDATE));
             result.add(new Cursor(forLoopCursor, cond));
             return result;
 
@@ -358,8 +353,8 @@ public class DataFlowGraph {
 
         } else if (p == cond) {
             List<Cursor> result = new ArrayList<>();
-            result.addAll(last(forLoopCursor, ForLoopPosition.INIT));
-            result.addAll(last(forLoopCursor, ForLoopPosition.UPDATE));
+            result.addAll(lastInForLoop(forLoopCursor, ForLoopPosition.INIT));
+            result.addAll(lastInForLoop(forLoopCursor, ForLoopPosition.UPDATE));
             return result;
 
         } else {
@@ -444,11 +439,12 @@ public class DataFlowGraph {
         Expression expr = unary.getExpression();
 
         if (p == ENTRY) {
-            return previousIn(unaryCursor.getParentOrThrow(), unaryCursor.getValue());
+            return Collections.singletonList(new Cursor(unaryCursor, expr));
         } else if (p == EXIT) {
-            return previousIn(new Cursor(unaryCursor, expr), EXIT);
+            //return previousIn(new Cursor(unaryCursor, expr), EXIT);
+            return Collections.singletonList(unaryCursor);
         } else if (p == unary.getExpression()) {
-            return previousIn(unaryCursor, ENTRY);
+            return previousIn(unaryCursor.getParent(), unary);
         }
         throw new IllegalStateException();
     }
