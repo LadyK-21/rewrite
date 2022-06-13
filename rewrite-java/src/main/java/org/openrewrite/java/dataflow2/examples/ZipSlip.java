@@ -3,6 +3,7 @@ package org.openrewrite.java.dataflow2.examples;
 import lombok.AllArgsConstructor;
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
+import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.dataflow2.*;
 import org.openrewrite.java.tree.Expression;
@@ -34,7 +35,7 @@ public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
     }
 
     @Override
-    public ProgramState<ZipSlipValue> transferToIfThenElseBranches(J.If ifThenElse, ProgramState<ZipSlipValue> s, String ifThenElseBranch) {
+    public ProgramState<ZipSlipValue> transferToIfThenElseBranches(J.If ifThenElse, ProgramState<ZipSlipValue> state, String ifThenElseBranch) {
         Expression cond = ifThenElse.getIfCondition().getTree();
         // look for file.toPath().startsWith(dir.toPath()) or its negation
 
@@ -48,11 +49,38 @@ public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
         }
         if(cond instanceof J.MethodInvocation) {
             J.MethodInvocation startsWithInvocation = (J.MethodInvocation)cond;
-            // ...
-            // s = s.set(left.getFieldType(), ZipSlipValue.True / False);
+            MethodMatcher startsWithMatcher = new MethodMatcher("java.nio.file.Path startsWith(java.nio.file.Path)");
+            if(startsWithMatcher.matches(startsWithInvocation)) {
+                Expression startsWithSelect = startsWithInvocation.getSelect();
+                if(startsWithSelect instanceof J.MethodInvocation) {
+                    J.MethodInvocation selectToPathInvocation = (J.MethodInvocation)startsWithSelect;
+                    MethodMatcher toPathMatcher = new MethodMatcher("java.io.File toPath()");
+                    if(toPathMatcher.matches(selectToPathInvocation)) {
+                        Expression toPathSelect = selectToPathInvocation.getSelect();
+                        if(toPathSelect instanceof J.Identifier) {
+                            JavaType.Variable file = ((J.Identifier) toPathSelect).getFieldType();
+                            Expression arg = startsWithInvocation.getArguments().get(0);
+                            if(arg instanceof J.MethodInvocation) {
+                                J.MethodInvocation argToPathInvocation = (J.MethodInvocation)arg;
+                                if(toPathMatcher.matches(argToPathInvocation)) {
+                                    Expression dir = argToPathInvocation.getSelect();
+                                    if(state.get(file) != null && state.get(file).dir == dir) {
+                                        // found file.toPath().startsWith(dir.toPath())
+                                        if(ifThenElseBranch == "then") {
+
+                                        } else {
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        return s;
+        return state;
     }
 
     @Override

@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.antlr.v4.analysis.LeftRecursiveRuleAnalyzer.ASSOC.right;
 import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
 
@@ -32,8 +31,9 @@ public class DataFlowGraph {
      * @return The set of program points, possibly composite (i.e. containing other program points, such as
      * a while loop), preceding given program point in the dataflow graph.
      */
-    public @NonNull Collection<Cursor> previous(Cursor programPoint) {
-        return previousIn(programPoint, ENTRY);
+    public @NonNull Collection<Cursor> previous(Cursor c) {
+        //return previousIn(programPoint, ENTRY);
+        return previousIn(c.getParent(), c.getValue());
     }
 
     public @NonNull Collection<Cursor> previousIn(Cursor parentCursor, ProgramPoint current) {
@@ -194,7 +194,7 @@ public class DataFlowGraph {
             return Collections.singletonList(parentCursor);
         } else if (p == ENTRY) {
             if (args.size() > 0 && !(args.get(0) instanceof J.Empty)) {
-                return previousIn(new Cursor(parentCursor, right), args.get(args.size() - 1));
+                return previousIn(new Cursor(parentCursor, args.get(args.size()-1)), EXIT);
             } else if(select != null) {
                 return previousIn(new Cursor(parentCursor, select), EXIT);
             } else {
@@ -231,7 +231,7 @@ public class DataFlowGraph {
             return Collections.singletonList(parentCursor);
         } else if (p == ENTRY) {
             if (args.size() > 0 && !(args.get(0) instanceof J.Empty)) {
-                return previousIn(new Cursor(parentCursor, right), args.get(args.size() - 1));
+                return previousIn(new Cursor(parentCursor, args.get(args.size()-1)), EXIT);
             } else {
                 return previousIn(parentCursor.getParent(), parentCursor.getValue());
             }
@@ -260,7 +260,7 @@ public class DataFlowGraph {
             if (elsePart == null) {
                 Cursor c = new Cursor(ifCursor, cond);
                 c.putMessage("ifThenElseBranch", "exit");
-                return Collections.singletonList(c);
+                result.add(c);
             } else {
                 result.add(new Cursor(ifCursor, elsePart));
             }
@@ -276,7 +276,8 @@ public class DataFlowGraph {
             c.putMessage("ifThenElseBranch", "else");
             return Collections.singletonList(c);
         } else if (p == cond) {
-            return Collections.singletonList(new Cursor(ifCursor, cond));
+            //return Collections.singletonList(new Cursor(ifCursor, cond));
+            return previousIn(ifCursor.getParent(), ifThenElse);
         }
         throw new IllegalStateException();
     }

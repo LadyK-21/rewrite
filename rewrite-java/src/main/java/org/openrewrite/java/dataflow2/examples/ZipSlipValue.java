@@ -10,8 +10,8 @@ import java.util.Collection;
 public
 class ZipSlipValue {
 
-    String name;
-    Expression dir; // non-null if the value is the result of 'new File(dir, ..)'
+    public final String name;
+    public final Expression dir; // non-null if the value is the result of 'new File(dir, ..)'
 
     public static final Joiner<ZipSlipValue> JOINER = new Joiner<ZipSlipValue>() {
         @Override

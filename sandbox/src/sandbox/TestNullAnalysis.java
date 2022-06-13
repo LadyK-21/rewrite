@@ -67,7 +67,9 @@ public class TestNullAnalysis {
 //        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
 
         testIsSNull("String s = f(); if(s == null) { s = \"a\"; }", False);
-        testIsSNull("String s = null; if(s == \"b\") { s = \"a\"; }", True);
+        // Understanding that s is always null below requires constant propagation
+        // and partial evaluation of the condition
+        testIsSNull("String s = null; if(s == \"b\") { s = \"a\"; }", Conflict);
 
         testIsSNull("String s, t; t = (s = null);", True);
         testIsSNull("String s, t; s = (t = null);", True);
@@ -83,7 +85,8 @@ public class TestNullAnalysis {
         testIsSNull("String s = \"a\" + null;", False);
         testIsSNull("String s = null + \"b\";", False);
         testIsSNull("String s = \"a\" + \"b\";", False);
-        testIsSNull("String s = u;", null); // CantTell
+        testIsSNull("String s = u;", null); // Because u is undefined
+        testIsSNull("String u = null; String s = u;", True);
         testIsSNull("String s = \"a\".toUpperCase();", False);
         testIsSNull("String s = \"a\".unknownMethod(s, null);", Conflict);
         testIsSNull("String s; if(c) { s = null; } else { s = null; }", True);

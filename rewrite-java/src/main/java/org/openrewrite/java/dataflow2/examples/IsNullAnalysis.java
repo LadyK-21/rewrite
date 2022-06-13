@@ -48,14 +48,15 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState<ModalBoolean>>
             if(binary.getOperator() == J.Binary.Type.Equal) {
                 if(binary.getLeft() instanceof J.Identifier) {
                     J.Identifier left = (J.Identifier) binary.getLeft();
-                    if (binary.getRight() instanceof J.Literal && ((J.Literal) binary.getRight()).getValue() == null) {
-                        // condition has the form 's == null'
+                    if (binary.getRight() instanceof J.Literal) {
+                        // condition has the form 's == literal'
+                        boolean isNull = ((J.Literal) binary.getRight()).getValue() == null;
                         if(ifThenElseBranch.equals("then")) {
-                            // in the 'then' branch, s is null
-                            s = s.set(left.getFieldType(), ModalBoolean.True);
+                            // in the 'then' branch
+                            s = s.set(left.getFieldType(), isNull ? True : False);
                         } else {
-                            // in the 'else' branch or the 'exit' branch, s is not null
-                            s = s.set(left.getFieldType(), ModalBoolean.False);
+                            // in the 'else' branch or the 'exit' branch
+                            s = s.set(left.getFieldType(), isNull ? False : True);
                         }
                     }
                 }
@@ -79,7 +80,8 @@ public class IsNullAnalysis extends DataFlowAnalysis<ProgramState<ModalBoolean>>
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();
         if(v.getInitializer() != null) {
-            ProgramState s = outputState(new Cursor(c, v.getInitializer()), tc);
+            ProgramState<ModalBoolean> s = outputState(new Cursor(c, v.getInitializer()), tc);
+            ModalBoolean e = s.expr();
             return s.set(t, s.expr()).pop();
         } else {
             ProgramState s = inputState(c, tc);

@@ -5,6 +5,7 @@ import org.openrewrite.java.dataflow2.ProgramPoint;
 import org.openrewrite.java.dataflow2.Utils;
 import org.openrewrite.java.tree.J;
 
+import static org.openrewrite.java.dataflow2.ModalBoolean.False;
 import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
 import static sandbox.TestUtils.parse;
@@ -13,9 +14,11 @@ public class TestPrevious {
     public static void test()
     {
         //testNonLocalExits();
+        testMethodInvocation();
+        testIfThen();
+        testIfThenElse();
         testVariableDeclarations();
         testForLoop();
-        testMethodInvocation();
     }
 
 
@@ -72,13 +75,52 @@ public class TestPrevious {
 
     }
 
+    public static void testIfThen() {
+        String source =
+                "class C {\n" +
+                "    void m() {\n" +
+                "        a();\n" +
+                "        if(s == null) f();\n" +
+                "        b();\n" +
+                "    }\n" +
+                "}\n" +
+                "";
+
+        J.CompilationUnit cu = parse(source);
+        DataFlowGraph dfg = new DataFlowGraph(cu);
+
+        TestUtils.assertPrevious(cu,"b()", ENTRY, "f()", "(s == null)");
+        TestUtils.assertPrevious(cu,"f()", ENTRY, "(s == null)");
+        TestUtils.assertPrevious(cu,"s", ENTRY, "a()");
+    }
+
+    public static void testIfThenElse() {
+        String source =
+                "class C {\n" +
+                        "    void m() {\n" +
+                        "        a();\n" +
+                        "        if(s == null) f(); else g(); \n" +
+                        "        b();\n" +
+                        "    }\n" +
+                        "}\n" +
+                        "";
+
+        J.CompilationUnit cu = parse(source);
+        DataFlowGraph dfg = new DataFlowGraph(cu);
+
+        TestUtils.assertPrevious(cu,"b()", ENTRY, "f()", "else g();");
+        TestUtils.assertPrevious(cu,"f()", ENTRY, "(s == null)");
+        TestUtils.assertPrevious(cu,"g()", ENTRY, "(s == null)");
+        TestUtils.assertPrevious(cu,"s", ENTRY, "a()");
+    }
+
     public static void testMethodInvocation()
     {
         String source =
                 "class C {\n" +
                         "    void m() {\n" +
                         "        a();\n" +
-                        "        f(u).method(g(v),h(w));\n" +
+                        "        u.method(v,w);\n" +
                         "        b();\n" +
                         "    }\n" +
                         "}\n" +
@@ -88,20 +130,15 @@ public class TestPrevious {
         DataFlowGraph dfg = new DataFlowGraph(cu);
         //new PrintProgramPointsVisitor(dfg).visit(cu, null);
 
-        TestUtils.assertPrevious(cu,"b()", ENTRY, "f(u).method(g(v),h(w))");
-        TestUtils.assertPrevious(cu,"f(u).method(g(v),h(w))", EXIT, "f(u).method(g(v),h(w))");
-        TestUtils.assertPrevious(cu,"f(u).method(g(v),h(w))", ENTRY, "h(w)");
-//        TestUtils.assertPrevious(cu,"w", EXIT,"w");
-//        TestUtils.assertPrevious(cu,"w", ENTRY,"i = u + v");
-//        TestUtils.assertPrevious(cu,"i = u + v", EXIT, "i = u + v");
-//        TestUtils.assertPrevious(cu,"i = u + v", ENTRY, "u + v");
-//        TestUtils.assertPrevious(cu,"u + v", EXIT, "u + v");
-//        TestUtils.assertPrevious(cu,"u + v", ENTRY, "v");
-//        TestUtils.assertPrevious(cu,"v", EXIT, "v");
-//        TestUtils.assertPrevious(cu,"v", ENTRY, "u");
-//        TestUtils.assertPrevious(cu,"u", EXIT, "u");
-//        TestUtils.assertPrevious(cu,"u", ENTRY, "a");
-
+        TestUtils.assertPrevious(cu,"b()", ENTRY, "u.method(v,w)");
+        TestUtils.assertPrevious(cu,"u.method(v,w)", EXIT, "u.method(v,w)");
+        TestUtils.assertPrevious(cu,"u.method(v,w)", ENTRY, "w");
+        TestUtils.assertPrevious(cu,"w", EXIT,"w");
+        TestUtils.assertPrevious(cu,"w", ENTRY,"v");
+        TestUtils.assertPrevious(cu,"v", EXIT,"v");
+        TestUtils.assertPrevious(cu,"v", ENTRY,"u");
+        TestUtils.assertPrevious(cu,"u", EXIT,"u");
+        TestUtils.assertPrevious(cu,"u", ENTRY,"a()");
     }
 
     public static void testNonLocalExits()
