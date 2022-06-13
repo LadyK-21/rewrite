@@ -3,6 +3,7 @@ package org.openrewrite.java.dataflow2.examples;
 import lombok.AllArgsConstructor;
 import org.openrewrite.java.dataflow2.Joiner;
 import org.openrewrite.java.tree.Expression;
+import org.openrewrite.java.tree.J;
 
 import java.util.Collection;
 
@@ -56,5 +57,12 @@ class ZipSlipValue {
         } else {
             return dir.print();
         }
+    }
+
+    public static boolean equal(Expression a, Expression b) {
+        if(a instanceof J.Identifier && b instanceof J.Identifier) {
+            return ((J.Identifier)a).getFieldType() == ((J.Identifier)b).getFieldType();
+        }
+        return false;
     }
 }

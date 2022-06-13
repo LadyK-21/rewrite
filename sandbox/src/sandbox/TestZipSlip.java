@@ -35,7 +35,7 @@ public class TestZipSlip {
                         "} \n" +
                         "";
 
-        //testZipSlip(source1);
+        testZipSlip(source1);
 
         String source2 =
                 "import java.io.File; \n" +

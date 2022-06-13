@@ -16,6 +16,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.openrewrite.java.dataflow2.ModalBoolean.False;
+import static org.openrewrite.java.dataflow2.ModalBoolean.True;
+import static org.openrewrite.java.dataflow2.examples.ZipSlipValue.LOWER;
+
 @Incubating(since = "7.24.0")
 public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
 
@@ -64,10 +68,11 @@ public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
                                 J.MethodInvocation argToPathInvocation = (J.MethodInvocation)arg;
                                 if(toPathMatcher.matches(argToPathInvocation)) {
                                     Expression dir = argToPathInvocation.getSelect();
-                                    if(state.get(file) != null && state.get(file).dir == dir) {
+                                    if(state.get(file) != null && ZipSlipValue.equal(state.get(file).dir, dir)) {
                                         // found file.toPath().startsWith(dir.toPath())
-                                        if(ifThenElseBranch == "then") {
-
+                                        // with state(file) = isBuiltFrom(dir)
+                                        if(ifThenElseBranch == "then" ^ negate) {
+                                            state = state.set(file, LOWER);
                                         } else {
 
                                         }
@@ -85,12 +90,12 @@ public class ZipSlip extends DataFlowAnalysis<ProgramState<ZipSlipValue>> {
 
     @Override
     public ProgramState<ZipSlipValue> transferUnary(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
-        return inputState(c, t).push(ZipSlipValue.LOWER);
+        return inputState(c, t).push(LOWER);
     }
 
     @Override
     public ProgramState<ZipSlipValue> transferBinary(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
-        return inputState(c, t).push(ZipSlipValue.LOWER);
+        return inputState(c, t).push(LOWER);
     }
 
     @Override
