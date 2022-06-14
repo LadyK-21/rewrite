@@ -11,6 +11,19 @@ import java.util.Collection;
 public
 class ZipSlipValue {
 
+    /*
+    String name = entry.getName();
+    File file = new File(dir, name);
+    if (!file.toPath().startsWith(dir.toPath())) ...
+
+    We are interested in knowing which values
+    - are returned by ZipEntry.getName() : NAME
+    - are returned by new File(dir, name), where name is a value returned by ZipEntry.getName() : FILE(dir)
+
+    Other values are
+    - SAFE : strings known to be not returned by ZipEntry.getName(), and files not returned by new File(dir, name)
+    - LOWER :
+     */
     public final String name;
     public final Expression dir; // non-null if the value is the result of 'new File(dir, ..)'
 
