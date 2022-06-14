@@ -1,6 +1,7 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
+import org.openrewrite.java.dataflow2.examples.ZipSlipValue;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
@@ -85,7 +86,9 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
     }
 
     @Override
-    public abstract ProgramState<T> transferNewClass(Cursor c, TraversalControl<ProgramState<T>> t);
+    public  ProgramState<T> transferNewClass(Cursor c, TraversalControl<ProgramState<T>> t) {
+        return inputState(c, t).push(joiner.lowerBound());
+    }
 
     @Override
     public ProgramState<T> transferLiteral(Cursor c, TraversalControl<ProgramState<T>> t) {

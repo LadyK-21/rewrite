@@ -20,7 +20,7 @@ public class TestZipSlip {
     }
 
     public static void testZipSlip() {
-        String source1 =
+        testZipSlip("source1",
                 "import java.io.File; \n" +
                         "import java.io.FileOutputStream; \n" +
                         "import java.io.RandomAccessFile; \n" +
@@ -33,11 +33,41 @@ public class TestZipSlip {
                         "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
                         "    } \n" +
                         "} \n" +
-                        "";
+                        "");
 
-        testZipSlip(source1);
+        testZipSlip("source2",
+                "import java.io.File; \n" +
+                        "import java.io.FileOutputStream; \n" +
+                        "import java.io.RandomAccessFile; \n" +
+                        "import java.io.FileWriter; \n" +
+                        "import java.util.zip.ZipEntry; \n" +
+                        "public class ZipTest { \n" +
+                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+                        "        String name1 = entry.getName(); \n" +
+                        "        String name2 = name1; \n" +
+                        "        File file = new File(dir, name2); \n" +
+                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+                        "    } \n" +
+                        "} \n" +
+                        "");
 
-        String source2 =
+        testZipSlip("source3",
+                "import java.io.File; \n" +
+                        "import java.io.FileOutputStream; \n" +
+                        "import java.io.RandomAccessFile; \n" +
+                        "import java.io.FileWriter; \n" +
+                        "import java.util.zip.ZipEntry; \n" +
+                        "public class ZipTest { \n" +
+                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+                        "        String name1 = entry.getName(); \n" +
+                        "        String name2 = name1 + \"/\"; \n" +
+                        "        File file = new File(dir, name2); \n" +
+                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+                        "    } \n" +
+                        "} \n" +
+                        "");
+
+        testZipSlip("source4",
                 "import java.io.File; \n" +
                         "import java.io.FileOutputStream; \n" +
                         "import java.io.RandomAccessFile; \n" +
@@ -47,21 +77,20 @@ public class TestZipSlip {
                         "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
                         "        String name = entry.getName(); \n" +
                         "        File file = new File(dir, name); \n" +
-                        "        if (!file.toPath().startsWith(dir.toPath())) { \n" +
+                        "        if (file.toPath().startsWith(dir.toPath())) { \n" +
                         "            // throw new UncheckedIOException(\"ZipSlip attack detected\"); \n" +
                         "            file = null; \n" +
                         "        } \n" +
                         "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
                         "    } \n" +
                         "} \n" +
-                        "";
-
-        testZipSlip(source2);
+                        "");
 
     }
 
-    public static void testZipSlip(String source) {
+    public static void testZipSlip(String name, String source) {
 
+        System.out.println("Processing test " + name);
         MethodMatcher m = new MethodMatcher("java.io.FileOutputStream <constructor>(java.io.File)");
         J.CompilationUnit cu = parse(source);
 
@@ -77,12 +106,25 @@ public class TestZipSlip {
                     // We're interested in the expr() of the output state of arg
                     ZipSlip zipSlip = new ZipSlip(new DataFlowGraph(cu));
                     ProgramState<ZipSlipValue> state = zipSlip.outputState(new Cursor(new Cursor(getCursor(), newClass.getArguments()), arg), null);
+
                     System.out.println("state.expr() = " + state.expr());
+                    if(state.expr().dir != null) {
+                        // unsafe, and we know the value of 'dir'
+                        System.out.println(" -> requires a guard");
+                    } else if(state.expr() == ZipSlipValue.UNKNOWN) {
+                        System.out.println(" -> maybe requires a guard");
+                    } else if(state.expr() == ZipSlipValue.SAFE) {
+                        System.out.println(" -> does not require a guard");
+                    } else if(state.expr() == ZipSlipValue.UNSAFE) {
+                        System.out.println(" -> requires a guard");
+                    }
                 }
                 return super.visitNewClass(newClass, o);
             }
         };
 
         myVisitor.visit(cu, null);
+
+        System.out.println();
     }
 }

@@ -8,22 +8,12 @@ import org.openrewrite.java.tree.J;
 import java.util.Collection;
 
 @AllArgsConstructor
-public
-class ZipSlipValue {
+public class ZipSlipValue {
 
-    /*
-    String name = entry.getName();
-    File file = new File(dir, name);
-    if (!file.toPath().startsWith(dir.toPath())) ...
+    // ZipEntry entry, File dir
+    // String fileName = entry.getName();
+    // File file = new File(dir, fileName);
 
-    We are interested in knowing which values
-    - are returned by ZipEntry.getName() : NAME
-    - are returned by new File(dir, name), where name is a value returned by ZipEntry.getName() : FILE(dir)
-
-    Other values are
-    - SAFE : strings known to be not returned by ZipEntry.getName(), and files not returned by new File(dir, name)
-    - LOWER :
-     */
     public final String name;
     public final Expression dir; // non-null if the value is the result of 'new File(dir, ..)'
 
@@ -35,29 +25,38 @@ class ZipSlipValue {
 
         @Override
         public ZipSlipValue lowerBound() {
-            return LOWER;
+            return UNKNOWN;
         }
 
         @Override
         public ZipSlipValue defaultInitialization() {
-            return NULL;
+            return SAFE;
         }
     };
 
     // all other values have a non-null dir
-    public static final ZipSlipValue LOWER = new ZipSlipValue("LOWER", null);
-    public static final ZipSlipValue UPPER = new ZipSlipValue("UPPER", null);
-    public static final ZipSlipValue NULL = new ZipSlipValue("NULL", null);
+    // lower bound (initial value) : nothing is know about the value
+    public static final ZipSlipValue UNKNOWN = new ZipSlipValue("UNKNOWN", null);
+    // upper bound : conflicting information about the value
+    public static final ZipSlipValue UNSAFE = new ZipSlipValue("UNSAFE", null);
+    // value is known to be the name of a zip entry
+    public static final ZipSlipValue ZIP_ENTRY_NAME = new ZipSlipValue("ZIP_ENTRY_NAME", null);
+    // the value is known to be safe
+    public static final ZipSlipValue SAFE = new ZipSlipValue("SAFE", null);
 
     private static ZipSlipValue join(Collection<ZipSlipValue> values) {
-        ZipSlipValue result = LOWER;
+        ZipSlipValue result = UNKNOWN;
         for (ZipSlipValue value : values) {
-            if (value == UPPER) {
-                return UPPER;
-            } else if (result == LOWER) {
+            if (result == UNKNOWN) {
                 result = value;
-            } else if (value != LOWER && !result.dir.equals(value.dir)) {
-                return UPPER;
+            } else if (value == SAFE && result == SAFE) {
+                // do nothing
+            } else if (value == ZIP_ENTRY_NAME && result == ZIP_ENTRY_NAME) {
+                // do nothing
+            } else if(value.dir != null && result.dir != null && value.dir.equals(result.dir)) {
+                // do nothing
+            } else {
+                return UNSAFE;
             }
         }
         return result;
