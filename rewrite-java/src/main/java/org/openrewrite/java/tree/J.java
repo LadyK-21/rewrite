@@ -63,6 +63,8 @@ public interface J extends Tree {
         return v.defaultValue(this, p);
     }
 
+    <T,P> T dispatch(Dispatcher1<T,P> d, P p);
+
     <J2 extends J> J2 withPrefix(Space space);
 
     Space getPrefix();
@@ -143,6 +145,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchAnnotatedType(this, p);
+        }
+
+        @Override
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
@@ -206,6 +213,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitAnnotation(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchAnnotation(this, p);
         }
 
         public CoordinateBuilder.Annotation getCoordinates() {
@@ -277,6 +289,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchArrayAccess(this, p);
+        }
+
+        @Override
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
@@ -319,6 +336,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchArrayType(this, p);
+        }
+
+        @Override
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
@@ -348,6 +370,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitAssert(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchAssert(this, p);
         }
 
         @Override
@@ -410,6 +437,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitAssignment(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchAssignment(this, p);
         }
 
         @Override
@@ -499,6 +531,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitAssignmentOperation(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchAssignmentOperation(this, p);
         }
 
         @Override
@@ -602,6 +639,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitBinary(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchBinary(this, p);
         }
 
         @Override
@@ -720,6 +762,11 @@ public interface J extends Tree {
             return v.visitBlock(this, p);
         }
 
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchBlock(this, p);
+        }
+
         public CoordinateBuilder.Block getCoordinates() {
             return new CoordinateBuilder.Block(this);
         }
@@ -785,6 +832,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchBreak(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -835,6 +887,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitCase(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchCase(this, p);
         }
 
         @Override
@@ -992,6 +1049,11 @@ public interface J extends Tree {
             return v.visitClassDeclaration(this, p);
         }
 
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchClassDeclaration(this, p);
+        }
+
         // gather annotations from everywhere they may occur
         public List<J.Annotation> getAllAnnotations() {
             List<Annotation> allAnnotations = new ArrayList<>(leadingAnnotations);
@@ -1042,6 +1104,11 @@ public interface J extends Tree {
                 Enum,
                 Interface,
                 Annotation
+            }
+
+            @Override
+            public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+                return d.dispatchKind(this, p);
             }
         }
 
@@ -1226,6 +1293,11 @@ public interface J extends Tree {
             return v.visitJavaSourceFile(this, p);
         }
 
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchCompilationUnit(this, p);
+        }
+
         public Set<NameTree> findType(String clazz) {
             return FindTypes.find(this, clazz);
         }
@@ -1316,6 +1388,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchContinue(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -1373,6 +1450,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitDoWhileLoop(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchDoWhileLoop(this, p);
         }
 
         @Override
@@ -1448,6 +1530,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchEmpty(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -1480,6 +1567,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitEnumValue(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchEnumValue(this, p);
         }
 
         @Override
@@ -1528,6 +1620,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitEnumValueSet(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchEnumValueSet(this, p);
         }
 
         @Override
@@ -1608,6 +1705,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitFieldAccess(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchFieldAccess(this, p);
         }
 
         public String getSimpleName() {
@@ -1738,6 +1840,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchForEachLoop(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -1787,6 +1894,11 @@ public interface J extends Tree {
             @Override
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitForEachControl(this, p);
+            }
+
+            @Override
+            public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+                return d.dispatchForEachControl(this, p);
             }
 
             public Padding getPadding() {
@@ -1904,6 +2016,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchForLoop(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -1963,6 +2080,11 @@ public interface J extends Tree {
             @Override
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitForControl(this, p);
+            }
+
+            @Override
+            public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+                return d.dispatchForControl(this, p);
             }
 
             public Padding getPadding() {
@@ -2071,6 +2193,11 @@ public interface J extends Tree {
             return v.visitIdentifier(this, p);
         }
 
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchIdentifier(this, p);
+        }
+
         public CoordinateBuilder.Identifier getCoordinates() {
             return new CoordinateBuilder.Identifier(this);
         }
@@ -2129,6 +2256,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchIf(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -2169,6 +2301,11 @@ public interface J extends Tree {
             @Override
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitElse(this, p);
+            }
+
+            @Override
+            public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+                return d.dispatchElse(this, p);
             }
 
             public Padding getPadding() {
@@ -2268,6 +2405,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitImport(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchImport(this, p);
         }
 
         /**
@@ -2464,6 +2606,11 @@ public interface J extends Tree {
             return v.visitInstanceOf(this, p);
         }
 
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchInstanceOf(this, p);
+        }
+
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -2543,6 +2690,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchLabel(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -2611,6 +2763,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitLambda(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchLambda(this, p);
         }
 
         @Override
@@ -2686,6 +2843,11 @@ public interface J extends Tree {
                     return t.parameters == parameters ? t : new Parameters(t.id, t.prefix, t.markers, t.parenthesized, parameters);
                 }
             }
+
+            @Override
+            public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+                return d.dispatchParameters(this, p);
+            }
         }
     }
 
@@ -2735,6 +2897,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitLiteral(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchLiteral(this, p);
         }
 
         /**
@@ -2840,6 +3007,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitMemberReference(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchMemberReference(this, p);
         }
 
         public Padding getPadding() {
@@ -3040,6 +3212,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitMethodDeclaration(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchMethodDeclaration(this, p);
         }
 
         public boolean isAbstract() {
@@ -3296,6 +3473,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchMethodInvocation(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.MethodInvocation getCoordinates() {
             return new CoordinateBuilder.MethodInvocation(this);
         }
@@ -3415,6 +3597,11 @@ public interface J extends Tree {
             Native,
             Strictfp,
         }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchModifiers(this, p);
+        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -3452,6 +3639,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitMultiCatch(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchMultiCatch(this, p);
         }
 
         @SuppressWarnings("unchecked")
@@ -3557,6 +3749,11 @@ public interface J extends Tree {
             return v.visitNewArray(this, p);
         }
 
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchNewArray(this, p);
+        }
+
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -3622,6 +3819,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitArrayDimension(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchArrayDimension(this, p);
         }
 
         public Padding getPadding() {
@@ -3754,6 +3956,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchNewClass(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -3832,6 +4039,11 @@ public interface J extends Tree {
             return v.visitPackage(this, p);
         }
 
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchPackage(this, p);
+        }
+
         public CoordinateBuilder.Package getCoordinates() {
             return new CoordinateBuilder.Package(this);
         }
@@ -3892,6 +4104,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitParameterizedType(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchParameterizedType(this, p);
         }
 
         public Padding getPadding() {
@@ -3964,6 +4181,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitParentheses(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchParentheses(this, p);
         }
 
         @Override
@@ -4055,6 +4277,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitControlParentheses(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchControlParentheses(this, p);
         }
 
         @Override
@@ -4162,6 +4389,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchPrimitive(this, p);
+        }
+
+        @Override
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
@@ -4188,6 +4420,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitReturn(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchReturn(this, p);
         }
 
         @Override
@@ -4227,6 +4464,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchSwitch(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -4255,6 +4497,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitSynchronized(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchSynchronized(this, p);
         }
 
         @Override
@@ -4317,6 +4564,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitTernary(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchTernary(this, p);
         }
 
         public Padding getPadding() {
@@ -4386,6 +4638,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitThrow(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchThrow(this, p);
         }
 
         @Override
@@ -4460,6 +4717,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchTry(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -4491,6 +4753,11 @@ public interface J extends Tree {
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitTryResource(this, p);
             }
+
+            @Override
+            public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+                return d.dispatchTryResource(this, p);
+            }
         }
 
         @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -4516,6 +4783,11 @@ public interface J extends Tree {
             @Override
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitCatch(this, p);
+            }
+
+            @Override
+            public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+                return d.dispatchCatch(this, p);
             }
 
             @Override
@@ -4600,6 +4872,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchTypeCast(this, p);
+        }
+
+        @Override
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
@@ -4655,6 +4932,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitTypeParameter(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchTypeParameter(this, p);
         }
 
         public Padding getPadding() {
@@ -4755,6 +5037,11 @@ public interface J extends Tree {
                 return t.typeParameters == typeParameters ? t : new TypeParameters(t.id, t.prefix, t.markers, t.annotations, typeParameters);
             }
         }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchTypeParameters(this, p);
+        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -4801,6 +5088,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitUnary(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchUnary(this, p);
         }
 
         @Override
@@ -4918,6 +5210,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchVariableDeclarations(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.VariableDeclarations getCoordinates() {
             return new CoordinateBuilder.VariableDeclarations(this);
         }
@@ -5024,6 +5321,11 @@ public interface J extends Tree {
             @Override
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitVariable(this, p);
+            }
+
+            @Override
+            public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+                return d.dispatchVariable(this, p);
             }
 
             public boolean isField(Cursor cursor) {
@@ -5148,6 +5450,11 @@ public interface J extends Tree {
         }
 
         @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchWhileLoop(this, p);
+        }
+
+        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -5234,6 +5541,11 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitWildcard(this, p);
+        }
+
+        @Override
+        public <T,P> T dispatch(Dispatcher1<T,P> d, P p) {
+            return d.dispatchWildcard(this, p);
         }
 
         public enum Bound {
