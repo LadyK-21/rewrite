@@ -10,12 +10,15 @@ import java.util.Collection;
  */
 @Incubating(since = "7.24.0")
 public enum ModalBoolean {
+
     // The lattice is ordered as:
-    // NoIdea < DefinitelyYes, DefinitelyNo < Conflict
-    NoIdea, // The lower bound of the lattice
+    // NoIdea < True, False, Null < Conflict
+
+    NoIdea, // The lower bound of the lattice (nothing is known about the value)
     True,
     False,
-    Conflict; // The upper bound of the lattice
+    Null, // in the case of reference type java.lang.Boolean
+    Conflict; // The upper bound of the lattice (some paths lead to True, some paths leads to False)
 
     public static final Joiner<ModalBoolean> JOINER = new Joiner<ModalBoolean>() {
 
@@ -31,7 +34,7 @@ public enum ModalBoolean {
 
         @Override
         public ModalBoolean defaultInitialization() {
-            return False; // TODO boolean and Boolean have different defaults
+            return False;
         }
     };
 
@@ -39,8 +42,9 @@ public enum ModalBoolean {
         ModalBoolean result = NoIdea;
         for (ModalBoolean out : outs) {
             if(out == NoIdea) continue;
-            if ((result == True && out != True) ||
-                    (result == False && out != False)) {
+            if (   (result == True && out != True)
+                || (result == False && out != False)
+                || (result == Null && out != Null) ) {
                 return Conflict;
             } else if (result == Conflict) {
                 return result;
