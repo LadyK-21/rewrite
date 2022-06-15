@@ -18,7 +18,7 @@ import java.util.Collection;
  * In Java, program points are statements, variable declarations, assignment expressions, increment and decrement
  * expressions, method declarations.
  */
-@Incubating(since = "7.24.0")
+@Incubating(since = "7.24.1")
 public interface ProgramPoint {
 
     default Collection<Cursor> previous(DataFlowGraph dfg, Cursor c) {

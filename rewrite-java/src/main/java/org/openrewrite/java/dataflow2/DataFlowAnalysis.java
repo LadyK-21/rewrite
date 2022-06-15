@@ -6,7 +6,7 @@ import org.openrewrite.java.tree.J;
 
 import java.util.*;
 
-@Incubating(since = "7.24.0")
+@Incubating(since = "7.24.1")
 public abstract class DataFlowAnalysis<T> {
 
     final DataFlowGraph dfg;

@@ -7,7 +7,7 @@ import lombok.*;
 import org.openrewrite.Incubating;
 import org.openrewrite.java.tree.JavaType;
 
-@Incubating(since = "7.24.0")
+@Incubating(since = "7.24.1")
 @Data
 public class ProgramState<T> {
 
@@ -96,7 +96,7 @@ public class ProgramState<T> {
     }
 }
 
-@Incubating(since = "7.24.0")
+@Incubating(since = "7.24.1")
 @AllArgsConstructor
 class LinkedListElement<T> {
     LinkedListElement previous;

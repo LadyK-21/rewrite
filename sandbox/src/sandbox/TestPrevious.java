@@ -13,7 +13,7 @@ import static sandbox.TestUtils.parse;
 public class TestPrevious {
     public static void test()
     {
-        //testNonLocalExits();
+        testNonLocalExits();
         testMethodInvocation();
         testIfThen();
         testIfThenElse();
@@ -41,6 +41,7 @@ public class TestPrevious {
 
         TestUtils.assertPrevious(cu,pp, entryOrExit, previous);
     }
+
     public static void testVariableDeclarations()
     {
         String source =
@@ -144,20 +145,34 @@ public class TestPrevious {
     public static void testNonLocalExits()
     {
         String source =
-                "class C {\n" +
-                        "    void m() { \n" +
+                        "import java.lang.Exception; \n" +
+                        "import java.io.IOException; \n" +
+                        "class C {\n" +
+                        "    void a() { \n" +
+                        "    void b() { \n" +
+                        "    void c() { \n" +
+                        "    boolean x() { \n" +
+                        "    boolean y() { \n" +
+                        "    void m() throws Exception { \n" +
                         "        a(); \n" +
-                        "        if(x) return; \n" +
+                        "        if(x()) return; \n" +
                         "        b(); \n" +
-//                        "        if(y) throw e; \n" +
-//                        "        try { \n" +
-//                        "            throw new Exception(1); \n" +
-//                        "        } catch(Exception e) {" +
-//                        "        } \n" +
-//                        "        try { \n" +
-//                        "            throw new Exception(2); \n" +
-//                        "        } catch(IllegalStateException e) {" +
-//                        "        } \n" +
+                        "        if(y()) throw new java.lang.Exception(\"1\"); \n" +
+                        "        try { \n" +
+                        "            throw new Exception(\"2\"); \n" +
+                        "        } catch(Exception e) { \n" +
+                        "           catch1(); \n" +
+                        "        } \n" +
+                        "        try { \n" +
+                        "            throw new IOException(\"3\"); \n" +
+                        "        } catch(Exception e) { \n" +
+                        "           catch2(); \n" +
+                        "        } \n" +
+                        "        try { \n" +
+                        "            throw new Exception(\"4\"); \n" +
+                        "        } catch(IOException e) { \n" +
+                        "           catch3(); \n" +
+                        "        } \n" +
                         // also add loops with break and continue
                         "         \n" +
                         "         \n" +
@@ -165,7 +180,7 @@ public class TestPrevious {
                         "         \n" +
                         "         \n" +
                         "         \n" +
-                        "        b(); \n" +
+                        "        c(); \n" +
                         // implicit return
                         "    } \n" +
                         "} \n" +
@@ -178,7 +193,7 @@ public class TestPrevious {
         J.MethodDeclaration m = (J.MethodDeclaration) cu.getClasses().get(0).getBody().getStatements().get(0);
         System.out.println(Utils.print(m));
 
-        TestUtils.assertPrevious(cu,Utils.print(m), EXIT);
+        TestUtils.assertPrevious(cu, Utils.print(m), EXIT, "return", "throw new Exception(1)", "throw new Exception(2)", "throw new Exception(4)");
 
     }
 

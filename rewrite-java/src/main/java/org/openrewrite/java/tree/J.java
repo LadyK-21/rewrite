@@ -5018,7 +5018,7 @@ public interface J extends Tree {
         @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
         @EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)
         @Data
-        public static final class Catch implements J {
+        public static final class Catch implements J, ProgramPoint {
             @With
             @EqualsAndHashCode.Include
             UUID id;

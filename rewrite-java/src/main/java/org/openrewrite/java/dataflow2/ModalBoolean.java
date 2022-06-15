@@ -8,7 +8,7 @@ import java.util.Collection;
 /**
  *  A modal boolean is 'true', 'false', or one of 'NoIdea' (not enough knowledge) or 'Conflict' (contradicting knowledge).
  */
-@Incubating(since = "7.24.0")
+@Incubating(since = "7.24.1")
 public enum ModalBoolean {
 
     // The lattice is ordered as:

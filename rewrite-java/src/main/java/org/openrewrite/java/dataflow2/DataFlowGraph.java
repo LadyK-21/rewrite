@@ -4,30 +4,46 @@ import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
 import org.openrewrite.internal.lang.NonNull;
 import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
 
-@Incubating(since = "7.24.0")
+@Incubating(since = "7.24.1")
 public class DataFlowGraph {
 
     final J.CompilationUnit cu;
 
+    // This is a temporary hack to compute next from previous
+    // until the next() methods are implemented.
+    private Map<Cursor, Collection<Cursor>> previousMap;
+
+    // NLE statement -> target
+    Map<ProgramPoint, Cursor> nonLocalExitsForward;
+    // target -> list(NLE statements targeting target)
+    Map<ProgramPoint, ArrayList<Cursor>> nonLocalExitsBackward;
+
     public DataFlowGraph(J.CompilationUnit cu) {
         this.cu = cu;
+
+        nonLocalExitsForward = new HashMap<>();
+        nonLocalExitsBackward = new HashMap<>();
+        new NonLocalExitsVisitor().visit(cu, null);
+        // add an implicit final return when the last statement is not an explicit return
+
+        //previousMap = new HashMap<>();
+        //new PreviousMapVisitor().visit(cu, null);
     }
 
     /**
-     * @param programPoint A cursor whose value is a program point.
+     * @param c A cursor whose value is a program point.
      * @return The set of program points, possibly composite (i.e. containing other program points, such as
      * a while loop), preceding given program point in the dataflow graph.
      */
@@ -41,6 +57,10 @@ public class DataFlowGraph {
 
         J parent = parentCursor.getValue();
         switch (parent.getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
+            case "J$Assignment":
+                return previousInAssignment(parentCursor, current);
+            case "J$Block":
+                return previousInBlock(parentCursor, current);
             case "J$MethodInvocation":
                 return previousInMethodInvocation(parentCursor, current);
             case "J$NewClass":
@@ -55,16 +75,12 @@ public class DataFlowGraph {
                 return previousInForLoop(parentCursor, current);
             case "J$ForLoop$Control":
                 return previousInForLoopControl(parentCursor, current);
-            case "J$Block":
-                return previousInBlock(parentCursor, current);
             case "J$VariableDeclarations":
                 return previousInVariableDeclarations(parentCursor, current);
             case "J$Unary":
                 return previousInUnary(parentCursor, current);
             case "J$Binary":
                 return previousInBinary(parentCursor, current);
-            case "J$Assignment":
-                return previousInAssignment(parentCursor, current);
             case "J$Parentheses":
                 return previousInParentheses(parentCursor, current);
             case "J$ControlParentheses":
@@ -73,17 +89,48 @@ public class DataFlowGraph {
                 return previousInNamedVariable(parentCursor, current);
             case "J$Return":
                 return previousInReturn(parentCursor, current);
-            case "J$Literal":
-            case "J$Identifier":
-            case "J$Empty":
-            case "J$Primitive": // not actually a program point
-                return previousInTerminalNode(parentCursor, current);
+            case "J$Throw":
+                return previousInThrow(parentCursor, current);
+            case "J$Try":
+                return previousInTry(parentCursor, current);
             case "J$MethodDeclaration":
                 return previousInMethoddeclaration(parentCursor, current);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
                 return Collections.emptyList();
+            case "J$Literal":
+            case "J$Identifier":
+            case "J$Empty":
+                return previousInTerminalNode(parentCursor, current);
+            case "J$Primitive":
+                // not actually a program point, but implements Expression or Statement
+                return previousInTerminalNode(parentCursor, current);
             default:
+                // Assert
+                // ArrayAccess
+                // AssignmentOperation
+                // Break
+                // Case
+                // Continue
+                // DoWhileLoop
+                // EnumValue
+                // EnumValueSet
+                // FieldAccess
+                // ForeachLoop
+                // InstanceOf
+                // Label
+                // Lambda
+                // MemberReference
+                // MultiCatch
+                // NewArray
+                // ArrayDimension
+                // Return
+                // Switch
+                // Ternary
+                // Throw
+                // Try
+                // TypeCast
+                // WhileLoop
                 throw new Error(parent.getClass().getName());
         }
 
@@ -180,8 +227,7 @@ public class DataFlowGraph {
 
     @NonNull Collection<Cursor> previousInMethoddeclaration(Cursor parentCursor, ProgramPoint p) {
         J.MethodDeclaration parent = parentCursor.getValue();
-
-        return Collections.emptyList();
+        return nonLocalExitsBackward.get(parent);
     }
 
     @NonNull Collection<Cursor> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {
@@ -231,10 +277,12 @@ public class DataFlowGraph {
             return Collections.singletonList(parentCursor);
         } else if (p == ENTRY) {
             if (args.size() > 0 && !(args.get(0) instanceof J.Empty)) {
-                return previousIn(new Cursor(parentCursor, args.get(args.size()-1)), EXIT);
+                return previousIn(new Cursor(parentCursor, args.get(args.size() - 1)), EXIT);
             } else {
                 return previousIn(parentCursor.getParent(), parentCursor.getValue());
             }
+        } else if(p == parent.getClazz()) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else {
             int index = args.indexOf(p);
             if (index > 0) {
@@ -509,6 +557,66 @@ public class DataFlowGraph {
         throw new IllegalStateException();
     }
 
+    public Collection<Cursor> previousInThrow(Cursor parentCursor, ProgramPoint p) {
+        J.Throw _throw = parentCursor.getValue();
+        @Nullable Expression expr = _throw.getException();
+        if (p == EXIT) {
+            if(expr == null) {
+                return Collections.singletonList(parentCursor);
+            } else {
+                return Collections.singletonList(new Cursor(parentCursor, expr));
+            }
+        } else if(p == ENTRY) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
+        } else if(p == expr) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
+        }
+        throw new IllegalStateException();
+    }
+
+    public Collection<Cursor> previousInTry(Cursor parentCursor, ProgramPoint p) {
+        J.Try _try = parentCursor.getValue();
+
+        // try(ressources?) body catches finally?
+        @Nullable List<J.Try.Resource> ressources = _try.getResources();
+        J.Block body = _try.getBody();
+        List<J.Try.Catch> catches = _try.getCatches();
+        J.@Nullable Block _finally = _try.getFinally();
+
+        if(ressources != null) throw new UnsupportedOperationException("TODO");
+
+        if (p == EXIT) {
+            if(_finally != null) {
+                return previousIn(new Cursor(parentCursor, _finally), EXIT);
+            } else {
+                List<Cursor> result = new ArrayList<>();
+                result.addAll(previousIn(new Cursor(parentCursor, body), EXIT));
+                for(J.Try.Catch _catch : catches) {
+                    result.addAll(previousIn(new Cursor(parentCursor, _catch), EXIT));
+                }
+                return result;
+            }
+        } else if(p == ENTRY) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
+        } else if(p == _finally) {
+            List<Cursor> result = new ArrayList<>();
+            result.addAll(previousIn(new Cursor(parentCursor, body), EXIT));
+            for(J.Try.Catch _catch : catches) {
+                result.addAll(previousIn(new Cursor(parentCursor, _catch), EXIT));
+            }
+            return result;
+        } else if(p == body) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
+        } else {
+            for(J.Try.Catch _catch : catches) {
+                if(p == _catch.getBody()) {
+                    return nonLocalExitsBackward.get(p);
+                }
+            }
+        }
+        throw new IllegalStateException();
+    }
+
     public Collection<Cursor> previousInTerminalNode(Cursor parentCursor, ProgramPoint p) {
         if (p == EXIT) {
             return Collections.singletonList(parentCursor);
@@ -526,6 +634,131 @@ public class DataFlowGraph {
             return ((Collection<?>) c.getValue()).stream().map(e -> print(new Cursor(c, e))).collect(Collectors.joining("; "));
         } else {
             throw new IllegalStateException();
+        }
+    }
+
+    // Poor man's next(), to be replaced by the equivalent of the previousXXX() methods
+    public Collection<Cursor> next(Cursor cursor) {
+        List<Cursor> r1 = new ArrayList<>();
+        for(Cursor k : previousMap.keySet()) {
+            Collection<Cursor> v = previousMap.get(k);
+            if(v.contains(cursor)) {
+                r1.add(k);
+            }
+        }
+        List<Cursor> r2= new ArrayList<>();
+        for(int i=0; i<r1.size(); i++) {
+            Cursor p = r1.get(i);
+            boolean add = true;
+            for(int j=i+1; j<r1.size(); j++) {
+                Cursor q = r1.get(j);
+                if(p == q) add = false;
+                if(p.isScopeInPath(q.getValue())) {
+                    add = false;
+                } else if(q.isScopeInPath(p.getValue())) {
+                    r1.remove(q);
+                }
+            }
+            if(add) {
+                r2.add(p);
+            }
+        }
+        return r2;
+    }
+
+    class PreviousMapVisitor extends JavaIsoVisitor {
+
+        private void process(ProgramPoint pp) {
+            Cursor c = getCursor();
+            Collection<Cursor> p = previous(c);
+            DataFlowGraph.this.previousMap.put(c, p);
+        }
+
+        @Override
+        public Statement visitStatement(Statement statement, Object o) {
+            super.visitStatement(statement, o);
+            process(statement);
+            return statement;
+        }
+
+        @Override
+        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
+            super.visitVariable(variable, o);
+            process(variable);
+            return variable;
+        }
+
+        @Override
+        public Expression visitExpression(Expression expression, Object o) {
+            super.visitExpression(expression, o);
+            process(expression);
+            return expression;
+        }
+    }
+
+    class NonLocalExitsVisitor extends JavaIsoVisitor {
+
+        @Override
+        public Statement visitStatement(Statement statement, Object o) {
+            if(statement instanceof J.Return) {
+                Cursor target = getCursor().dropParentUntil(v -> v instanceof J.MethodDeclaration);
+                addNonLocalExit(getCursor(), target);
+            } else if(statement instanceof J.Throw) {
+                Cursor target = target((J.Throw)statement);
+                addNonLocalExit(getCursor(), target);
+            } else if(statement instanceof J.Break) {
+
+            } else if(statement instanceof J.Continue) {
+
+            }
+            return super.visitStatement(statement, o);
+        }
+
+        @Override
+        public Expression visitExpression(Expression expr, Object o) {
+            return super.visitExpression(expr, o);
+        }
+
+        @Override
+        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
+            return super.visitVariable(variable, o);
+        }
+
+        private Cursor target(J.Throw statement) {
+            Expression expr = statement.getException();
+            JavaType thrownType = expr.getType();
+            assert thrownType != null;
+
+            Cursor c = getCursor();
+            while((c = c.dropParentUntil(v -> v instanceof J.Try || v instanceof J.MethodDeclaration)) != null) {
+                if (c.getValue() instanceof J.MethodDeclaration)
+                    return c;
+                J.Try _try = c.getValue();
+                // does the try block catch exception ?
+                for (J.Try.Catch _catch : _try.getCatches()) {
+                    assert _catch.getParameter().getTree().getVariables().size() == 1;
+                    J.VariableDeclarations.NamedVariable v = _catch.getParameter().getTree().getVariables().get(0);
+                    assert v.getVariableType().getType() instanceof JavaType.FullyQualified;
+                    JavaType.FullyQualified caughtType = (JavaType.FullyQualified) v.getVariableType().getType();
+                    assert caughtType != null;
+                    if (caughtType.isAssignableFrom(thrownType)) {
+                        return new Cursor(getCursor(), _catch);
+                    }
+                }
+                // if not, try the enclosing try blocks or method declaration
+            }
+            throw new IllegalStateException();
+        }
+
+        private void addNonLocalExit(Cursor from, Cursor to) {
+            nonLocalExitsForward.put(from.getValue(), to);
+            ArrayList<Cursor> l = nonLocalExitsBackward.get(to.getValue());
+            if(l == null) {
+                l = new ArrayList<>();
+                ProgramPoint value = to.getValue();
+                nonLocalExitsBackward.put(value, l);
+            }
+            l.add(from);
         }
     }
 }
