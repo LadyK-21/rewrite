@@ -118,7 +118,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ModalBoolean> {
                 return inputState(c, t).push(False);
             }
         }
-        return inputState(c, t).push(Conflict);
+        return inputState(c, t).push(NoIdea);
     }
 
     @Override

@@ -160,17 +160,17 @@ public class TestPrevious {
                         "        if(y()) throw new Exception(\"1\"); \n" +
                         "        try { \n" +
                         "            throw new Exception(\"2\"); \n" +
-                        "        } catch(Exception e) { \n" +
+                        "        } catch(Exception e2) { \n" +
                         "           catch2(); \n" +
                         "        } \n" +
                         "        try { \n" +
                         "            throw new IOException(\"3\"); \n" +
-                        "        } catch(Exception e) { \n" +
+                        "        } catch(Exception e3) { \n" +
                         "           catch3(); \n" +
                         "        } \n" +
                         "        try { \n" +
                         "            throw new Exception(\"4\"); \n" +
-                        "        } catch(IOException e) { \n" +
+                        "        } catch(IOException e4) { \n" +
                         "           catch4(); \n" +
                         "        } \n" +
                         // also add loops with break and continue
@@ -194,7 +194,9 @@ public class TestPrevious {
         System.out.println(Utils.print(m));
 
         // TODO <return "a"> is actually printed as <return"a">
-        TestUtils.assertPrevious(cu, Utils.print(m), EXIT, "return\"a\"", "throw new Exception(\"1\")", "throw new Exception(\"4\")");
+        TestUtils.assertPrevious(cu, Utils.print(m), EXIT, "return\"a\"", "throw new Exception(\"1\")", "throw new Exception(\"4\")", "c()");
+        TestUtils.assertPrevious(cu, Utils.print(m), ENTRY, "catch2()");
+        TestUtils.assertPrevious(cu, Utils.print(m), EXIT, "catch2()");
 
     }
 

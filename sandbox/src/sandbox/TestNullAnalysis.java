@@ -88,7 +88,7 @@ public class TestNullAnalysis {
         testIsSNull("String s = u;", null); // Because u is undefined
         testIsSNull("String u = null; String s = u;", True);
         testIsSNull("String s = \"a\".toUpperCase();", False);
-        testIsSNull("String s = \"a\".unknownMethod(s, null);", Conflict);
+        testIsSNull("String s = \"a\".unknownMethod(s, null);", NoIdea);
         testIsSNull("String s; if(c) { s = null; } else { s = null; }", True);
         testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", Conflict);
         testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", Conflict);

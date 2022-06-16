@@ -128,7 +128,7 @@ public class DataFlowGraph {
                 // Try
                 // TypeCast
                 // WhileLoop
-                throw new Error(parent.getClass().getName());
+                throw new Error("Not implemented : " + parent.getClass().getName());
         }
 
     }
@@ -225,7 +225,16 @@ public class DataFlowGraph {
     @NonNull Collection<Cursor> previousInMethodDeclaration(Cursor parentCursor, ProgramPoint p) {
         J.MethodDeclaration parent = parentCursor.getValue();
         if(p == EXIT) {
-            return nonLocalExitsBackward.get(parent);
+            List<Cursor> result = new ArrayList<>();
+            List<Cursor> nonLocalExits = nonLocalExitsBackward.get(parent);
+            result.addAll(nonLocalExits);
+            Collection<Cursor> normalExits = previousIn(new Cursor(parentCursor, parent.getBody()), EXIT);
+            for(Cursor normalExit : normalExits) {
+                if(!nonLocalExits.contains(normalExit)) {
+                    result.add(normalExit);
+                }
+            }
+            return result;
         } else if(p == ENTRY) {
             return Collections.emptyList();
         } else if(p == parent.getBody()) {

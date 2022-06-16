@@ -71,12 +71,12 @@ public class ZipSlip extends ValueAnalysis<ZipSlipValue> {
     }
 
 
-    private static final String[] definitelyNonNullReturningMethodSignatures = new String[] {
-            "java.lang.String toUpperCase()"
-    };
-
-    private static final List<MethodMatcher> definitelyNonNullReturningMethodMatchers =
-            Arrays.stream(definitelyNonNullReturningMethodSignatures).map(MethodMatcher::new).collect(Collectors.toList());
+//    private static final String[] definitelyNonNullReturningMethodSignatures = new String[] {
+//            "java.lang.String toUpperCase()"
+//    };
+//
+//    private static final List<MethodMatcher> definitelyNonNullReturningMethodMatchers =
+//            Arrays.stream(definitelyNonNullReturningMethodSignatures).map(MethodMatcher::new).collect(Collectors.toList());
 
     @Override
     public ProgramState<ZipSlipValue> transferNewClass(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
