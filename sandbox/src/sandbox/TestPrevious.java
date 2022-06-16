@@ -153,25 +153,25 @@ public class TestPrevious {
                         "    void c() { \n" +
                         "    boolean x() { \n" +
                         "    boolean y() { \n" +
-                        "    void m() throws Exception { \n" +
+                        "    String m() { \n" +
                         "        a(); \n" +
-                        "        if(x()) return; \n" +
+                        "        if(x()) return \"a\"; \n" +
                         "        b(); \n" +
-                        "        if(y()) throw new java.lang.Exception(\"1\"); \n" +
+                        "        if(y()) throw new Exception(\"1\"); \n" +
                         "        try { \n" +
                         "            throw new Exception(\"2\"); \n" +
-                        "        } catch(Exception e) { \n" +
-                        "           catch1(); \n" +
-                        "        } \n" +
-                        "        try { \n" +
-                        "            throw new IOException(\"3\"); \n" +
                         "        } catch(Exception e) { \n" +
                         "           catch2(); \n" +
                         "        } \n" +
                         "        try { \n" +
+                        "            throw new IOException(\"3\"); \n" +
+                        "        } catch(Exception e) { \n" +
+                        "           catch3(); \n" +
+                        "        } \n" +
+                        "        try { \n" +
                         "            throw new Exception(\"4\"); \n" +
                         "        } catch(IOException e) { \n" +
-                        "           catch3(); \n" +
+                        "           catch4(); \n" +
                         "        } \n" +
                         // also add loops with break and continue
                         "         \n" +
@@ -193,7 +193,8 @@ public class TestPrevious {
         J.MethodDeclaration m = (J.MethodDeclaration) cu.getClasses().get(0).getBody().getStatements().get(0);
         System.out.println(Utils.print(m));
 
-        TestUtils.assertPrevious(cu, Utils.print(m), EXIT, "return", "throw new Exception(1)", "throw new Exception(2)", "throw new Exception(4)");
+        // TODO <return "a"> is actually printed as <return"a">
+        TestUtils.assertPrevious(cu, Utils.print(m), EXIT, "return\"a\"", "throw new Exception(\"1\")", "throw new Exception(\"4\")");
 
     }
 

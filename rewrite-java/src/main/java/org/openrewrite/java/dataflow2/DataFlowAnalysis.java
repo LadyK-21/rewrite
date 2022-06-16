@@ -21,6 +21,9 @@ public abstract class DataFlowAnalysis<T> {
         ProgramPoint pp = c.getValue();
         List<ProgramState<T>> outs = new ArrayList<>();
         Collection<Cursor> sources = dfg.previous(c);
+        if(sources == null) {
+            dfg.previous(c);
+        }
         for (Cursor source : sources) {
             // Since program points are represented by cursors with a tree node value,
             // it is impossible to add program points when there is no corresponding tree node.

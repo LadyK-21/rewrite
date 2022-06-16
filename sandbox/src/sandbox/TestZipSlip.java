@@ -93,8 +93,8 @@ public class TestZipSlip {
                         "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
                         "        String name = entry.getName(); \n" +
                         "        File file = new File(dir, name); \n" +
-                        "        if (file.toPath().startsWith(dir.toPath())) { \n" +
-                        "            // throw new UncheckedIOException(\"ZipSlip attack detected\"); \n" +
+                        "        if (!file.toPath().startsWith(dir.toPath())) { \n" +
+                        "            //throw new UncheckedIOException(\"ZipSlip attack detected\"); \n" +
                         "            file = null; \n" +
                         "        } \n" +
                         "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +

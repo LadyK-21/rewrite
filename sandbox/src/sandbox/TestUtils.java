@@ -37,6 +37,9 @@ public class TestUtils {
 
         expected.sort(String.CASE_INSENSITIVE_ORDER);
         actual.sort(String.CASE_INSENSITIVE_ORDER);
+
+        //print(prevs.toArray(new Cursor[0])[0]);
+
         AssertionsForClassTypes.assertThat(actual)
                 .withFailMessage("previous(" + pp + ", " + entryOrExit + ")\nexpected: " + expected + "\n but was: " + actual)
                 .isEqualTo(expected);

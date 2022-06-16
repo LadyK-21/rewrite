@@ -5,10 +5,7 @@ import org.openrewrite.Incubating;
 import org.openrewrite.internal.lang.NonNull;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
-import org.openrewrite.java.tree.Expression;
-import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JavaType;
-import org.openrewrite.java.tree.Statement;
+import org.openrewrite.java.tree.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -94,7 +91,7 @@ public class DataFlowGraph {
             case "J$Try":
                 return previousInTry(parentCursor, current);
             case "J$MethodDeclaration":
-                return previousInMethoddeclaration(parentCursor, current);
+                return previousInMethodDeclaration(parentCursor, current);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
                 return Collections.emptyList();
@@ -225,9 +222,17 @@ public class DataFlowGraph {
 
 
 
-    @NonNull Collection<Cursor> previousInMethoddeclaration(Cursor parentCursor, ProgramPoint p) {
+    @NonNull Collection<Cursor> previousInMethodDeclaration(Cursor parentCursor, ProgramPoint p) {
         J.MethodDeclaration parent = parentCursor.getValue();
-        return nonLocalExitsBackward.get(parent);
+        if(p == EXIT) {
+            return nonLocalExitsBackward.get(parent);
+        } else if(p == ENTRY) {
+            return Collections.emptyList();
+        } else if(p == parent.getBody()) {
+            return Collections.emptyList();
+        } else {
+            throw new IllegalStateException();
+        }
     }
 
     @NonNull Collection<Cursor> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {
@@ -727,7 +732,6 @@ public class DataFlowGraph {
         private Cursor target(J.Throw statement) {
             Expression expr = statement.getException();
             JavaType thrownType = expr.getType();
-            assert thrownType != null;
 
             Cursor c = getCursor();
             while((c = c.dropParentUntil(v -> v instanceof J.Try || v instanceof J.MethodDeclaration)) != null) {
@@ -737,11 +741,10 @@ public class DataFlowGraph {
                 // does the try block catch exception ?
                 for (J.Try.Catch _catch : _try.getCatches()) {
                     assert _catch.getParameter().getTree().getVariables().size() == 1;
-                    J.VariableDeclarations.NamedVariable v = _catch.getParameter().getTree().getVariables().get(0);
-                    assert v.getVariableType().getType() instanceof JavaType.FullyQualified;
-                    JavaType.FullyQualified caughtType = (JavaType.FullyQualified) v.getVariableType().getType();
-                    assert caughtType != null;
-                    if (caughtType.isAssignableFrom(thrownType)) {
+//                    J.VariableDeclarations.NamedVariable v = _catch.getParameter().getTree().getVariables().get(0);
+//                    JavaType caughtType = v.getVariableType().getType();
+                    JavaType caughtType = _catch.getParameter().getTree().getTypeExpression().getType();  //getVariables().get(0);
+                    if (TypeUtils.isAssignableTo(caughtType, thrownType)) {
                         return new Cursor(getCursor(), _catch);
                     }
                 }
