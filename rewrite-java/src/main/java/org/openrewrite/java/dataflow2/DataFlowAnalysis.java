@@ -88,6 +88,10 @@ public abstract class DataFlowAnalysis<T> {
                 return transferIdentifier(pp, t);
             case "J$Empty":
                 return transferEmpty(pp, t);
+            case "J$FieldAccess":
+                // TODO: just a hack to make the UseSecureConnection work a little bit longer before it eventually fails ;)
+                // thinking previous program point is not computed for J.FieldAccess.
+                return transferFieldAccess(pp, t);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
             case "J$MethodDeclaration":
@@ -203,6 +207,10 @@ public abstract class DataFlowAnalysis<T> {
     }
 
     public ProgramState<T> transferEmpty(Cursor pp, TraversalControl <ProgramState<T>> t) {
+        return defaultTransfer(pp, t);
+    }
+
+    public ProgramState<T> transferFieldAccess(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 

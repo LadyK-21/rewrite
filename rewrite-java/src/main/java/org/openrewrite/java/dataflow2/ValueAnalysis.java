@@ -53,6 +53,12 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
     }
 
     @Override
+    public ProgramState<T> transferFieldAccess(Cursor c, TraversalControl<ProgramState<T>> t) {
+        return inputState(c, t);
+    }
+
+
+    @Override
     public ProgramState<T> transferNamedVariable(Cursor c, TraversalControl<ProgramState<T>> tc) {
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();

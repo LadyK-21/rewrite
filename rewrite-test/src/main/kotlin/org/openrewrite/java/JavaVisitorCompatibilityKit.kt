@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.openrewrite.java.cleanup.*
 import org.openrewrite.java.dataflow.*
 import org.openrewrite.java.controlflow.ControlFlowTest
+import org.openrewrite.java.dataflow2.examples.UseSecureHttpConnectionTest
 import org.openrewrite.java.controlflow.GuardTest
 import org.openrewrite.java.format.*
 import org.openrewrite.java.recipes.ExecutionContextParameterNameTest
@@ -507,6 +508,9 @@ abstract class JavaVisitorCompatibilityKit {
 
     @Nested
     inner class UriCreatedWithHttpSchemeTck : UriCreatedWithHttpSchemeTest
+
+    @Nested
+    inner class UseSecureHttpConnectionTck : UseSecureHttpConnectionTest
 
     @Nested
     inner class UseJavaStyleArrayDeclarationsTck : UseJavaStyleArrayDeclarationsTest
