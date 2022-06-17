@@ -1,5 +1,6 @@
 package sandbox;
 
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.openrewrite.Cursor;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
@@ -20,7 +21,7 @@ public class TestZipSlip {
     }
 
     public static void testZipSlip() {
-        testZipSlip("source1",
+        testZipSlip("source1", ZipSlipValue.NewFileFromZipEntry.class,
                 "import java.io.File; \n" +
                         "import java.io.FileOutputStream; \n" +
                         "import java.io.RandomAccessFile; \n" +
@@ -35,7 +36,7 @@ public class TestZipSlip {
                         "} \n" +
                         "");
 
-        testZipSlip("source2",
+        testZipSlip("source2", ZipSlipValue.NewFileFromZipEntry.class,
                 "import java.io.File; \n" +
                         "import java.io.FileOutputStream; \n" +
                         "import java.io.RandomAccessFile; \n" +
@@ -51,7 +52,7 @@ public class TestZipSlip {
                         "} \n" +
                         "");
 
-        testZipSlip("source3",
+        testZipSlip("source3", ZipSlipValue.Unknown.class,
                 "import java.io.File; \n" +
                         "import java.io.FileOutputStream; \n" +
                         "import java.io.RandomAccessFile; \n" +
@@ -67,7 +68,7 @@ public class TestZipSlip {
                         "} \n" +
                         "");
 
-        testZipSlip("source4",
+        testZipSlip("source4", ZipSlipValue.Unknown.class,
                 "import java.io.File; \n" +
                         "import java.io.FileOutputStream; \n" +
                         "import java.io.RandomAccessFile; \n" +
@@ -83,7 +84,7 @@ public class TestZipSlip {
                         "} \n" +
                         "");
 
-        testZipSlip("source5",
+        testZipSlip("source5", ZipSlipValue.Safe.class,
                 "import java.io.File; \n" +
                         "import java.io.FileOutputStream; \n" +
                         "import java.io.RandomAccessFile; \n" +
@@ -104,7 +105,7 @@ public class TestZipSlip {
 
     }
 
-    public static void testZipSlip(String name, String source) {
+    public static void testZipSlip(String name, Class expectedClass, String source) {
 
         System.out.println("Processing test " + name);
         MethodMatcher m = new MethodMatcher("java.io.FileOutputStream <constructor>(java.io.File)");
@@ -122,9 +123,11 @@ public class TestZipSlip {
                     // We're interested in the expr() of the output state of arg
                     ZipSlip zipSlip = new ZipSlip(new DataFlowGraph(cu));
                     ProgramState<ZipSlipValue> state = zipSlip.outputState(new Cursor(new Cursor(getCursor(), newClass.getArguments()), arg), null);
+                    ZipSlipValue actual = state.expr();
 
-                    System.out.println("state.expr() = " + state.expr());
-                    if(state.expr().dir != null) {
+                    System.out.println("state.expr() = " + actual);
+
+                    if(actual instanceof ZipSlipValue.NewFileFromZipEntry) {
                         // unsafe, and we know the value of 'dir'
                         System.out.println(" -> requires a guard");
                     } else if(state.expr() == ZipSlipValue.UNKNOWN) {
@@ -134,6 +137,11 @@ public class TestZipSlip {
                     } else if(state.expr() == ZipSlipValue.UNSAFE) {
                         System.out.println(" -> requires a guard");
                     }
+
+                    AssertionsForClassTypes.assertThat(actual.getClass())
+                            .withFailMessage("expected: " + expectedClass + "\n but was: " + actual)
+                            .isEqualTo(expectedClass);
+
                 }
                 return super.visitNewClass(newClass, o);
             }

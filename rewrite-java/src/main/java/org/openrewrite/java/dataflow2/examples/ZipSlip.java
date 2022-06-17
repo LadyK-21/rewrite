@@ -52,7 +52,9 @@ public class ZipSlip extends ValueAnalysis<ZipSlipValue> {
                                 J.MethodInvocation argToPathInvocation = (J.MethodInvocation)arg;
                                 if(toPathMatcher.matches(argToPathInvocation)) {
                                     Expression dir = argToPathInvocation.getSelect();
-                                    if(state.get(file) != null && ZipSlipValue.equal(state.get(file).dir, dir)) {
+                                    ZipSlipValue v = state.get(file);
+                                    if(v instanceof ZipSlipValue.NewFileFromZipEntry
+                                            && ZipSlipValue.equal(((ZipSlipValue.NewFileFromZipEntry)v).dir, dir)) {
                                         // found file.toPath().startsWith(dir.toPath())
                                         // with state(file) = isBuiltFrom(dir)
                                         if(ifThenElseBranch == "then" ^ negate) {
@@ -90,7 +92,7 @@ public class ZipSlip extends ValueAnalysis<ZipSlipValue> {
             ProgramState<ZipSlipValue> s = inputState(c, t);
             if(fileNameValue == ZipSlipValue.ZIP_ENTRY_NAME) {
                 // fileName has been obtained from ZipEntry.getName()
-                return s.push(new ZipSlipValue(null, dir));
+                return s.push(new ZipSlipValue.NewFileFromZipEntry(dir));
             }
         }
         return super.transferNewClass(c, t);

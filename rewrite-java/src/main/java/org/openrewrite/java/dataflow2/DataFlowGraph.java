@@ -90,6 +90,8 @@ public class DataFlowGraph {
                 return previousInThrow(parentCursor, current);
             case "J$Try":
                 return previousInTry(parentCursor, current);
+            case "J$Try$Catch":
+                return previousInTryCatch(parentCursor, current);
             case "J$MethodDeclaration":
                 return previousInMethodDeclaration(parentCursor, current);
             case "J$CompilationUnit":
@@ -490,9 +492,10 @@ public class DataFlowGraph {
                 return previousIn(namedVariableCursor.getParent(), namedVariable);
             }
         } else if (p == name) {
-            return Collections.emptyList();
+            //return Collections.emptyList();
+            return previousIn(namedVariableCursor.getParent(), namedVariableCursor.getValue());
         } else if (p == initializer) {
-            return previousIn(namedVariableCursor.getParentOrThrow(), namedVariableCursor.getValue());
+            return previousIn(namedVariableCursor.getParent(), namedVariableCursor.getValue());
         }
         throw new IllegalStateException();
     }
@@ -623,10 +626,30 @@ public class DataFlowGraph {
             return previousIn(parentCursor.getParent(), parentCursor.getValue());
         } else {
             for(J.Try.Catch _catch : catches) {
-                if(p == _catch.getBody()) {
+                if(p == _catch) {
                     return nonLocalExitsBackward.get(p);
                 }
             }
+        }
+        throw new IllegalStateException();
+    }
+
+
+    public Collection<Cursor> previousInTryCatch(Cursor parentCursor, ProgramPoint p) {
+        J.Try.Catch _catch = parentCursor.getValue();
+
+        // catch(parameter) body
+        J.ControlParentheses<J.VariableDeclarations> parameter = _catch.getParameter();
+        J.Block body = _catch.getBody();
+
+        if(p == EXIT) {
+            return previousIn(new Cursor(parentCursor, body), EXIT);
+        } else if(p == ENTRY) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
+        } else if(p == body) {
+            return Collections.singletonList(new Cursor(parentCursor, parameter));
+        } else if(p == parameter) {
+            return previousIn(parentCursor.getParent(), parentCursor.getValue());
         }
         throw new IllegalStateException();
     }

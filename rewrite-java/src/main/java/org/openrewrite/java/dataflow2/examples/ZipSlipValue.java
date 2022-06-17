@@ -8,14 +8,13 @@ import org.openrewrite.java.tree.J;
 import java.util.Collection;
 
 @AllArgsConstructor
-public class ZipSlipValue {
+public abstract class ZipSlipValue {
 
     // ZipEntry entry, File dir
     // String fileName = entry.getName();
     // File file = new File(dir, fileName);
 
     public final String name;
-    public final Expression dir; // non-null if the value is the result of 'new File(dir, ..)'
 
     public static final Joiner<ZipSlipValue> JOINER = new Joiner<ZipSlipValue>() {
         @Override
@@ -36,13 +35,13 @@ public class ZipSlipValue {
 
     // all other values have a non-null dir
     // lower bound (initial value) : nothing is know about the value
-    public static final ZipSlipValue UNKNOWN = new ZipSlipValue("UNKNOWN", null);
+    public static final ZipSlipValue UNKNOWN = new Unknown();
     // upper bound : conflicting information about the value
-    public static final ZipSlipValue UNSAFE = new ZipSlipValue("UNSAFE", null);
-    // value is known to be the name of a zip entry
-    public static final ZipSlipValue ZIP_ENTRY_NAME = new ZipSlipValue("ZIP_ENTRY_NAME", null);
+    public static final ZipSlipValue UNSAFE = new Unsafe();
     // the value is known to be safe
-    public static final ZipSlipValue SAFE = new ZipSlipValue("SAFE", null);
+    public static final ZipSlipValue SAFE = new Safe();
+    // the string value is returned by ZipEntry.entryName()
+    public static final ZipSlipValue ZIP_ENTRY_NAME = new ZipEntryName();
 
     private static ZipSlipValue join(Collection<ZipSlipValue> values) {
         ZipSlipValue result = UNKNOWN;
@@ -53,8 +52,10 @@ public class ZipSlipValue {
                 // do nothing
             } else if (value == ZIP_ENTRY_NAME && result == ZIP_ENTRY_NAME) {
                 // do nothing
-            } else if(value.dir != null && result.dir != null && value.dir.equals(result.dir)) {
-                // do nothing
+            } else if(value instanceof NewFileFromZipEntry && result instanceof NewFileFromZipEntry) {
+                if(!((NewFileFromZipEntry)value).dir.equals(((NewFileFromZipEntry)result).dir)) {
+                    return UNSAFE;
+                }
             } else {
                 return UNSAFE;
             }
@@ -64,11 +65,7 @@ public class ZipSlipValue {
 
     @Override
     public String toString() {
-        if(name != null) {
-            return name;
-        } else {
-            return dir.print();
-        }
+        return name;
     }
 
     public static boolean equal(Expression a, Expression b) {
@@ -76,5 +73,42 @@ public class ZipSlipValue {
             return ((J.Identifier)a).getFieldType() == ((J.Identifier)b).getFieldType();
         }
         return false;
+    }
+
+    public static class Unknown extends ZipSlipValue {
+        protected Unknown() {
+            super("UNKNOWN");
+        }
+    }
+
+    public static class Unsafe extends ZipSlipValue {
+        protected Unsafe() {
+            super("UNSAFE");
+        }
+    }
+
+    public static class Safe extends ZipSlipValue {
+        protected Safe() {
+            super("SAFE");
+        }
+    }
+
+    public static class ZipEntryName extends ZipSlipValue {
+        protected ZipEntryName() {
+            super("ZIP_ENTRY_NAME");
+        }
+    }
+
+    public static class NewFileFromZipEntry extends ZipSlipValue {
+        public final Expression dir;
+        protected NewFileFromZipEntry(Expression dir) {
+            super("NewFileFromZipEntry");
+            this.dir = dir;
+        }
+
+        @Override
+        public String toString() {
+            return "NewFileFromZipEntry(" + dir + ")";
+        }
     }
 }

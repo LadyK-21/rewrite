@@ -194,9 +194,18 @@ public class TestPrevious {
         System.out.println(Utils.print(m));
 
         // TODO <return "a"> is actually printed as <return"a">
-        TestUtils.assertPrevious(cu, Utils.print(m), EXIT, "return\"a\"", "throw new Exception(\"1\")", "throw new Exception(\"4\")", "c()");
-        TestUtils.assertPrevious(cu, Utils.print(m), ENTRY, "catch2()");
-        TestUtils.assertPrevious(cu, Utils.print(m), EXIT, "catch2()");
+        TestUtils.assertPrevious(cu, Utils.print(m), EXIT,
+                "return\"a\"", "throw new Exception(\"1\")", "throw new Exception(\"4\")", "c()");
+
+        TestUtils.assertPrevious(cu, "catch2()", ENTRY, "(Exception e2)");
+        TestUtils.assertPrevious(cu, "catch2()", EXIT,"catch2()");
+        TestUtils.assertPrevious(cu, "(Exception e2)", ENTRY, "throw new Exception(\"2\")");
+        TestUtils.assertPrevious(cu, "(Exception e2)", EXIT,"e2");
+        TestUtils.assertPrevious(cu, "e2", ENTRY, "throw new Exception(\"2\")");
+        TestUtils.assertPrevious(cu, "e2", EXIT,"e2");
+
+        TestUtils.assertPrevious(cu, "catch3()", ENTRY, "(Exception e3)");
+        TestUtils.assertPrevious(cu, "catch4()", ENTRY, "(IOException e4)");
 
     }
 
