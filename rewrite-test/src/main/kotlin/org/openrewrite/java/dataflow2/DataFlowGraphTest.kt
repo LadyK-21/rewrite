@@ -32,7 +32,7 @@ interface DataFlowGraphTest : RewriteTest {
             }
         }
         """.trimIndent()
-        return jp.parse(template.replace("__FRAGMENT__", s))[0];
+        return jp.parse(template.replace("__FRAGMENT__", s))[0]
     }
 
     @Test
@@ -48,20 +48,21 @@ interface DataFlowGraphTest : RewriteTest {
                 }
             }
         """.trimIndent()
-        val cu :J.CompilationUnit = compile(source, jp)
+        val cu :J.CompilationUnit = jp.parse(source)[0]
+        assertThat(cu.printAll()).isEqualTo(source)
         assertPrevious(cu, "b()", ENTRY, "j = w")
-        assertPrevious(cu,"j = w", EXIT, "j = w");
-        assertPrevious(cu,"j = w", ENTRY, "w");
-        assertPrevious(cu,"w", EXIT,"w");
-        assertPrevious(cu,"w", ENTRY,"i = u + v");
-        assertPrevious(cu,"i = u + v", EXIT, "i = u + v");
-        assertPrevious(cu,"i = u + v", ENTRY, "u + v");
-        assertPrevious(cu,"u + v", EXIT, "u + v");
-        assertPrevious(cu,"u + v", ENTRY, "v");
-        assertPrevious(cu,"v", EXIT, "v");
-        assertPrevious(cu,"v", ENTRY, "u");
-        assertPrevious(cu,"u", EXIT, "u");
-        assertPrevious(cu,"u", ENTRY, "a()");
+        assertPrevious(cu,"j = w", EXIT, "j = w")
+        assertPrevious(cu,"j = w", ENTRY, "w")
+        assertPrevious(cu,"w", EXIT,"w")
+        assertPrevious(cu,"w", ENTRY,"i = u + v")
+        assertPrevious(cu,"i = u + v", EXIT, "i = u + v")
+        assertPrevious(cu,"i = u + v", ENTRY, "u + v")
+        assertPrevious(cu,"u + v", EXIT, "u + v")
+        assertPrevious(cu,"u + v", ENTRY, "v")
+        assertPrevious(cu,"v", EXIT, "v")
+        assertPrevious(cu,"v", ENTRY, "u")
+        assertPrevious(cu,"u", EXIT, "u")
+        assertPrevious(cu,"u", ENTRY, "a()")
     }
 
     fun assertPrevious(cu: J.CompilationUnit, pp :String, entryOrExit :ProgramPoint, vararg previous :String) {
