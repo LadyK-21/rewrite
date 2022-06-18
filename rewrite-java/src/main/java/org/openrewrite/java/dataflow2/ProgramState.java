@@ -27,7 +27,7 @@ public class ProgramState<T> {
         this.map = map;
     }
 
-    private ProgramState(LinkedListElement expressionStack, HashMap<JavaType.Variable, T> map) {
+    private ProgramState(LinkedListElement<T> expressionStack, HashMap<JavaType.Variable, T> map) {
         this.expressionStack  = expressionStack;
         this.map = map;
     }
@@ -40,12 +40,12 @@ public class ProgramState<T> {
         return expressionStack.value;
     }
 
-    public ProgramState push(T value) {
-        return this.withExpressionStack(new LinkedListElement(expressionStack, value));
+    public ProgramState<T> push(T value) {
+        return this.withExpressionStack(new LinkedListElement<>(expressionStack, value));
     }
 
-    public ProgramState pop() {
-        return this.withExpressionStack(expressionStack.previous);
+    public ProgramState<T> pop() {
+        return withExpressionStack(expressionStack.previous);
     }
 
     public T get(JavaType.Variable ident) {
@@ -72,40 +72,40 @@ public class ProgramState<T> {
                 }
             }
         }
-        return new ProgramState(m);
+        return new ProgramState<>(m);
     }
 
     @Override
     public String toString() {
-        String s = "{";
-        for(LinkedListElement e = expressionStack; e != null; e = e.previous) {
-            s += " ";
-            s += e.value == null ? "null" : e.value.toString();
+        StringBuilder s = new StringBuilder("{");
+        for(LinkedListElement<T> e = expressionStack; e != null; e = e.previous) {
+            s.append(" ");
+            s.append(e.value == null ? "null" : e.value.toString());
         }
-        s += " |";
+        s.append(" |");
         for(JavaType.Variable v : map.keySet()) {
             T t = map.get(v);
-            s += " " + v.getName() + " -> " + t;
+            s.append(" ").append(v.getName()).append(" -> ").append(t);
         }
-        s += " }";
-        return s;
+        s.append(" }");
+        return s.toString();
     }
 
-    public <S extends ProgramState> boolean isEqualTo(S other) {
-        return this.map.equals(other.map) && LinkedListElement.isEqual(this.expressionStack, other.expressionStack);
+    public <S extends ProgramState<T>> boolean isEqualTo(S other) {
+        return map.equals(other.map) && LinkedListElement.isEqual(expressionStack, other.expressionStack);
     }
-}
 
-@Incubating(since = "7.24.1")
-@AllArgsConstructor
-class LinkedListElement<T> {
-    LinkedListElement previous;
-    T value;
+    @AllArgsConstructor
+    static class LinkedListElement<T> {
+        LinkedListElement<T> previous;
+        T value;
 
-    public static <T> boolean isEqual(LinkedListElement<T> a, LinkedListElement<T> b) {
-        if(a == b) return true;
-        if(a == null) return b == null;
-        if(b == null) return a == null;
-        return a.value == b.value && isEqual(a.previous, b.previous);
+        public static <T> boolean isEqual(LinkedListElement<T> a, LinkedListElement<T> b) {
+            if(a == b) return true;
+            if (a == null ^ b == null) {
+                return false;
+            }
+            return a.value == b.value && isEqual(a.previous, b.previous);
+        }
     }
 }
