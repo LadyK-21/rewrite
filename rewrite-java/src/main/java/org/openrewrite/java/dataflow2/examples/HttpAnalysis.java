@@ -22,11 +22,8 @@ public class HttpAnalysis extends ValueAnalysis<HttpAnalysisValue> {
             return inputState(c, t).push(HttpAnalysisValue.UNKNOWN);
         } else if (STRING_REPLACE.matches(mi)) {
             J.CompilationUnit cu = c.firstEnclosing(J.CompilationUnit.class);
-            HttpAnalysis httpAnalysis = new HttpAnalysis(new DataFlowGraph(cu));
-            ProgramState<HttpAnalysisValue> arg0State = httpAnalysis
-                    .outputState(new Cursor(c, mi.getArguments().get(0)), null);
-            ProgramState<HttpAnalysisValue> arg1State = httpAnalysis
-                    .outputState(new Cursor(c, mi.getArguments().get(1)), null);
+            ProgramState<HttpAnalysisValue> arg0State = outputState(new Cursor(c, mi.getArguments().get(0)), null);
+            ProgramState<HttpAnalysisValue> arg1State = outputState(new Cursor(c, mi.getArguments().get(1)), null);
             if (arg0State.expr().name == HttpAnalysisValue.understanding.NOT_SECURE
                 && arg1State.expr().name == HttpAnalysisValue.understanding.SECURE) {
                 return inputState(c, t).push(HttpAnalysisValue.SECURE);
