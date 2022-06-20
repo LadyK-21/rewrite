@@ -42,16 +42,19 @@ interface DataFlowGraphTest : RewriteTest {
 
     @Test
     fun methodInvocation(jp: JavaParser) {
-        val ac = "abc = myMethod(a1)"
+        val ac = "abc = myMethod(a1, b1)"
         val cu :J.CompilationUnit = compile(ac, jp)
 
-        assertPrevious(cu, ac, ENTRY, "myMethod(a1)")
+        assertPrevious(cu, ac, ENTRY, "myMethod(a1, b1)")
         assertPrevious(cu, ac, EXIT, ac)
 
-        assertPrevious(cu, "myMethod(a1)", ENTRY,"a1")
-        assertPrevious(cu, "myMethod(a1)", EXIT,"myMethod(a1)")
+        assertPrevious(cu, "myMethod(a1, b1)", ENTRY,"b1")
+        assertPrevious(cu, "myMethod(a1, b1)", EXIT,"myMethod(a1, b1)")
 
-        assertPrevious(cu, "a1", ENTRY, "a1")
+        assertPrevious(cu, "b1", ENTRY, "a1")
+        assertPrevious(cu, "b1", EXIT, "b1")
+
+        assertPrevious(cu, "a1", ENTRY, "b1")
         assertPrevious(cu, "a1", EXIT, "a1")
 
         assertPrevious(cu, "myMethod", EXIT,"myMethod")
