@@ -30,8 +30,8 @@ public class UseSecureHttpConnection extends Recipe {
                     ProgramState<HttpAnalysisValue> state = httpAnalysis
                             .outputState(new Cursor(getCursor(), mi.getArguments().get(0)), null);
                     HttpAnalysisValue stateValue = state.expr();
-                    if (stateValue.name == HttpAnalysisValue.Understanding.NOT_SECURE) {
-                        doAfterVisit(new HttpToHttpsVisitor((J.Literal) stateValue.literal));
+                    if (stateValue.getName() == HttpAnalysisValue.Understanding.NOT_SECURE) {
+                        doAfterVisit(new HttpToHttpsVisitor((J.Literal) stateValue.getLiteral()));
                     }
                 }
                 return mi;

@@ -7,6 +7,7 @@ import org.openrewrite.test.RewriteTest
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.AssertionsForClassTypes
+import org.junit.jupiter.api.Disabled
 
 import org.openrewrite.Cursor
 
@@ -19,6 +20,44 @@ import java.util.stream.Collectors
 
 interface DataFlowGraphTest : RewriteTest {
 
+    @Disabled
+    @Test
+    fun arrayAccess(jp: JavaParser) {
+        val ac = "s = str[0]"
+        val cu :J.CompilationUnit = compile(ac, jp)
+
+        assertPrevious(cu, "s = str[0]", ENTRY, "a()")
+        assertPrevious(cu, "s = str[0]", EXIT, "s = str[0]")
+
+        assertPrevious(cu, "str[0]", ENTRY,"0")
+        assertPrevious(cu, "str[0]", EXIT,"str[0]")
+
+        assertPrevious(cu, "0", ENTRY, "str")
+        assertPrevious(cu, "0", EXIT, "0")
+
+        assertPrevious(cu, "str", EXIT,"str")
+        assertPrevious(cu, "str", ENTRY,"a()")
+
+    }
+
+    @Test
+    fun methodInvocation(jp: JavaParser) {
+        val ac = "abc = myMethod(a1)"
+        val cu :J.CompilationUnit = compile(ac, jp)
+
+        assertPrevious(cu, ac, ENTRY, "myMethod(a1)")
+        assertPrevious(cu, ac, EXIT, ac)
+
+        assertPrevious(cu, "myMethod(a1)", ENTRY,"a1")
+        assertPrevious(cu, "myMethod(a1)", EXIT,"myMethod(a1)")
+
+        assertPrevious(cu, "a1", ENTRY, "a1")
+        assertPrevious(cu, "a1", EXIT, "a1")
+
+        assertPrevious(cu, "myMethod", EXIT,"myMethod")
+        assertPrevious(cu, "myMethod", ENTRY,"a()")
+
+    }
     fun compile(s :String, jp: JavaParser): J.CompilationUnit {
         val template =
             """

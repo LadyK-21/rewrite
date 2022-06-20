@@ -56,54 +56,54 @@ public class DataFlowGraph {
 
         J parent = parentCursor.getValue();
         switch (parent.getClass().getSimpleName()) {
-            case "J$Assignment":
+            case "Assignment":
                 return previousInAssignment(parentCursor, current);
-            case "J$Block":
+            case "Block":
                 return previousInBlock(parentCursor, current);
-            case "J$MethodInvocation":
+            case "MethodInvocation":
                 return previousInMethodInvocation(parentCursor, current);
-            case "J$NewClass":
+            case "NewClass":
                 return previousInNewClass(parentCursor, current);
-            case "J$If":
+            case "If":
                 return previousInIf(parentCursor, current);
-            case "J$If$Else":
+            case "Else":
                 return previousInIfElse(parentCursor, current);
-            case "J$WhileLoop":
+            case "WhileLoop":
                 return previousInWhileLoop(parentCursor, current);
-            case "J$ForLoop":
+            case "ForLoop":
                 return previousInForLoop(parentCursor, current);
-            case "J$ForLoop$Control":
+            case "ForLoop$Control":
                 return previousInForLoopControl(parentCursor, current);
-            case "J$VariableDeclarations":
+            case "VariableDeclarations":
                 return previousInVariableDeclarations(parentCursor, current);
-            case "J$Unary":
+            case "Unary":
                 return previousInUnary(parentCursor, current);
-            case "J$Binary":
+            case "Binary":
                 return previousInBinary(parentCursor, current);
-            case "J$Parentheses":
+            case "Parentheses":
                 return previousInParentheses(parentCursor, current);
-            case "J$ControlParentheses":
+            case "ControlParentheses":
                 return previousInControlParentheses(parentCursor, current);
-            case "J$VariableDeclarations$NamedVariable":
+            case "NamedVariable":
                 return previousInNamedVariable(parentCursor, current);
-            case "J$Return":
+            case "Return":
                 return previousInReturn(parentCursor, current);
-            case "J$Throw":
+            case "Throw":
                 return previousInThrow(parentCursor, current);
-            case "J$Try":
+            case "Try":
                 return previousInTry(parentCursor, current);
-            case "J$Try$Catch":
+            case "Catch":
                 return previousInTryCatch(parentCursor, current);
-            case "J$MethodDeclaration":
+            case "MethodDeclaration":
                 return previousInMethodDeclaration(parentCursor, current);
-            case "J$CompilationUnit":
-            case "J$ClassDeclaration":
+            case "CompilationUnit":
+            case "ClassDeclaration":
                 return Collections.emptyList();
-            case "J$Literal":
-            case "J$Identifier":
-            case "J$Empty":
+            case "Literal":
+            case "Identifier":
+            case "Empty":
                 return previousInTerminalNode(parentCursor, current);
-            case "J$Primitive":
+            case "Primitive":
                 // not actually a program point, but implements Expression or Statement
                 return previousInTerminalNode(parentCursor, current);
             default:
@@ -132,7 +132,7 @@ public class DataFlowGraph {
                 // Try
                 // TypeCast
                 // WhileLoop
-                throw new Error("Not implemented : " + parent.getClass().getName());
+                throw new Error("Not implemented : " + parent.getClass().getSimpleName());
         }
     }
 
