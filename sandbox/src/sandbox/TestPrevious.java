@@ -13,6 +13,8 @@ import static sandbox.TestUtils.parse;
 public class TestPrevious {
     public static void test()
     {
+        testParentheses();
+        testWhileLoop();
         testNonLocalExits();
         testMethodInvocation();
         testIfThen();
@@ -40,6 +42,38 @@ public class TestPrevious {
         J.CompilationUnit cu = parse(source);
 
         TestUtils.assertPrevious(cu,pp, entryOrExit, previous);
+    }
+
+    public static void testParentheses()
+    {
+        String source =
+                "class C {\n" +
+                        "    void a() {} \n" +
+                        "    void b() {} \n" +
+                        "    void m() {\n" +
+                        "        a();\n" +
+                        "        int i = (u + v);\n" +
+                        "        b();\n" +
+                        "    }\n" +
+                        "}\n" +
+                        "";
+
+        J.CompilationUnit cu = parse(source);
+        DataFlowGraph dfg = new DataFlowGraph(cu);
+        //new PrintProgramPointsVisitor(dfg).visit(cu, null);
+
+        TestUtils.assertPrevious(cu,"b()", ENTRY, "i = (u + v)");
+        TestUtils.assertPrevious(cu,"i = (u + v)", EXIT, "i = (u + v)");
+        TestUtils.assertPrevious(cu,"i = (u + v)", ENTRY, "(u + v)");
+        TestUtils.assertPrevious(cu,"(u + v)", EXIT,"(u + v)");
+        TestUtils.assertPrevious(cu,"(u + v)", ENTRY,"u + v");
+        TestUtils.assertPrevious(cu,"u + v", EXIT, "u + v");
+        TestUtils.assertPrevious(cu,"u + v", ENTRY, "v");
+        TestUtils.assertPrevious(cu,"v", EXIT, "v");
+        TestUtils.assertPrevious(cu,"v", ENTRY, "u");
+        TestUtils.assertPrevious(cu,"u", EXIT, "u");
+        TestUtils.assertPrevious(cu,"u", ENTRY, "a()");
+
     }
 
     public static void testVariableDeclarations()
@@ -199,8 +233,10 @@ public class TestPrevious {
 
         TestUtils.assertPrevious(cu, "catch2()", ENTRY, "(Exception e2)");
         TestUtils.assertPrevious(cu, "catch2()", EXIT,"catch2()");
-        TestUtils.assertPrevious(cu, "(Exception e2)", ENTRY, "throw new Exception(\"2\")");
-        TestUtils.assertPrevious(cu, "(Exception e2)", EXIT,"e2");
+        TestUtils.assertPrevious(cu, "(Exception e2)", ENTRY, "Exception e2");
+        TestUtils.assertPrevious(cu, "(Exception e2)", EXIT,"(Exception e2)");
+        TestUtils.assertPrevious(cu, "Exception e2", ENTRY, "throw new Exception(\"2\")");
+        TestUtils.assertPrevious(cu, "Exception e2", EXIT,"e2");
         TestUtils.assertPrevious(cu, "e2", ENTRY, "throw new Exception(\"2\")");
         TestUtils.assertPrevious(cu, "e2", EXIT,"e2");
 
@@ -275,6 +311,38 @@ public class TestPrevious {
         TestUtils.assertPrevious(cu,"j=1", EXIT,"j=1");
         TestUtils.assertPrevious(cu,"1", ENTRY, "i=0");
         TestUtils.assertPrevious(cu,"1", EXIT,"1");
+    }
+
+    public static void testWhileLoop() {
+        String source =
+                "class C { \n" +
+                        "    void a() {} \n" +
+                        "    void b() {} \n" +
+                        "    void method() { \n" +
+                        "       a(); \n" +
+                        "       String s; while((s = \"a\") == null) { s = null; } \n" +
+                        "       b(); \n" +
+                        "    } \n" +
+                        "} \n" +
+                        "";
+
+        J.CompilationUnit cu = parse(source);
+        DataFlowGraph dfg = new DataFlowGraph(cu);
+
+        TestUtils.assertPrevious(cu,"while((s = \"a\") == null) { s = null; }", ENTRY,"s");
+        TestUtils.assertPrevious(cu,"while((s = \"a\") == null) { s = null; }", EXIT,"((s = \"a\") == null)");
+        TestUtils.assertPrevious(cu,"((s = \"a\") == null)", ENTRY, "(s = \"a\") == null");
+        TestUtils.assertPrevious(cu,"((s = \"a\") == null)", EXIT, "((s = \"a\") == null)");
+        TestUtils.assertPrevious(cu,"(s = \"a\") == null", ENTRY, "null");
+        TestUtils.assertPrevious(cu,"(s = \"a\") == null", EXIT, "(s = \"a\") == null");
+        TestUtils.assertPrevious(cu,"null", ENTRY,"(s = \"a\")");
+        TestUtils.assertPrevious(cu,"null", EXIT,"null");
+        TestUtils.assertPrevious(cu,"(s = \"a\")", ENTRY,"s = \"a\"");
+        TestUtils.assertPrevious(cu,"(s = \"a\")", EXIT,"(s = \"a\")");
+        TestUtils.assertPrevious(cu,"s = \"a\"", ENTRY,"\"a\"");
+        TestUtils.assertPrevious(cu,"s = \"a\"", EXIT,"s = \"a\"");
+        TestUtils.assertPrevious(cu,"\"a\"", ENTRY,"s", "{ s = null; }");
+        TestUtils.assertPrevious(cu,"\"a\"", EXIT,"\"a\"");
     }
 
 }

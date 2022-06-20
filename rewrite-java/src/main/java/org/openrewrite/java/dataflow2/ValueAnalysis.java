@@ -134,7 +134,8 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
     @Override
     public ProgramState<T> transferControlParentheses(Cursor c, TraversalControl<ProgramState<T>> t) {
         J.ControlParentheses paren = c.getValue();
-        return outputState(new Cursor(c, paren.getTree()), t); // TODO push
+        ProgramState<T> state = outputState(new Cursor(c, paren.getTree()), t); // TODO push
+        return state;
     }
 }
 

@@ -57,14 +57,15 @@ public class TestNullAnalysis {
 
 //        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", CantTell);
 
-//        testIsSNull("String s = null; while(c) { s = \"a\"; }", CantTell);
-//        testIsSNull("String s = null; while(c) { s = null; }", DefinitelyYes);
-//        testIsSNull("String s = \"a\"; while(c) { s = null; }", CantTell);
-//        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", DefinitelyNo);
-//        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", CantTell);
-//        testIsSNull("String s; while((s = null) == null) { s = null; }", DefinitelyYes);
-//        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", CantTell);
-//        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", DefinitelyNo);
+        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", False);
+        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", False);
+
+        testIsSNull("String s = null; while(c) { s = \"a\"; }", Conflict);
+        testIsSNull("String s = null; while(c) { s = null; }", True);
+        testIsSNull("String s = \"a\"; while(c) { s = null; }", Conflict);
+        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", False);
+        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", True);
+        testIsSNull("String s; while((s = null) == null) { s = null; }", True);
 
         testIsSNull("String s = f(); if(s == null) { s = \"a\"; }", False);
         // Understanding that s is always null below requires constant propagation

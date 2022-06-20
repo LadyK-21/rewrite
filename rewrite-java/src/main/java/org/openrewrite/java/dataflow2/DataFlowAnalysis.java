@@ -6,6 +6,8 @@ import org.openrewrite.java.tree.J;
 
 import java.util.*;
 
+import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
+
 @Incubating(since = "7.25.0")
 public abstract class DataFlowAnalysis<T> {
 
@@ -19,11 +21,9 @@ public abstract class DataFlowAnalysis<T> {
 
     public ProgramState<T> inputState(Cursor c, TraversalControl<ProgramState<T>> t) {
         ProgramPoint pp = c.getValue();
+
         List<ProgramState<T>> outs = new ArrayList<>();
-        Collection<Cursor> sources = dfg.previous(c);
-        if (sources == null) {
-            dfg.previous(c);
-        }
+        Collection<Cursor> sources = dfg.previousIn(c, ENTRY);
         for (Cursor source : sources) {
             // Since program points are represented by cursors with a tree node value,
             // it is impossible to add program points when there is no corresponding tree node.
@@ -50,7 +50,21 @@ public abstract class DataFlowAnalysis<T> {
         return join(Arrays.asList(outs));
     }
 
+    public Map<ProgramPoint, ProgramState<T>> visited = new HashMap<>();
+
     public ProgramState<T> outputState(Cursor pp, TraversalControl<ProgramState<T>> t) {
+        ProgramState<T> p = visited.get(pp.getValue());
+        if(p != null) {
+            return p;
+        } else {
+            visited.put(pp.getValue(), new ProgramState<>());
+            p = outputState2(pp, t);
+            visited.put(pp.getValue(), p);
+            return p;
+        }
+    }
+
+    public ProgramState<T> outputState2(Cursor pp, TraversalControl<ProgramState<T>> t) {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
                 return transferMethodInvocation(pp, t);

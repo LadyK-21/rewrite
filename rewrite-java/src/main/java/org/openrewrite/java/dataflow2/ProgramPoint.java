@@ -21,9 +21,9 @@ import java.util.Collection;
 @Incubating(since = "7.25.0")
 public interface ProgramPoint {
 
-    default Collection<Cursor> previous(DataFlowGraph dfg, Cursor c) {
-        return dfg.previous(c);
-    }
+//    default Collection<Cursor> previous(DataFlowGraph dfg, Cursor c) {
+//        return dfg.previous(c);
+//    }
 
     default String printPP(Cursor cursor) {
         if (this instanceof J) {

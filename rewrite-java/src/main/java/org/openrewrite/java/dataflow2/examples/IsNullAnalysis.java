@@ -17,13 +17,13 @@ import java.util.stream.Collectors;
 import static org.openrewrite.java.dataflow2.ModalBoolean.*;
 
 @Incubating(since = "7.25.0")
-public class IsNullAnalysis extends DataFlowAnalysis<ModalBoolean> {
+public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
 
     public IsNullAnalysis(DataFlowGraph dfg) {
-        super(dfg);
+        super(dfg, ModalBoolean.JOINER);
     }
 
-    private static final Joiner<ModalBoolean> JOINER = ModalBoolean.JOINER;
+    //private static final Joiner<ModalBoolean> JOINER = ModalBoolean.JOINER;
 
     /**
      * @return Whether the variable v is known to be null before given program point.
@@ -97,7 +97,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ModalBoolean> {
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
             ProgramState<ModalBoolean> s = outputState(new Cursor(c, a.getAssignment()), t);
-            return s.set(ident.getFieldType(), s.expr());
+            return s.set(ident.getFieldType(), s.expr()).push(s.expr());
         } else {
             throw new UnsupportedOperationException();
         }

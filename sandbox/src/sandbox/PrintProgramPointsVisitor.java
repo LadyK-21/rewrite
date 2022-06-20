@@ -11,6 +11,8 @@ import org.openrewrite.java.tree.Statement;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
+
 class PrintProgramPointsVisitor extends JavaIsoVisitor {
 
     private final DataFlowGraph dfg;
@@ -36,10 +38,10 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
         if (print(getCursor()).equals("0")) {
             System.out.println();
         }
-        Collection<Cursor> pp = dfg.previous(getCursor());
+        Collection<Cursor> pp = dfg.previousIn(getCursor(), ENTRY);
         if (pp == null) {
             System.out.println("   (prevs = null)");
-            dfg.previous(getCursor());
+            //dfg.previous(getCursor());
         } else {
             for (Cursor p : pp) {
                 System.out.println("   prev = " + print(p));
@@ -65,10 +67,10 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
             if (print(getCursor()).equals("xxx")) {
                 Main.debug = true;
             }
-            Collection<Cursor> pp = dfg.previous(getCursor());
+            Collection<Cursor> pp = dfg.previousIn(getCursor(), ENTRY);
             if (pp == null) {
                 System.out.println("   (prevs = null)");
-                dfg.previous(getCursor());
+                //dfg.previous(getCursor());
             } else {
                 for (Cursor p : pp) {
                     System.out.println("   prev = " + print(p));
@@ -84,7 +86,7 @@ class PrintProgramPointsVisitor extends JavaIsoVisitor {
         if (print(getCursor()).equals("0")) {
             System.out.println();
         }
-        Collection<Cursor> pp = dfg.previous(getCursor());
+        Collection<Cursor> pp = dfg.previousIn(getCursor(), ENTRY);
         if (pp == null) {
             System.out.println("   (null)");
         } else {

@@ -13,7 +13,7 @@ public class Main {
     {
         TestPrevious.test();
         TestNullAnalysis.test();
-        TestZipSlip.test();
+        //TestZipSlip.test();
     }
 
 
