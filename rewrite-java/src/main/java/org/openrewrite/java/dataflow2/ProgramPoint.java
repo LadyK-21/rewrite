@@ -2,7 +2,6 @@ package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
-import org.openrewrite.Tree;
 import org.openrewrite.java.tree.J;
 
 import java.util.Collection;
@@ -24,6 +23,14 @@ public interface ProgramPoint {
 
     default Collection<Cursor> previous(DataFlowGraph dfg, Cursor c) {
         return dfg.previous(c);
+    }
+
+    default String printPP(Cursor cursor) {
+        if (this instanceof J) {
+            return ((J) this).print(cursor);
+        } else {
+            throw new UnsupportedOperationException("printPP(" + this.getClass().getSimpleName() + ")");
+        }
     }
 
     ProgramPoint ENTRY = new ProgramPoint() {

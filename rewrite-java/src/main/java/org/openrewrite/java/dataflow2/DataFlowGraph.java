@@ -2,13 +2,13 @@ package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
-import org.openrewrite.Tree;
 import org.openrewrite.internal.ListUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
@@ -23,12 +23,15 @@ public class DataFlowGraph {
     private Map<Cursor, List<Cursor>> previousMap;
 
     // NLE statement -> target
-    Map<ProgramPoint, Cursor> nonLocalExitsForward = new HashMap<>();
+    Map<ProgramPoint, Cursor> nonLocalExitsForward;
     // target -> list(NLE statements targeting target)
-    Map<ProgramPoint, List<Cursor>> nonLocalExitsBackward = new HashMap<>();
+    Map<ProgramPoint, ArrayList<Cursor>> nonLocalExitsBackward;
 
     public DataFlowGraph(J.CompilationUnit cu) {
         this.cu = cu;
+
+        nonLocalExitsForward = new HashMap<>();
+        nonLocalExitsBackward = new HashMap<>();
         new NonLocalExitsVisitor().visit(cu, 0);
         // add an implicit final return when the last statement is not an explicit return
 
@@ -52,55 +55,56 @@ public class DataFlowGraph {
         }
 
         J parent = parentCursor.getValue();
-        switch (parent.getClass().getSimpleName()) {
-            case "Assignment":
+        switch (parent.getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
+            case "J$Assignment":
                 return previousInAssignment(parentCursor, current);
-            case "Block":
+            case "J$Block":
                 return previousInBlock(parentCursor, current);
-            case "MethodInvocation":
+            case "J$MethodInvocation":
                 return previousInMethodInvocation(parentCursor, current);
-            case "NewClass":
+            case "J$NewClass":
                 return previousInNewClass(parentCursor, current);
-            case "If":
+            case "J$If":
                 return previousInIf(parentCursor, current);
-            case "Else":
+            case "J$If$Else":
                 return previousInIfElse(parentCursor, current);
-            case "WhileLoop":
+            case "J$WhileLoop":
                 return previousInWhileLoop(parentCursor, current);
-            case "ForLoop":
+            case "J$ForLoop":
                 return previousInForLoop(parentCursor, current);
-            case "ForLoop$Control":
+            case "J$ForLoop$Control":
                 return previousInForLoopControl(parentCursor, current);
-            case "VariableDeclarations":
+            case "J$VariableDeclarations":
                 return previousInVariableDeclarations(parentCursor, current);
-            case "Unary":
+            case "J$Unary":
                 return previousInUnary(parentCursor, current);
-            case "Binary":
+            case "J$Binary":
                 return previousInBinary(parentCursor, current);
-            case "Parentheses":
+            case "J$Parentheses":
                 return previousInParentheses(parentCursor, current);
-            case "ControlParentheses":
+            case "J$ControlParentheses":
                 return previousInControlParentheses(parentCursor, current);
-            case "NamedVariable":
+            case "J$VariableDeclarations$NamedVariable":
                 return previousInNamedVariable(parentCursor, current);
-            case "Return":
+            case "J$Return":
                 return previousInReturn(parentCursor, current);
-            case "Throw":
+            case "J$Throw":
                 return previousInThrow(parentCursor, current);
-            case "Try":
+            case "J$Try":
                 return previousInTry(parentCursor, current);
-            case "Catch":
+            case "J$Try$Catch":
                 return previousInTryCatch(parentCursor, current);
-            case "MethodDeclaration":
+            case "J$MethodDeclaration":
                 return previousInMethodDeclaration(parentCursor, current);
-            case "CompilationUnit":
-            case "ClassDeclaration":
+            case "J$CompilationUnit":
+            case "J$ClassDeclaration":
                 return Collections.emptyList();
-            case "Literal":
-            case "Identifier":
-            case "Empty":
+            case "J$Literal":
+            case "J$Identifier":
+            case "J$Empty":
+                // all these are terminal nodes
                 return previousInTerminalNode(parentCursor, current);
-            case "Primitive":
+            case "J$Primitive":
                 // not actually a program point, but implements Expression or Statement
                 return previousInTerminalNode(parentCursor, current);
             default:
@@ -129,7 +133,7 @@ public class DataFlowGraph {
                 // Try
                 // TypeCast
                 // WhileLoop
-                throw new Error("Not implemented : " + parent.getClass().getSimpleName());
+                throw new Error("Not implemented : " + parent.getClass().getName());
         }
     }
 
@@ -660,18 +664,9 @@ public class DataFlowGraph {
     public String print(Cursor c) {
         if (c.getValue() instanceof ProgramPoint) {
             ProgramPoint p = c.getValue();
-            if (p instanceof Tree) {
-                return ((Tree) this).print(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();
-            } else {
-                throw new UnsupportedOperationException("Unable to print a program point of type " + this.getClass().getSimpleName());
-            }
+            return p.printPP(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();
         } else if (c.getValue() instanceof Collection) {
-            StringJoiner joiner = new StringJoiner("; ");
-            for (Object e : ((Collection<?>) c.getValue())) {
-                String print = print(new Cursor(c, e));
-                joiner.add(print);
-            }
-            return joiner.toString();
+            return ((Collection<?>) c.getValue()).stream().map(e -> print(new Cursor(c, e))).collect(Collectors.joining("; "));
         } else {
             throw new IllegalStateException();
         }
@@ -793,7 +788,7 @@ public class DataFlowGraph {
 
         private void addNonLocalExit(Cursor from, Cursor to) {
             nonLocalExitsForward.put(from.getValue(), to);
-            List<Cursor> l = nonLocalExitsBackward.get(to.getValue());
+            ArrayList<Cursor> l = nonLocalExitsBackward.get(to.getValue());
             if (l == null) {
                 l = new ArrayList<>();
                 ProgramPoint value = to.getValue();
