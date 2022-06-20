@@ -2,13 +2,13 @@ package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
 import org.openrewrite.Incubating;
+import org.openrewrite.Tree;
 import org.openrewrite.internal.ListUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.tree.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
@@ -23,15 +23,12 @@ public class DataFlowGraph {
     private Map<Cursor, List<Cursor>> previousMap;
 
     // NLE statement -> target
-    Map<ProgramPoint, Cursor> nonLocalExitsForward;
+    Map<ProgramPoint, Cursor> nonLocalExitsForward = new HashMap<>();
     // target -> list(NLE statements targeting target)
-    Map<ProgramPoint, ArrayList<Cursor>> nonLocalExitsBackward;
+    Map<ProgramPoint, List<Cursor>> nonLocalExitsBackward = new HashMap<>();
 
     public DataFlowGraph(J.CompilationUnit cu) {
         this.cu = cu;
-
-        nonLocalExitsForward = new HashMap<>();
-        nonLocalExitsBackward = new HashMap<>();
         new NonLocalExitsVisitor().visit(cu, 0);
         // add an implicit final return when the last statement is not an explicit return
 
@@ -663,9 +660,18 @@ public class DataFlowGraph {
     public String print(Cursor c) {
         if (c.getValue() instanceof ProgramPoint) {
             ProgramPoint p = c.getValue();
-            return p.printPP(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();
+            if (p instanceof Tree) {
+                return ((Tree) this).print(c).replace("\n", " ").replaceAll("[ ]+", " ").trim();
+            } else {
+                throw new UnsupportedOperationException("Unable to print a program point of type " + this.getClass().getSimpleName());
+            }
         } else if (c.getValue() instanceof Collection) {
-            return ((Collection<?>) c.getValue()).stream().map(e -> print(new Cursor(c, e))).collect(Collectors.joining("; "));
+            StringJoiner joiner = new StringJoiner("; ");
+            for (Object e : ((Collection<?>) c.getValue())) {
+                String print = print(new Cursor(c, e));
+                joiner.add(print);
+            }
+            return joiner.toString();
         } else {
             throw new IllegalStateException();
         }
@@ -787,7 +793,7 @@ public class DataFlowGraph {
 
         private void addNonLocalExit(Cursor from, Cursor to) {
             nonLocalExitsForward.put(from.getValue(), to);
-            ArrayList<Cursor> l = nonLocalExitsBackward.get(to.getValue());
+            List<Cursor> l = nonLocalExitsBackward.get(to.getValue());
             if (l == null) {
                 l = new ArrayList<>();
                 ProgramPoint value = to.getValue();
