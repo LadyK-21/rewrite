@@ -1,7 +1,6 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
-import org.openrewrite.java.dataflow2.examples.ZipSlipValue;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
@@ -127,13 +126,13 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
 
     @Override
     public ProgramState<T> transferParentheses(Cursor c, TraversalControl<ProgramState<T>> t) {
-        J.Parentheses paren = c.getValue();
+        J.Parentheses<?> paren = c.getValue();
         return outputState(new Cursor(c, paren.getTree()), t);
     }
 
     @Override
     public ProgramState<T> transferControlParentheses(Cursor c, TraversalControl<ProgramState<T>> t) {
-        J.ControlParentheses paren = c.getValue();
+        J.ControlParentheses<?> paren = c.getValue();
         return outputState(new Cursor(c, paren.getTree()), t);
     }
 }

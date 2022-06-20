@@ -124,7 +124,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ModalBoolean> {
     @Override
     public ProgramState<ModalBoolean> transferLiteral(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.Literal pp = c.getValue();
-        ProgramState s = inputState(c, t);
+        ProgramState<ModalBoolean> s = inputState(c, t);
         if (pp.getValue() == null) {
             return s.push(True);
         } else {
@@ -159,7 +159,7 @@ public class IsNullAnalysis extends DataFlowAnalysis<ModalBoolean> {
 
     @Override
     public ProgramState<ModalBoolean> transferParentheses(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
-        J.Parentheses paren = c.getValue();
+        J.Parentheses<?> paren = c.getValue();
         return outputState(new Cursor(c, paren.getTree()), t);
     }
 }

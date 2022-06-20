@@ -17,17 +17,17 @@ public class Utils {
      */
     public static Cursor findProgramPoint(J.CompilationUnit cu, String ppToFind) {
         Visitor visitor = new Visitor(ppToFind);
-        visitor.visit(cu, null);
+        visitor.visit(cu, 0);
         return visitor.result;
     }
 
     public static JavaType.Variable findVariable(J.CompilationUnit cu, String variableToFind) {
         FindVariableVisitor visitor = new FindVariableVisitor(variableToFind);
-        visitor.visit(cu, null);
+        visitor.visit(cu, 0);
         return visitor.result;
     }
 
-    static class Visitor extends JavaIsoVisitor {
+    static class Visitor extends JavaIsoVisitor<Integer> {
 
         final String ppToFind;
         Cursor result;
@@ -38,8 +38,8 @@ public class Utils {
         }
 
         @Override
-        public Statement visitStatement(Statement statement, Object o) {
-            super.visitStatement(statement, o);
+        public Statement visitStatement(Statement statement, Integer p) {
+            super.visitStatement(statement, p);
             if (result == null && ppToFind.equals(print(statement, getCursor()))) {
                 result = getCursor();
             }
@@ -47,8 +47,8 @@ public class Utils {
         }
 
         @Override
-        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
-            super.visitVariable(variable, o);
+        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Integer p) {
+            super.visitVariable(variable, p);
             if (result == null && ppToFind.equals(print(variable, getCursor()))) {
                 result = getCursor();
             }
@@ -56,8 +56,8 @@ public class Utils {
         }
 
         @Override
-        public Expression visitExpression(Expression expression, Object o) {
-            super.visitExpression(expression, o);
+        public Expression visitExpression(Expression expression, Integer p) {
+            super.visitExpression(expression, p);
             if (result == null && ppToFind.equals(print(expression, getCursor()))) {
                 result = getCursor();
             }
@@ -65,7 +65,7 @@ public class Utils {
         }
     }
 
-    static class FindVariableVisitor extends JavaIsoVisitor {
+    static class FindVariableVisitor extends JavaIsoVisitor<Integer> {
 
         final String variableToFind;
         JavaType.Variable result;
@@ -76,8 +76,8 @@ public class Utils {
         }
 
         @Override
-        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Object o) {
-            super.visitVariable(variable, o);
+        public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Integer p) {
+            super.visitVariable(variable, p);
             if (result == null && variableToFind.equals(variable.getName().getSimpleName())) {
                 result = variable.getVariableType();
             }
