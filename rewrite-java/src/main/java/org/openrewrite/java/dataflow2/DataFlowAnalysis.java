@@ -32,11 +32,11 @@ public abstract class DataFlowAnalysis<T> {
 
             if (source.getMessage("ifThenElseBranch") != null) {
                 J.If ifThenElse = source.firstEnclosing(J.If.class);
-                ProgramState<T> s1 = outputState(source, t);
+                ProgramState<T> s1 = outputState(source, t, pp);
                 ProgramState<T> s2 = transferToIfThenElseBranches(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
                 outs.add(s2);
             } else {
-                outs.add(outputState(source, t));
+                outs.add(outputState(source, t, pp));
             }
         }
         ProgramState<T> result = join(outs);
@@ -52,7 +52,8 @@ public abstract class DataFlowAnalysis<T> {
 
     public Map<ProgramPoint, ProgramState<T>> visited = new HashMap<>();
 
-    public ProgramState<T> outputState(Cursor pp, TraversalControl<ProgramState<T>> t) {
+    public ProgramState<T> outputState(Cursor pp, TraversalControl<ProgramState<T>> t, ProgramPoint depend) {
+        // 'depend' depends on 'outputState(pp)'
         ProgramState<T> p = visited.get(pp.getValue());
         if(p != null) {
             return p;

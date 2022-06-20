@@ -2,10 +2,8 @@ package org.openrewrite.java.dataflow2.examples;
 
 import org.openrewrite.Cursor;
 import org.openrewrite.java.MethodMatcher;
-import org.openrewrite.java.dataflow2.DataFlowGraph;
-import org.openrewrite.java.dataflow2.ProgramState;
-import org.openrewrite.java.dataflow2.TraversalControl;
-import org.openrewrite.java.dataflow2.ValueAnalysis;
+import org.openrewrite.java.dataflow2.*;
+import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 
 public class HttpAnalysis extends ValueAnalysis<HttpAnalysisValue> {
@@ -21,8 +19,10 @@ public class HttpAnalysis extends ValueAnalysis<HttpAnalysisValue> {
         if (URI_CREATE_MATCHER.matches(mi)) {
             return inputState(c, t).push(HttpAnalysisValue.UNKNOWN);
         } else if (STRING_REPLACE.matches(mi)) {
-            ProgramState<HttpAnalysisValue> arg0State = outputState(new Cursor(c, mi.getArguments().get(0)), null);
-            ProgramState<HttpAnalysisValue> arg1State = outputState(new Cursor(c, mi.getArguments().get(1)), null);
+            ProgramPoint arg0 = mi.getArguments().get(0);
+            ProgramPoint arg1 = mi.getArguments().get(1);
+            ProgramState<HttpAnalysisValue> arg0State = outputState(new Cursor(c, arg0), null, arg0);
+            ProgramState<HttpAnalysisValue> arg1State = outputState(new Cursor(c, arg1), null, arg1);
             if (arg0State.expr().getName() == HttpAnalysisValue.Understanding.NOT_SECURE
                 && arg1State.expr().getName() == HttpAnalysisValue.Understanding.SECURE) {
                 return inputState(c, t).push(HttpAnalysisValue.SECURE);

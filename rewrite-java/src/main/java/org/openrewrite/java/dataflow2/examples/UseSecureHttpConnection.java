@@ -6,6 +6,7 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.Recipe;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.dataflow2.DataFlowGraph;
+import org.openrewrite.java.dataflow2.ProgramPoint;
 import org.openrewrite.java.dataflow2.ProgramState;
 import org.openrewrite.java.tree.J;
 
@@ -27,8 +28,9 @@ public class UseSecureHttpConnection extends Recipe {
                 if (URI_CREATE_MATCHER.matches(mi)) {
                     J.CompilationUnit cu = getCursor().firstEnclosing(J.CompilationUnit.class);
                     HttpAnalysis httpAnalysis = new HttpAnalysis(new DataFlowGraph(cu));
+                    ProgramPoint arg0 = mi.getArguments().get(0);
                     ProgramState<HttpAnalysisValue> state = httpAnalysis
-                            .outputState(new Cursor(getCursor(), mi.getArguments().get(0)), null);
+                            .outputState(new Cursor(getCursor(), arg0), null, arg0);
                     HttpAnalysisValue stateValue = state.expr();
                     if (stateValue.getName() == HttpAnalysisValue.Understanding.NOT_SECURE) {
                         doAfterVisit(new HttpToHttpsVisitor((J.Literal) stateValue.getLiteral()));

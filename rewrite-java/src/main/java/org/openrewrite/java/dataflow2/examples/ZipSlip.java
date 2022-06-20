@@ -88,7 +88,7 @@ public class ZipSlip extends ValueAnalysis<ZipSlipValue> {
         if(m.matches(newClass)) {
             Expression dir = newClass.getArguments().get(0);
             Expression fileName = newClass.getArguments().get(1);
-            ZipSlipValue fileNameValue = outputState(new Cursor(c, fileName), t).expr();
+            ZipSlipValue fileNameValue = outputState(new Cursor(c, fileName), t, fileName).expr();
             ProgramState<ZipSlipValue> s = inputState(c, t);
             if(fileNameValue == ZipSlipValue.ZIP_ENTRY_NAME) {
                 // fileName has been obtained from ZipEntry.getName()
