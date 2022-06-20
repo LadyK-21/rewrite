@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 import static org.openrewrite.java.dataflow2.examples.ZipSlipValue.UNKNOWN;
 
-@Incubating(since = "7.24.1")
+@Incubating(since = "7.25.0")
 public class ZipSlip extends ValueAnalysis<ZipSlipValue> {
 
     public ZipSlip(DataFlowGraph dfg) {

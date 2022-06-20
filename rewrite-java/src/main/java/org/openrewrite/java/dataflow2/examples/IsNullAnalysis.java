@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 import static org.openrewrite.java.dataflow2.ModalBoolean.*;
 
-@Incubating(since = "7.24.1")
+@Incubating(since = "7.25.0")
 public class IsNullAnalysis extends DataFlowAnalysis<ModalBoolean> {
 
     public IsNullAnalysis(DataFlowGraph dfg) {

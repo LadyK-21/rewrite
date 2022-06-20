@@ -6,12 +6,12 @@ import org.openrewrite.java.tree.J;
 
 import java.util.*;
 
-@Incubating(since = "7.24.1")
+@Incubating(since = "7.25.0")
 public abstract class DataFlowAnalysis<T> {
 
     final DataFlowGraph dfg;
     Map<Cursor, ProgramState<T>> analysis = new HashMap<>();
-    WorkList<Cursor> workList = new WorkList();
+    Queue<Cursor> workList = new ArrayDeque<>();
 
     public DataFlowAnalysis(DataFlowGraph dfg) {
         this.dfg = dfg;
@@ -21,7 +21,7 @@ public abstract class DataFlowAnalysis<T> {
         ProgramPoint pp = c.getValue();
         List<ProgramState<T>> outs = new ArrayList<>();
         Collection<Cursor> sources = dfg.previous(c);
-        if(sources == null) {
+        if (sources == null) {
             dfg.previous(c);
         }
         for (Cursor source : sources) {
@@ -30,7 +30,7 @@ public abstract class DataFlowAnalysis<T> {
             // To work around this limitation, we use cursor messages to express that a given
             // edge goes through a virtual program point.
 
-            if(source.getMessage("ifThenElseBranch") != null) {
+            if (source.getMessage("ifThenElseBranch") != null) {
                 J.If ifThenElse = source.firstEnclosing(J.If.class);
                 ProgramState<T> s1 = outputState(source, t);
                 ProgramState<T> s2 = transferToIfThenElseBranches(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
@@ -126,116 +126,89 @@ public abstract class DataFlowAnalysis<T> {
         }
     }
 
-
     public ProgramState<T> transferToIfThenElseBranches(J.If ifThenElse, ProgramState<T> s, String ifThenElseBranch) {
         return s;
     }
 
+    public abstract ProgramState<T> defaultTransfer(Cursor pp, TraversalControl<ProgramState<T>> t);
 
-    public abstract ProgramState<T> defaultTransfer(Cursor pp, TraversalControl <ProgramState<T>> t);
-
-    public ProgramState<T> transferMethodInvocation(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferMethodInvocation(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferNewClass(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferNewClass(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferIf(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferIf(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferIfElse(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferIfElse(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferWhileLoop(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferWhileLoop(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferForLoop(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferForLoop(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferForLoopControl(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferForLoopControl(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferBlock(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferBlock(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferVariableDeclarations(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferVariableDeclarations(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferNamedVariable(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferNamedVariable(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferUnary(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferUnary(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferBinary(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferBinary(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferAssignment(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferAssignment(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferAssignmentOperation(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferAssignmentOperation(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferParentheses(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferParentheses(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferControlParentheses(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferControlParentheses(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferLiteral(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferLiteral(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferIdentifier(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferIdentifier(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
-    public ProgramState<T> transferEmpty(Cursor pp, TraversalControl <ProgramState<T>> t) {
+    public ProgramState<T> transferEmpty(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }
 
     public ProgramState<T> transferFieldAccess(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
-    }
-
-    static class WorkList<E> {
-
-        private Queue<E> q = new ArrayDeque<E>();
-
-        public void insert(E e) {
-            q.add(e);
-        }
-
-        public void insertAll(Collection<E> ee) {
-            for(E e : ee) insert(e);
-        }
-
-        public boolean isEmpty() {
-            return q.isEmpty();
-        }
-
-        public E extract() {
-            return q.remove();
-        }
-
-        public boolean contains(E e) {
-            return q.contains(e);
-        }
     }
 }

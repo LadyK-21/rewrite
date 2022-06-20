@@ -24,12 +24,12 @@ public class HttpAnalysis extends ValueAnalysis<HttpAnalysisValue> {
             J.CompilationUnit cu = c.firstEnclosing(J.CompilationUnit.class);
             ProgramState<HttpAnalysisValue> arg0State = outputState(new Cursor(c, mi.getArguments().get(0)), null);
             ProgramState<HttpAnalysisValue> arg1State = outputState(new Cursor(c, mi.getArguments().get(1)), null);
-            if (arg0State.expr().name == HttpAnalysisValue.understanding.NOT_SECURE
-                && arg1State.expr().name == HttpAnalysisValue.understanding.SECURE) {
+            if (arg0State.expr().getName() == HttpAnalysisValue.Understanding.NOT_SECURE
+                && arg1State.expr().getName() == HttpAnalysisValue.Understanding.SECURE) {
                 return inputState(c, t).push(HttpAnalysisValue.SECURE);
-            } else if (arg1State.expr().name == HttpAnalysisValue.understanding.NOT_SECURE
-                    && arg0State.expr().name == HttpAnalysisValue.understanding.SECURE)
-            return inputState(c, t).push(new HttpAnalysisValue(HttpAnalysisValue.understanding.NOT_SECURE, mi.getArguments().get(1)));
+            } else if (arg1State.expr().getName() == HttpAnalysisValue.Understanding.NOT_SECURE
+                    && arg0State.expr().getName() == HttpAnalysisValue.Understanding.SECURE)
+            return inputState(c, t).push(new HttpAnalysisValue(HttpAnalysisValue.Understanding.NOT_SECURE, mi.getArguments().get(1)));
         }
         return super.transferMethodInvocation(c, t);
     }
@@ -37,10 +37,13 @@ public class HttpAnalysis extends ValueAnalysis<HttpAnalysisValue> {
     @Override
     public ProgramState<HttpAnalysisValue> transferLiteral(Cursor c, TraversalControl<ProgramState<HttpAnalysisValue>> t) {
         J.Literal literal = c.getValue();
-        if (literal.getValueSource().contains("https")) {
-            return inputState(c, t).push(HttpAnalysisValue.SECURE);
-        } else if (literal.getValueSource().contains("http")) {
-            return inputState(c, t).push(new HttpAnalysisValue(HttpAnalysisValue.understanding.NOT_SECURE, literal));
+        String value = literal.getValueSource();
+        if(value != null) {
+            if (value.startsWith("https")) {
+                return inputState(c, t).push(HttpAnalysisValue.SECURE);
+            } else if (value.startsWith("http")) {
+                return inputState(c, t).push(new HttpAnalysisValue(HttpAnalysisValue.Understanding.NOT_SECURE, literal));
+            }
         }
         return super.transferLiteral(c, t);
     }

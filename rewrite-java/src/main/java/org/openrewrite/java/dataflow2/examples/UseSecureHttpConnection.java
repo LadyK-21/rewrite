@@ -8,9 +8,6 @@ import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.dataflow2.DataFlowGraph;
 import org.openrewrite.java.dataflow2.ProgramState;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JavaType;
-
-import java.util.Map;
 
 import static org.openrewrite.java.dataflow2.examples.HttpAnalysis.URI_CREATE_MATCHER;
 
@@ -33,7 +30,7 @@ public class UseSecureHttpConnection extends Recipe {
                     ProgramState<HttpAnalysisValue> state = httpAnalysis
                             .outputState(new Cursor(getCursor(), mi.getArguments().get(0)), null);
                     HttpAnalysisValue stateValue = state.expr();
-                    if (stateValue.name == HttpAnalysisValue.understanding.NOT_SECURE) {
+                    if (stateValue.name == HttpAnalysisValue.Understanding.NOT_SECURE) {
                         doAfterVisit(new HttpToHttpsVisitor((J.Literal) stateValue.literal));
                     }
                 }

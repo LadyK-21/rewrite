@@ -7,7 +7,7 @@ import lombok.*;
 import org.openrewrite.Incubating;
 import org.openrewrite.java.tree.JavaType;
 
-@Incubating(since = "7.24.1")
+@Incubating(since = "7.25.0")
 @Data
 public class ProgramState<T> {
 
