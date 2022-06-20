@@ -1,6 +1,7 @@
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
+import org.openrewrite.java.dataflow2.examples.ZipSlipValue;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Statement;
@@ -77,7 +78,7 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
             ProgramState<T> s = outputState(new Cursor(c, a.getAssignment()), t);
-            return s.set(ident.getFieldType(), s.expr());
+            return s.set(ident.getFieldType(), s.expr()); // TODO push
         } else {
             throw new UnsupportedOperationException();
         }
@@ -126,14 +127,14 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
 
     @Override
     public ProgramState<T> transferParentheses(Cursor c, TraversalControl<ProgramState<T>> t) {
-        J.Parentheses<?> paren = c.getValue();
-        return outputState(new Cursor(c, paren.getTree()), t);
+        J.Parentheses paren = c.getValue();
+        return outputState(new Cursor(c, paren.getTree()), t); // TODO push
     }
 
     @Override
     public ProgramState<T> transferControlParentheses(Cursor c, TraversalControl<ProgramState<T>> t) {
-        J.ControlParentheses<?> paren = c.getValue();
-        return outputState(new Cursor(c, paren.getTree()), t);
+        J.ControlParentheses paren = c.getValue();
+        return outputState(new Cursor(c, paren.getTree()), t); // TODO push
     }
 }
 

@@ -21,7 +21,6 @@ public class HttpAnalysis extends ValueAnalysis<HttpAnalysisValue> {
         if (URI_CREATE_MATCHER.matches(mi)) {
             return inputState(c, t).push(HttpAnalysisValue.UNKNOWN);
         } else if (STRING_REPLACE.matches(mi)) {
-            J.CompilationUnit cu = c.firstEnclosing(J.CompilationUnit.class);
             ProgramState<HttpAnalysisValue> arg0State = outputState(new Cursor(c, mi.getArguments().get(0)), null);
             ProgramState<HttpAnalysisValue> arg1State = outputState(new Cursor(c, mi.getArguments().get(1)), null);
             if (arg0State.expr().getName() == HttpAnalysisValue.Understanding.NOT_SECURE
