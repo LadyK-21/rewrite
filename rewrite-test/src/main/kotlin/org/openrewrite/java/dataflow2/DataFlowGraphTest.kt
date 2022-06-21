@@ -20,13 +20,12 @@ import java.util.stream.Collectors
 
 interface DataFlowGraphTest : RewriteTest {
 
-    @Disabled
     @Test
     fun arrayAccess(jp: JavaParser) {
         val ac = "s = str[0]"
         val cu :J.CompilationUnit = compile(ac, jp)
 
-        assertPrevious(cu, "s = str[0]", ENTRY, "a()")
+        assertPrevious(cu, "s = str[0]", ENTRY, "str[0]")
         assertPrevious(cu, "s = str[0]", EXIT, "s = str[0]")
 
         assertPrevious(cu, "str[0]", ENTRY,"0")
@@ -35,8 +34,8 @@ interface DataFlowGraphTest : RewriteTest {
         assertPrevious(cu, "0", ENTRY, "str")
         assertPrevious(cu, "0", EXIT, "0")
 
-        assertPrevious(cu, "str", EXIT,"str")
         assertPrevious(cu, "str", ENTRY,"a()")
+        assertPrevious(cu, "str", EXIT,"str")
 
     }
 

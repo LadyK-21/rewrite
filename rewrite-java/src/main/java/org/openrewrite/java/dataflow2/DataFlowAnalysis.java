@@ -185,6 +185,8 @@ public abstract class DataFlowAnalysis<T> {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
                 return transferMethodInvocation(pp, t);
+            case "J$ArrayAccess":
+                return transferArrayAccess(pp, t);
             case "J$NewClass":
                 return transferNewClass(pp, t);
             case "J$If":
@@ -267,6 +269,9 @@ public abstract class DataFlowAnalysis<T> {
         return defaultTransfer(pp, t);
     }
 
+    public ProgramState<T> transferArrayAccess(Cursor pp, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, t);
+    }
     public ProgramState<T> transferNewClass(Cursor pp, TraversalControl<ProgramState<T>> t) {
         return defaultTransfer(pp, t);
     }

@@ -96,6 +96,10 @@ public class DataFlowGraph {
                 return previousInTryCatch(parentCursor, current);
             case "J$MethodDeclaration":
                 return previousInMethodDeclaration(parentCursor, current);
+            case "J$ArrayAccess":
+                return previousInArrayAccess(parentCursor, current);
+            case "J$ArrayDimension":
+                return previousInArrayDimension(parentCursor, current);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
                 return Collections.emptyList();
@@ -243,6 +247,31 @@ public class DataFlowGraph {
         } else {
             throw new IllegalStateException();
         }
+    }
+
+    List<Cursor> previousInArrayAccess(Cursor parentCursor, ProgramPoint p) {
+        J.ArrayAccess ac = parentCursor.getValue();
+        if (p == EXIT) {
+            return Collections.singletonList(parentCursor);
+        } else if (p == ENTRY) {
+            return previousIn(new Cursor(parentCursor.getParent(), ac.getDimension().getIndex()), EXIT);
+        } else if (p == ac.getIndexed()) {
+            return previousIn(parentCursor.getParentOrThrow(), ac);
+        }
+        throw new IllegalStateException();
+    }
+
+    List<Cursor> previousInArrayDimension(Cursor parentCursor, ProgramPoint p) {
+        J.ArrayDimension dim = parentCursor.getValue();
+        if (p == EXIT) {
+            return Collections.singletonList(parentCursor);
+        } else if (p == ENTRY) {
+            return previousIn(new Cursor(parentCursor, dim.getIndex()), EXIT);
+        } else if (p == dim.getIndex()) {
+            J.ArrayAccess ac = parentCursor.getParentOrThrow().getValue();
+            return previousIn(new Cursor(parentCursor, ac.getIndexed()), EXIT);
+        }
+        throw new IllegalStateException();
     }
 
     List<Cursor> previousInMethodInvocation(Cursor parentCursor, ProgramPoint p) {

@@ -91,6 +91,12 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
     }
 
     @Override
+    public ProgramState<T> transferArrayAccess(Cursor c, TraversalControl<ProgramState<T>> t) {
+        J.ArrayAccess ac = c.getValue();
+        return inputState(c, t).push(joiner.lowerBound());
+    }
+
+    @Override
     public  ProgramState<T> transferNewClass(Cursor c, TraversalControl<ProgramState<T>> t) {
         return inputState(c, t).push(joiner.lowerBound());
     }
