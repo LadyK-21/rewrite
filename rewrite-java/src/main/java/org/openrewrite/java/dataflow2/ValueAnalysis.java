@@ -62,7 +62,7 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();
         if (v.getInitializer() != null) {
-            ProgramState s = outputState(new Cursor(c, v.getInitializer()), tc, v);
+            ProgramState s = analysis(v.getInitializer());
             return s.set(t, s.expr()).pop();
         } else {
             ProgramState s = inputState(c, tc);
@@ -77,7 +77,7 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
         J.Assignment a = c.getValue();
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
-            ProgramState<T> s = outputState(new Cursor(c, a.getAssignment()), t, a);
+            ProgramState<T> s = analysis(a.getAssignment());
             return s.set(ident.getFieldType(), s.expr());
         } else {
             throw new UnsupportedOperationException();
@@ -112,7 +112,7 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
     public ProgramState<T> transferIfElse(Cursor c, TraversalControl<ProgramState<T>> t) {
         J.If.Else ifElse = c.getValue();
         ProgramPoint body = ifElse.getBody();
-        return outputState(new Cursor(c, body), t, body);
+        return analysis(body);
     }
 
     @Override
@@ -121,7 +121,7 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
         List<Statement> stmts = block.getStatements();
         if (stmts.size() > 0) {
             Statement stmt = stmts.get(stmts.size() - 1);
-            return outputState(new Cursor(c, stmt), t, stmt);
+            return analysis(stmt);
         } else {
             throw new UnsupportedOperationException(); // TODO
         }
@@ -131,14 +131,14 @@ public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
     public ProgramState<T> transferParentheses(Cursor c, TraversalControl<ProgramState<T>> t) {
         J.Parentheses paren = c.getValue();
         ProgramPoint tree = (ProgramPoint) paren.getTree();
-        return outputState(new Cursor(c, tree), t, tree);
+        return analysis(tree);
     }
 
     @Override
     public ProgramState<T> transferControlParentheses(Cursor c, TraversalControl<ProgramState<T>> t) {
         J.ControlParentheses paren = c.getValue();
         ProgramPoint tree = (ProgramPoint) paren.getTree();
-        return outputState(new Cursor(c, tree), t, tree);
+        return analysis(tree);
     }
 }
 

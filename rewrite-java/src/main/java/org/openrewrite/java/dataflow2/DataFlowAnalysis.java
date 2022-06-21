@@ -12,11 +12,127 @@ import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 public abstract class DataFlowAnalysis<T> {
 
     final DataFlowGraph dfg;
-    Map<Cursor, ProgramState<T>> analysis = new HashMap<>();
-    Queue<Cursor> workList = new ArrayDeque<>();
+
+    // The state AFTER given program point
+    Map<ProgramPoint, ProgramState<T>> analysis = new HashMap<>();
+
+    Set<ProgramPoint> visited = new HashSet();
+
+    Map<ProgramPoint, Cursor> cursors = new HashMap<>();
+
+    PriorityQueue<Cursor> workList = new PriorityQueue<>(new Comparator<Cursor>() {
+        @Override
+        public int compare(Cursor c1, Cursor c2) {
+            ProgramPoint p1 = c1.getValue();
+            ProgramPoint p2 = c2.getValue();
+            // least element is first in the list
+            if(nextsTransitiveClosure.get(p1) != null && nextsTransitiveClosure.get(p1).contains(p2)) {
+                return -1;
+            } else if(nextsTransitiveClosure.get(p2) != null && nextsTransitiveClosure.get(p2).contains(p1)) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    });
+
+    MultiMap<ProgramPoint, ProgramPoint> nexts = new MultiMap<>();
+    MultiMap<ProgramPoint, ProgramPoint> nextsTransitiveClosure = new MultiMap<>();
 
     public DataFlowAnalysis(DataFlowGraph dfg) {
         this.dfg = dfg;
+    }
+
+    public void doAnalysis(Cursor from) {
+
+        initNexts(from);
+        initClosure();
+        visited = new HashSet<>();
+        initWorkList(from);
+
+        while(!workList.isEmpty()) {
+            System.out.println(workList.size());
+
+            Cursor c = workList.remove();
+            ProgramPoint pp = c.getValue();
+            ProgramState<T> previousState = analysis(pp);
+            ProgramState<T> newState = transfer(c, null);
+
+            if(!newState.equals(previousState)) {
+                analysis.put(pp, newState);
+                ArrayList<ProgramPoint> nn = nexts.get(pp);
+                if(nn != null) {
+                    for (ProgramPoint p : nn) {
+                        Cursor next = cursors.get(p);
+                        workList.add(next);
+                    }
+                }
+            }
+        }
+    }
+
+    void initNexts(Cursor c) {
+        ProgramPoint to = c.getValue();
+        if(visited.contains(to)) return;
+        visited.add(to);
+        cursors.put(to, c);
+
+        Collection<Cursor> sources = dfg.previousIn(c, ENTRY);
+        for (Cursor source : sources) {
+            ProgramPoint from = source.getValue();
+            // There is a DFG edge from->to
+            // The analysis at 'to' depends on the analysis at 'from'
+            nexts.add(from, to);
+            initNexts(source);
+        }
+    }
+
+    void initClosure() {
+        for(ProgramPoint from : nexts.keySet()) {
+            addTransitiveClosure(from, nexts.get(from));
+        }
+    }
+
+    void addTransitiveClosure(ProgramPoint from, Collection<ProgramPoint> tos) {
+        ArrayList<ProgramPoint> trans = nextsTransitiveClosure.get(from);
+        if(tos != null) {
+            for(ProgramPoint to : tos) {
+                if(trans == null) {
+                    trans = new ArrayList<>();
+                    nextsTransitiveClosure.put(from, trans);
+                }
+                if(!trans.contains(to)) {
+                    nextsTransitiveClosure.add(from, to);
+                    addTransitiveClosure(from, nexts.get(to));
+                }
+            }
+        }
+    }
+
+    void initWorkList(Cursor c) {
+        ProgramPoint to = c.getValue();
+        if(visited.contains(to)) return;
+        visited.add(to);
+        workList.add(c);
+
+        Collection<Cursor> sources = dfg.previousIn(c, ENTRY);
+        for (Cursor source : sources) {
+            ProgramPoint from = source.getValue();
+            initWorkList(source);
+        }
+    }
+
+    public ProgramState<T> analysis(ProgramPoint p) {
+        ProgramState<T> res = analysis.get(p);
+        if(res == null) {
+            res = new ProgramState<>();
+            analysis.put(p, res);
+        }
+        return res;
+    }
+
+    public ProgramState<T> analysis(Cursor c) {
+        return analysis((ProgramPoint)c.getValue());
     }
 
     public ProgramState<T> inputState(Cursor c, TraversalControl<ProgramState<T>> t) {
@@ -32,11 +148,11 @@ public abstract class DataFlowAnalysis<T> {
 
             if (source.getMessage("ifThenElseBranch") != null) {
                 J.If ifThenElse = source.firstEnclosing(J.If.class);
-                ProgramState<T> s1 = outputState(source, t, pp);
+                ProgramState<T> s1 = analysis(source); // outputState(source, t, pp);
                 ProgramState<T> s2 = transferToIfThenElseBranches(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
                 outs.add(s2);
             } else {
-                outs.add(outputState(source, t, pp));
+                outs.add(analysis(source)); // outputState(source, t, pp));
             }
         }
         ProgramState<T> result = join(outs);
@@ -50,22 +166,22 @@ public abstract class DataFlowAnalysis<T> {
         return join(Arrays.asList(outs));
     }
 
-    public Map<ProgramPoint, ProgramState<T>> visited = new HashMap<>();
+//    public Map<ProgramPoint, ProgramState<T>> visited = new HashMap<>();
+//
+//    public ProgramState<T> outputState(Cursor pp, TraversalControl<ProgramState<T>> t, ProgramPoint depend) {
+//        // 'depend' depends on 'outputState(pp)'
+//        ProgramState<T> p = visited.get(pp.getValue());
+//        if(p != null) {
+//            return p;
+//        } else {
+//            visited.put(pp.getValue(), new ProgramState<>());
+//            p = transfer(pp, t);
+//            visited.put(pp.getValue(), p);
+//            return p;
+//        }
+//    }
 
-    public ProgramState<T> outputState(Cursor pp, TraversalControl<ProgramState<T>> t, ProgramPoint depend) {
-        // 'depend' depends on 'outputState(pp)'
-        ProgramState<T> p = visited.get(pp.getValue());
-        if(p != null) {
-            return p;
-        } else {
-            visited.put(pp.getValue(), new ProgramState<>());
-            p = outputState2(pp, t);
-            visited.put(pp.getValue(), p);
-            return p;
-        }
-    }
-
-    public ProgramState<T> outputState2(Cursor pp, TraversalControl<ProgramState<T>> t) {
+    public ProgramState<T> transfer(Cursor pp, TraversalControl<ProgramState<T>> t) {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
                 return transferMethodInvocation(pp, t);

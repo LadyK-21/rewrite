@@ -118,6 +118,8 @@ public class TestNullAnalysis {
 
         source = source.replace("__FRAGMENT__", fragment);
 
+        System.out.println(fragment);
+
         J.CompilationUnit cu = parse(source);
 
         //new PrintProgramPointsVisitor().visit(cu, null);
@@ -131,14 +133,16 @@ public class TestNullAnalysis {
         assertThat(v).isNotNull();
 
         DataFlowGraph dfg = new DataFlowGraph(cu);
-        ProgramState state = new IsNullAnalysis(dfg).inputState(c1, new TraversalControl<>());
+        IsNullAnalysis analysis = new IsNullAnalysis(dfg);
+        analysis.doAnalysis(c1);
+        ProgramState state = analysis.analysis(c1);
 
 //
 //        IsNullAnalysis a = new IsNullAnalysis(dfg);
 //        a.analyze(c1, new TraversalControl<>());
 //        ProgramState state = a.inputState(c1, new TraversalControl<>());
 
-        System.out.println(fragment + "\n    Is 's' null when entering point 'b()' ? " + state.get(v));
+        System.out.println("    Is 's' null when entering point 'b()' ? " + state.get(v));
 
         assertThat(state.get(v)).isEqualTo(expected);
     }

@@ -21,8 +21,8 @@ public class HttpAnalysis extends ValueAnalysis<HttpAnalysisValue> {
         } else if (STRING_REPLACE.matches(mi)) {
             ProgramPoint arg0 = mi.getArguments().get(0);
             ProgramPoint arg1 = mi.getArguments().get(1);
-            ProgramState<HttpAnalysisValue> arg0State = outputState(new Cursor(c, arg0), null, arg0);
-            ProgramState<HttpAnalysisValue> arg1State = outputState(new Cursor(c, arg1), null, arg1);
+            ProgramState<HttpAnalysisValue> arg0State = analysis(arg0);
+            ProgramState<HttpAnalysisValue> arg1State = analysis(arg1);
             if (arg0State.expr().getName() == HttpAnalysisValue.Understanding.NOT_SECURE
                 && arg1State.expr().getName() == HttpAnalysisValue.Understanding.SECURE) {
                 return inputState(c, t).push(HttpAnalysisValue.SECURE);

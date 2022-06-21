@@ -9,6 +9,7 @@ import org.openrewrite.java.tree.JavaType;
 
 @Incubating(since = "7.25.0")
 @Data
+@EqualsAndHashCode
 public class ProgramState<T> {
 
     @With
@@ -96,6 +97,7 @@ public class ProgramState<T> {
     }
 
     @AllArgsConstructor
+    @EqualsAndHashCode
     static class LinkedListElement<T> {
         LinkedListElement<T> previous;
         T value;

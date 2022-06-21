@@ -80,7 +80,7 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();
         if(v.getInitializer() != null) {
-            ProgramState<ModalBoolean> s = outputState(new Cursor(c, v.getInitializer()), tc, v);
+            ProgramState<ModalBoolean> s = analysis(v.getInitializer());
             ModalBoolean e = s.expr();
             return s.set(t, s.expr()).pop();
         } else {
@@ -96,7 +96,7 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
         J.Assignment a = c.getValue();
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
-            ProgramState<ModalBoolean> s = outputState(new Cursor(c, a.getAssignment()), t, a);
+            ProgramState<ModalBoolean> s = analysis(a.getAssignment());
             return s.set(ident.getFieldType(), s.expr()).push(s.expr());
         } else {
             throw new UnsupportedOperationException();
@@ -144,7 +144,7 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
     public ProgramState<ModalBoolean> transferIfElse(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.If.Else ifElse = c.getValue();
         ProgramPoint body = ifElse.getBody();
-        return outputState(new Cursor(c, body), t, body);
+        return analysis(body);
     }
 
     @Override
@@ -153,7 +153,7 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
         List<Statement> stmts = block.getStatements();
         if (stmts.size() > 0) {
             ProgramPoint stmt = stmts.get(stmts.size() - 1);
-            return outputState(new Cursor(c, stmt), t, stmt);
+            return analysis(stmt);
         } else {
             throw new UnsupportedOperationException(); // TODO
         }
@@ -163,7 +163,7 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
     public ProgramState<ModalBoolean> transferParentheses(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.Parentheses<?> paren = c.getValue();
         ProgramPoint tree = (ProgramPoint) paren.getTree();
-        return outputState(new Cursor(c, tree), t, tree);
+        return analysis(tree);
     }
 }
 

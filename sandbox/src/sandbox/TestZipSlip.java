@@ -122,7 +122,11 @@ public class TestZipSlip {
 
                     // We're interested in the expr() of the output state of arg
                     ZipSlip zipSlip = new ZipSlip(new DataFlowGraph(cu));
-                    ProgramState<ZipSlipValue> state = zipSlip.outputState(new Cursor(getCursor(), arg), null, arg);
+
+                    zipSlip.doAnalysis(getCursor());
+
+                    ProgramState<ZipSlipValue> state = zipSlip.analysis(arg);
+
                     ZipSlipValue actual = state.expr();
 
                     System.out.println("state.expr() = " + actual);
