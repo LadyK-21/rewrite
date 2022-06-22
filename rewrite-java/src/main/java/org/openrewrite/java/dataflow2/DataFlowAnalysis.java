@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * https://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.openrewrite.java.dataflow2;
 
 import org.openrewrite.Cursor;
@@ -205,6 +220,8 @@ public abstract class DataFlowAnalysis<T> {
                 return transferMethodInvocation(pp, t);
             case "J$ArrayAccess":
                 return transferArrayAccess(pp, t);
+            case "J$Assert":
+                return transferAssert(pp, t);
             case "J$NewClass":
                 return transferNewClass(pp, t);
             case "J$If":
@@ -240,41 +257,40 @@ public abstract class DataFlowAnalysis<T> {
             case "J$Empty":
                 return transferEmpty(pp, t);
             case "J$FieldAccess":
-                // TODO: just a hack to make the UseSecureConnection work a little bit longer before it eventually fails ;)
-                // thinking previous program point is not computed for J.FieldAccess.
                 return transferFieldAccess(pp, t);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
             case "J$MethodDeclaration":
-                // Assert
-                // ArrayAccess
-                // AssignmentOperation
-                // Break
-                // Case
-                // Continue
-                // DoWhileLoop
+
+                // AssignmentOperation x+=1
                 // EnumValue
                 // EnumValueSet
-                // FieldAccess
                 // ForeachLoop
-                // InstanceOf
-                // Label
-                // Lambda
+                // DoWhileLoop
+                // InstanceOf like binary
+                // NewArray like new class with dimension
+                // Ternary (? :)
+                // TypeCast like parenthesis evaluate expression not type
                 // MemberReference
-                // MultiCatch
-                // NewArray
-                // ArrayDimension
-                // NewClass
-                // Return
+
                 // Switch
-                // Ternary
+                // Case
+                // Lambda
+                // Break
+                // Continue
+                // Label
+                // Return
                 // Throw
                 // Try
-                // TypeCast
-                // WhileLoop
+                // MultiCatch
+
             default:
                 throw new Error(pp.getValue().getClass().getName());
         }
+    }
+
+    public ProgramState<T> transferAssert(Cursor pp, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, t);
     }
 
     public ProgramState<T> transferToIfThenElseBranches(J.If ifThenElse, ProgramState<T> s, String ifThenElseBranch) {

@@ -1,27 +1,85 @@
+/*
+ * Copyright 2022 the original author or authors.
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * https://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.openrewrite.java.dataflow2
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.openrewrite.java.JavaParser
-import org.openrewrite.java.tree.J
-import org.openrewrite.test.RewriteTest
-
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.AssertionsForClassTypes
-import org.junit.jupiter.api.Disabled
-
-import org.openrewrite.Cursor
-
 import org.openrewrite.java.dataflow2.ProgramPoint.ENTRY
-
 import org.openrewrite.java.dataflow2.ProgramPoint.EXIT
+import org.openrewrite.java.tree.J
 
-import org.openrewrite.java.dataflow2.Utils.print
-import java.util.stream.Collectors
+interface DataFlowGraphTest : DataFlowTest {
 
-interface DataFlowGraphTest : RewriteTest {
+    fun compile(s :String, jp: JavaParser): J.CompilationUnit {
+        val source = template.replace("/*__FRAGMENT__*/", s)
+        return jp.parse(source)[0]
+    }
+
+    val template: String
+        get() = """
+            class A {
+                void a(){};
+                void b(){};
+                void m(String u, String v, Integer w) {
+                    a();
+                    /*__FRAGMENT__*/
+                    b();
+                }
+            }
+        """.trimIndent()
 
     @Test
-    fun arrayAccess(jp: JavaParser) {
+    fun assertTest(jp: JavaParser) {
+        val ac = "assert w == 1 : \"w is invalid\""
+        val cu :J.CompilationUnit = compile("$ac;", jp)
+
+        assertPrevious(cu, ac, ENTRY, "w == 1")
+        assertPrevious(cu, ac, EXIT, ac)
+
+        assertPrevious(cu, "w == 1", ENTRY, "1")
+        assertPrevious(cu, "w == 1", EXIT, "w == 1")
+
+        assertPrevious(cu, "1", ENTRY, "w")
+        assertPrevious(cu, "1", EXIT, "1")
+
+        assertPrevious(cu, "w", J.Binary::class.java, ENTRY, "\"w is invalid\"")
+        assertPrevious(cu, "w", EXIT, "w")
+
+        assertPrevious(cu, "w is invalid", J.Assert::class.java, ENTRY, "a()")
+        assertPrevious(cu, "w is invalid", J.Assert::class.java, EXIT, "\"w is invalid\"")
+    }
+
+    @Test
+    fun binaryTest(jp: JavaParser) {
+        val ac = """if (5 == 1) {}"""
+        val cu :J.CompilationUnit = compile(ac, jp)
+
+        assertPrevious(cu, "5 == 1", ENTRY, "1")
+        assertPrevious(cu, "5 == 1", EXIT, "5 == 1")
+
+        assertPrevious(cu, "1", ENTRY, "5")
+        assertPrevious(cu, "1", EXIT, "1")
+
+        assertPrevious(cu, "5", ENTRY, "a()")
+        assertPrevious(cu, "5", EXIT, "5")
+    }
+
+    @Test
+    fun arrayAccessTest(jp: JavaParser) {
         val ac = "s = str[0]"
         val cu :J.CompilationUnit = compile(ac, jp)
 
@@ -36,19 +94,18 @@ interface DataFlowGraphTest : RewriteTest {
 
         assertPrevious(cu, "str", ENTRY,"a()")
         assertPrevious(cu, "str", EXIT,"str")
-
     }
 
     @Test
-    fun methodInvocation(jp: JavaParser) {
+    fun methodInvocationTest(jp: JavaParser) {
         val ac = "abc = myMethod(a1, b1)"
-        val cu :J.CompilationUnit = compile(ac, jp)
+        val cu: J.CompilationUnit = compile(ac, jp)
 
         assertPrevious(cu, ac, ENTRY, "myMethod(a1, b1)")
         assertPrevious(cu, ac, EXIT, ac)
 
-        assertPrevious(cu, "myMethod(a1, b1)", ENTRY,"b1")
-        assertPrevious(cu, "myMethod(a1, b1)", EXIT,"myMethod(a1, b1)")
+        assertPrevious(cu, "myMethod(a1, b1)", ENTRY, "b1")
+        assertPrevious(cu, "myMethod(a1, b1)", EXIT, "myMethod(a1, b1)")
 
         assertPrevious(cu, "b1", ENTRY, "a1")
         assertPrevious(cu, "b1", EXIT, "b1")
@@ -56,28 +113,12 @@ interface DataFlowGraphTest : RewriteTest {
         assertPrevious(cu, "a1", ENTRY, "b1")
         assertPrevious(cu, "a1", EXIT, "a1")
 
-        assertPrevious(cu, "myMethod", EXIT,"myMethod")
-        assertPrevious(cu, "myMethod", ENTRY,"a()")
-
-    }
-    fun compile(s :String, jp: JavaParser): J.CompilationUnit {
-        val template =
-            """
-        class A {
-            void a();
-            void b();
-            void m(String u, String v) {
-                a();
-                __FRAGMENT__
-                b();
-            }
-        }
-        """.trimIndent()
-        return jp.parse(template.replace("__FRAGMENT__", s))[0]
+        assertPrevious(cu, "myMethod", ENTRY, "a()")
+        assertPrevious(cu, "myMethod", EXIT, "myMethod")
     }
 
     @Test
-    fun basicDataFlow(jp: JavaParser) {
+    fun basicDataFlowTest(jp: JavaParser) {
         val source = """
             class C {
                 void a() {}
@@ -106,22 +147,4 @@ interface DataFlowGraphTest : RewriteTest {
         assertPrevious(cu,"u", ENTRY, "a()")
     }
 
-    fun assertPrevious(cu: J.CompilationUnit, pp :String, entryOrExit :ProgramPoint, vararg previous :String) {
-        assertThat(cu).isNotNull
-        val c :Cursor = Utils.findProgramPoint(cu, pp)
-        assertThat(c).isNotNull
-        val dfg = DataFlowGraph(cu)
-        val pps :Collection<Cursor> = dfg.previousIn(c, entryOrExit)
-        assertThat(pps).isNotNull
-        assertThat(pps).isNotEmpty
-
-        val actual :List<String> = pps.stream().map { prev -> print(prev) }.collect(Collectors.toList())
-        val expected :List<String> = previous.asList()
-
-        AssertionsForClassTypes
-            .assertThat(actual)
-            .withFailMessage("previous($pp, $entryOrExit)\nexpected: $expected\n but was: $actual")
-            .isEqualTo(expected)
-
-    }
 }
