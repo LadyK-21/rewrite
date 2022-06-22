@@ -77,7 +77,7 @@ public abstract class DataFlowAnalysis<T> {
         visited.add(to);
         cursors.put(to, c);
 
-        Collection<Cursor> sources = dfg.previousIn(c, ENTRY);
+        Collection<Cursor> sources = dfg.previous(c);
         for (Cursor source : sources) {
             ProgramPoint from = source.getValue();
             // There is a DFG edge from->to

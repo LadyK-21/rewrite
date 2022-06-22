@@ -194,6 +194,19 @@ public class DataFlowGraph {
         }
     }
 
+    public Collection<Cursor> previous(Cursor c) {
+        Collection<Cursor> prev = previousIn(c, EXIT);
+        if(prev.size() == 1 && prev.contains(c)) {
+            return previousIn(c, ENTRY);
+        } else {
+            return prev;
+        }
+    }
+
+    public Collection<Cursor> previous(Collection<Cursor> cs) {
+        return cs.stream().flatMap(c -> previous(c).stream()).collect(Collectors.toList());
+    }
+
     enum ForLoopPosition {
         INIT, CONDITION, UPDATE
     }

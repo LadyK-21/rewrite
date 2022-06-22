@@ -47,6 +47,15 @@ public class Utils {
         }
 
         @Override
+        public Expression visitExpression(Expression expression, Integer p) {
+            super.visitExpression(expression, p);
+            if (result == null && ppToFind.equals(print(expression, getCursor()))) {
+                result = getCursor();
+            }
+            return expression;
+        }
+
+        @Override
         public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, Integer p) {
             super.visitVariable(variable, p);
             if (result == null && ppToFind.equals(print(variable, getCursor()))) {
@@ -56,12 +65,12 @@ public class Utils {
         }
 
         @Override
-        public Expression visitExpression(Expression expression, Integer p) {
-            super.visitExpression(expression, p);
-            if (result == null && ppToFind.equals(print(expression, getCursor()))) {
+        public J.If.Else visitElse(J.If.Else elze, Integer p) {
+            super.visitElse(elze, p);
+            if (result == null && ppToFind.equals(print(elze, getCursor()))) {
                 result = getCursor();
             }
-            return expression;
+            return elze;
         }
     }
 

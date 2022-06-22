@@ -57,40 +57,40 @@ public class TestNullAnalysis {
 
 //        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", CantTell);
 
-        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", False);
-        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", False);
+//        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", False);
+//        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", False);
 
-        testIsSNull("String s = null; while(c) { s = \"a\"; }", Conflict);
-        testIsSNull("String s = null; while(c) { s = null; }", True);
-        testIsSNull("String s = \"a\"; while(c) { s = null; }", Conflict);
-        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", False);
-        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", True);
-        testIsSNull("String s; while((s = null) == null) { s = null; }", True);
+//        testIsSNull("String s = null; while(c) { s = \"a\"; }", Conflict);
+//        testIsSNull("String s = null; while(c) { s = null; }", True);
+//        testIsSNull("String s = \"a\"; while(c) { s = null; }", Conflict);
+//        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", False);
+//        testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", True);
+//        testIsSNull("String s; while((s = null) == null) { s = null; }", True);
 
-        testIsSNull("String s = f(); if(s == null) { s = \"a\"; }", False);
-        // Understanding that s is always null below requires constant propagation
-        // and partial evaluation of the condition
-        testIsSNull("String s = null; if(s == \"b\") { s = \"a\"; }", Conflict);
-
-        testIsSNull("String s, t; t = (s = null);", True);
-        testIsSNull("String s, t; s = (t = null);", True);
-        testIsSNull("String s = \"a\", t, u; t = (u = null);", False);
-
-        testIsSNull("String s = null;", True);
-        testIsSNull("String s = \"abc\";", False);
-        testIsSNull("String s; s = null; s = \"abc\";", False);
-        testIsSNull("String s; s = \"abc\"; s = null;", True);
-        testIsSNull("String q = null; String s = q;", True);
-        testIsSNull("String q = \"abc\"; String s = q;", False);
-        testIsSNull("String s = null + null;", False);
-        testIsSNull("String s = \"a\" + null;", False);
-        testIsSNull("String s = null + \"b\";", False);
-        testIsSNull("String s = \"a\" + \"b\";", False);
-        testIsSNull("String s = u;", null); // Because u is undefined
-        testIsSNull("String u = null; String s = u;", True);
-        testIsSNull("String s = \"a\".toUpperCase();", False);
-        testIsSNull("String s = \"a\".unknownMethod(s, null);", NoIdea);
-        testIsSNull("String s; if(c) { s = null; } else { s = null; }", True);
+//        testIsSNull("String s = f(); if(s == null) { s = \"a\"; }", False);
+//        // Understanding that s is always null below requires constant propagation
+//        // and partial evaluation of the condition
+//        //testIsSNull("String s = null; if(s == \"b\") { s = \"a\"; }", Conflict);
+//
+//        testIsSNull("String s, t; t = (s = null);", True);
+//        testIsSNull("String s, t; s = (t = null);", True);
+//        testIsSNull("String s = \"a\", t, u; t = (u = null);", False);
+//
+//        testIsSNull("String s = null;", True);
+//        testIsSNull("String s = \"abc\";", False);
+//        testIsSNull("String s; s = null; s = \"abc\";", False);
+//        testIsSNull("String s; s = \"abc\"; s = null;", True);
+//        testIsSNull("String q = null; String s = q;", True);
+//        testIsSNull("String q = \"abc\"; String s = q;", False);
+//        testIsSNull("String s = null + null;", False);
+//        testIsSNull("String s = \"a\" + null;", False);
+//        testIsSNull("String s = null + \"b\";", False);
+//        testIsSNull("String s = \"a\" + \"b\";", False);
+//        testIsSNull("String s = u;", null); // Because u is undefined
+//        testIsSNull("String u = null; String s = u;", True);
+//        testIsSNull("String s = \"a\".toUpperCase();", False);
+//        testIsSNull("String s = \"a\".unknownMethod(s, null);", NoIdea);
+//        testIsSNull("String s; if(c) { s = null; } else { s = null; }", True);
         testIsSNull("String s; if(c) { s = null; } else { s = \"b\"; }", Conflict);
         testIsSNull("String s; if(c) { s = \"a\"; } else { s = null; }", Conflict);
         testIsSNull("String s; if(c) { s = \"a\"; } else { s = \"b\"; }", False);

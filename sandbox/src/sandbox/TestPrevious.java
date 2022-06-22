@@ -143,9 +143,15 @@ public class TestPrevious {
         J.CompilationUnit cu = parse(source);
         DataFlowGraph dfg = new DataFlowGraph(cu);
 
+        TestUtils.assertPrevious(cu,"b()", EXIT, "b()");
         TestUtils.assertPrevious(cu,"b()", ENTRY, "f()", "else g();");
+        TestUtils.assertPrevious(cu,"f()", EXIT, "f()");
         TestUtils.assertPrevious(cu,"f()", ENTRY, "(s == null)");
+        TestUtils.assertPrevious(cu,"else g();", EXIT, "g()");
+        TestUtils.assertPrevious(cu,"else g();", ENTRY, "(s == null)");
+        TestUtils.assertPrevious(cu,"g()", EXIT, "g()");
         TestUtils.assertPrevious(cu,"g()", ENTRY, "(s == null)");
+        TestUtils.assertPrevious(cu,"s", EXIT, "s");
         TestUtils.assertPrevious(cu,"s", ENTRY, "a()");
     }
 
@@ -341,8 +347,10 @@ public class TestPrevious {
         TestUtils.assertPrevious(cu,"(s = \"a\")", EXIT,"(s = \"a\")");
         TestUtils.assertPrevious(cu,"s = \"a\"", ENTRY,"\"a\"");
         TestUtils.assertPrevious(cu,"s = \"a\"", EXIT,"s = \"a\"");
-        TestUtils.assertPrevious(cu,"\"a\"", ENTRY,"s", "{ s = null; }");
-        TestUtils.assertPrevious(cu,"\"a\"", EXIT,"\"a\"");
+        TestUtils.assertPrevious(cu,"{ s = null; }", ENTRY,"((s = \"a\") == null)");
+        TestUtils.assertPrevious(cu,"{ s = null; }", EXIT,"s = null");
+        TestUtils.assertPrevious(cu,"s = null", ENTRY,"null");
+        TestUtils.assertPrevious(cu,"s = null", EXIT,"s = null");
     }
 
 }
