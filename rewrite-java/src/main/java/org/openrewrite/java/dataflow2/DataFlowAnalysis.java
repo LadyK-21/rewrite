@@ -115,7 +115,7 @@ public abstract class DataFlowAnalysis<T> {
         visited.add(to);
         workList.add(c);
 
-        Collection<Cursor> sources = dfg.previousIn(c, ENTRY);
+        Collection<Cursor> sources = dfg.previous(c);
         for (Cursor source : sources) {
             ProgramPoint from = source.getValue();
             initWorkList(source);
