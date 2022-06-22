@@ -11,6 +11,8 @@ import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 @Incubating(since = "7.25.0")
 public abstract class DataFlowAnalysis<T> {
 
+    protected final Joiner<T> joiner;
+
     final DataFlowGraph dfg;
 
     // The state AFTER given program point
@@ -39,8 +41,9 @@ public abstract class DataFlowAnalysis<T> {
     MultiMap<ProgramPoint, ProgramPoint> nexts = new MultiMap<>();
     MultiMap<ProgramPoint, ProgramPoint> nextsTransitiveClosure = new MultiMap<>();
 
-    public DataFlowAnalysis(DataFlowGraph dfg) {
+    public DataFlowAnalysis(DataFlowGraph dfg, Joiner<T> joiner) {
         this.dfg = dfg;
+        this.joiner = joiner;
     }
 
     public void doAnalysis(Cursor from) {
@@ -55,10 +58,22 @@ public abstract class DataFlowAnalysis<T> {
 
             Cursor c = workList.remove();
             ProgramPoint pp = c.getValue();
-            ProgramState<T> previousState = analysis(pp);
+
+            System.out.println(Utils.print(c));
+
+            if("(s = \"a\")".equals(Utils.print(c))) {
+                System.out.println();
+            }
+
+            ProgramState<T> previousState = analysisOrNull(pp);
             ProgramState<T> newState = transfer(c, null);
 
-            if(!newState.equals(previousState)) {
+
+            System.out.println(previousState + "  ->  " + newState);
+
+            if(previousState == null) {
+                analysis.put(pp, newState);
+            } else if(!previousState.equals(newState)) {
                 analysis.put(pp, newState);
                 ArrayList<ProgramPoint> nn = nexts.get(pp);
                 if(nn != null) {
@@ -66,8 +81,7 @@ public abstract class DataFlowAnalysis<T> {
                         Cursor next = cursors.get(p);
                         workList.add(next);
                     }
-                }
-            }
+                }            }
         }
     }
 
@@ -125,12 +139,16 @@ public abstract class DataFlowAnalysis<T> {
     public ProgramState<T> analysis(ProgramPoint p) {
         ProgramState<T> res = analysis.get(p);
         if(res == null) {
-            res = new ProgramState<>();
+            res = new ProgramState<>(joiner.lowerBound());
             analysis.put(p, res);
         }
         return res;
     }
 
+    public ProgramState<T> analysisOrNull(ProgramPoint p) {
+        ProgramState<T> res = analysis.get(p);
+        return res;
+    }
     public ProgramState<T> analysis(Cursor c) {
         return analysis((ProgramPoint)c.getValue());
     }

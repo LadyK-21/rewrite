@@ -18,8 +18,8 @@ public class ProgramState<T> {
     @With
     HashMap<JavaType.Variable, T> map;
 
-    public ProgramState() {
-        expressionStack  = null;
+    public ProgramState(T lowerBound) {
+        expressionStack  = new LinkedListElement<>(null, lowerBound);
         map = new HashMap<>();
     }
 

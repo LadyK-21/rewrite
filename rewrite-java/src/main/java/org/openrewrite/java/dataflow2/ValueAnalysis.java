@@ -16,11 +16,9 @@ import java.util.List;
  */
 public abstract class ValueAnalysis<T> extends DataFlowAnalysis<T> {
     
-    protected final Joiner<T> joiner;
 
     public ValueAnalysis(DataFlowGraph dfg, Joiner<T> joiner) {
-        super(dfg);
-        this.joiner = joiner;
+        super(dfg, joiner);
     }
 
     @Override

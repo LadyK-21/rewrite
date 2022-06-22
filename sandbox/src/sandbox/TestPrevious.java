@@ -335,6 +335,8 @@ public class TestPrevious {
         J.CompilationUnit cu = parse(source);
         DataFlowGraph dfg = new DataFlowGraph(cu);
 
+        TestUtils.assertPrevious(cu,"b()", ENTRY,"((s = \"a\") == null)");
+        TestUtils.assertPrevious(cu,"b()", EXIT,"b()");
         TestUtils.assertPrevious(cu,"while((s = \"a\") == null) { s = null; }", ENTRY,"s");
         TestUtils.assertPrevious(cu,"while((s = \"a\") == null) { s = null; }", EXIT,"((s = \"a\") == null)");
         TestUtils.assertPrevious(cu,"((s = \"a\") == null)", ENTRY, "(s = \"a\") == null");
