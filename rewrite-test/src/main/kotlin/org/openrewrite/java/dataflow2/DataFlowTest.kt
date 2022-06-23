@@ -26,18 +26,22 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.stream.Collectors
 
 interface DataFlowTest {
-    fun assertPrevious(cu: J.CompilationUnit, pp: String, entryOrExit: ProgramPoint, vararg previous: String) {
-        assertPrevious(cu, pp, type = null, entryOrExit, *previous)
+    fun assertPrevious(cu: J.CompilationUnit, programPointSignature: String, entryOrExit: ProgramPoint, vararg previousSignatures: String) {
+        assertPrevious(cu, programPointSignature, programPointInScopeOf = null, entryOrExit, *previousSignatures)
     }
+
+    /**
+     * Find a ProgramPoint which is a descendant of the specified type
+     */
     fun assertPrevious(
         cu: J.CompilationUnit,
-        pp: String,
-        type: Class<out J>?,
+        programPointSignature: String,
+        programPointInScopeOf: Class<out J>?,
         entryOrExit: ProgramPoint,
-        vararg previous: String
+        vararg previousSignatures: String
     ) {
         Assertions.assertThat(cu).isNotNull
-        val c :Cursor = findProgramPoint(cu, type, pp)
+        val c :Cursor = findProgramPoint(cu, programPointInScopeOf, programPointSignature)
         Assertions.assertThat(c).isNotNull
         val dfg = DataFlowGraph(cu)
         val pps :Collection<Cursor> = dfg.previousIn(c, entryOrExit)
@@ -45,30 +49,33 @@ interface DataFlowTest {
         Assertions.assertThat(pps).isNotEmpty
 
         val actual :List<String> = pps.stream().map { prev -> Utils.print(prev) }.collect(Collectors.toList())
-        val expected :List<String> = previous.asList()
+        val expected :List<String> = previousSignatures.asList()
 
         AssertionsForClassTypes
             .assertThat(actual)
-            .withFailMessage("previous($pp, $entryOrExit)\nexpected: $expected\n but was: $actual")
+            .withFailMessage("previous($programPointSignature, $entryOrExit)\nexpected: $expected\n but was: $actual")
             .isEqualTo(expected)
     }
 
-    fun findProgramPoint(cu: J.CompilationUnit, type: Class<out J>?, ppToFind: String): Cursor {
+    /**
+     * Find a ProgramPoint which is a descendant of the specified type
+     */
+    fun findProgramPoint(cu: J.CompilationUnit, inScopeOfType: Class<out J>?, ppToFind: String): Cursor {
         val pp: AtomicReference<Cursor> = AtomicReference()
-        FindProgramPointVisitor(type, ppToFind).visit(cu, pp)
+        FindProgramPointVisitor(inScopeOfType, ppToFind).visit(cu, pp)
         return pp.get()
     }
 
-    class FindProgramPointVisitor(private val type: Class<out J>?, private val ppToFind: String) :
+    class FindProgramPointVisitor(private val inScopeOfType: Class<out J>?, private val ppToFind: String) :
         JavaIsoVisitor<AtomicReference<Cursor>>() {
 
-        fun isInType(cursor: Cursor, p: AtomicReference<Cursor>): Boolean {
-            return p.get() == null && (type == null || cursor.firstEnclosing(type) != null)
+        private fun isInScopeOfType(cursor: Cursor, p: AtomicReference<Cursor>): Boolean {
+            return p.get() == null && (inScopeOfType == null || cursor.firstEnclosing(inScopeOfType) != null)
         }
 
         override fun visitLiteral(literal: J.Literal, p: AtomicReference<Cursor>): J.Literal {
             val l = super.visitLiteral(literal, p)
-            if (isInType(cursor, p) && ppToFind == l.value) {
+            if (isInScopeOfType(cursor, p) && ppToFind == l.value) {
                 p.set(cursor)
             }
             return l
@@ -76,7 +83,7 @@ interface DataFlowTest {
 
         override fun visitIdentifier(identifier: J.Identifier, p: AtomicReference<Cursor>): J.Identifier {
             val l = super.visitIdentifier(identifier, p)
-            if (isInType(cursor, p) && l.printPP(cursor).equals(ppToFind)) {
+            if (isInScopeOfType(cursor, p) && l.printPP(cursor).equals(ppToFind)) {
                 p.set(cursor)
             }
             return l
@@ -84,7 +91,7 @@ interface DataFlowTest {
 
         override fun visitStatement(statement: Statement, p: AtomicReference<Cursor>): Statement {
             super.visitStatement(statement, p)
-            if (isInType(cursor, p) && ppToFind == printProgramPoint(statement, cursor)) {
+            if (isInScopeOfType(cursor, p) && ppToFind == printProgramPoint(statement, cursor)) {
                 p.set(cursor)
             }
             return statement
@@ -92,7 +99,7 @@ interface DataFlowTest {
 
         override fun visitExpression(expression: Expression, p: AtomicReference<Cursor>): Expression {
             super.visitExpression(expression, p)
-            if (isInType(cursor, p) && ppToFind == printProgramPoint(expression, cursor)) {
+            if (isInScopeOfType(cursor, p) && ppToFind == printProgramPoint(expression, cursor)) {
                 p.set(cursor)
             }
             return expression
@@ -103,7 +110,7 @@ interface DataFlowTest {
             p: AtomicReference<Cursor>
         ): J.VariableDeclarations.NamedVariable {
             super.visitVariable(variable, p)
-            if (isInType(cursor, p) && ppToFind == printProgramPoint(variable, cursor)) {
+            if (isInScopeOfType(cursor, p) && ppToFind == printProgramPoint(variable, cursor)) {
                 p.set(cursor)
             }
             return variable
@@ -111,13 +118,13 @@ interface DataFlowTest {
 
         override fun visitElse(elze: J.If.Else, p: AtomicReference<Cursor>): J.If.Else {
             super.visitElse(elze, p)
-            if (isInType(cursor, p) && ppToFind == printProgramPoint(elze, cursor)) {
+            if (isInScopeOfType(cursor, p) && ppToFind == printProgramPoint(elze, cursor)) {
                 p.set(cursor)
             }
             return elze
         }
 
-        fun printProgramPoint(p: ProgramPoint, c: Cursor): String {
+        private fun printProgramPoint(p: ProgramPoint, c: Cursor): String {
             return (p as J).print(c).replace("\n", " ").replace(" +".toRegex(), " ").trim { it <= ' ' }
         }
     }
