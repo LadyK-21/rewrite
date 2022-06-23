@@ -487,15 +487,15 @@ public class JavaVisitor<P> extends TreeVisitor<J, P> implements JavaVisitable<J
         return c;
     }
 
-    public <T extends J> J visitControlParentheses(J.ControlParentheses<T> controlParens, P p) {
-        J.ControlParentheses<T> cp = controlParens;
+    public J visitControlParentheses(J.ControlParentheses controlParens, P p) {
+        J.ControlParentheses cp = controlParens;
         cp = cp.withPrefix(visitSpace(cp.getPrefix(), Space.Location.CONTROL_PARENTHESES_PREFIX, p));
         Expression temp = (Expression) visitExpression(cp, p);
         if (!(temp instanceof J.ControlParentheses)) {
             return temp;
         } else {
             //noinspection unchecked
-            cp = (J.ControlParentheses<T>) temp;
+            cp = (J.ControlParentheses) temp;
         }
         cp = cp.getPadding().withTree(visitRightPadded(cp.getPadding().getTree(), JRightPadded.Location.PARENTHESES, p));
         cp = cp.withMarkers(visitMarkers(cp.getMarkers(), p));
@@ -973,8 +973,8 @@ public class JavaVisitor<P> extends TreeVisitor<J, P> implements JavaVisitable<J
         return pt;
     }
 
-    public <T extends J> J visitParentheses(J.Parentheses<T> parens, P p) {
-        J.Parentheses<T> pa = parens;
+    public J visitParentheses(J.Parentheses parens, P p) {
+        J.Parentheses pa = parens;
         pa = pa.withPrefix(visitSpace(pa.getPrefix(), Space.Location.PARENTHESES_PREFIX, p));
         pa = pa.withMarkers(visitMarkers(pa.getMarkers(), p));
         Expression temp = (Expression) visitExpression(pa, p);
@@ -982,9 +982,9 @@ public class JavaVisitor<P> extends TreeVisitor<J, P> implements JavaVisitable<J
             return temp;
         } else {
             //noinspection unchecked
-            pa = (J.Parentheses<T>) temp;
+            pa = (J.Parentheses) temp;
         }
-        pa = pa.getPadding().withTree(visitRightPadded(pa.getPadding().getTree(), JRightPadded.Location.PARENTHESES, p));
+        pa = pa.getPadding().withTree(visitRightPadded((JRightPadded) pa.getPadding().getTree(), JRightPadded.Location.PARENTHESES, p));
         return pa;
     }
 

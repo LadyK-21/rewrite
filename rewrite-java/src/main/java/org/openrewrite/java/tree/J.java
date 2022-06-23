@@ -60,7 +60,7 @@ public interface J extends Tree {
     }
 
     @Nullable
-    default <P> J acceptJava(JavaVisitable<J, P> v, P p) {
+    default <T,P> T acceptJava(JavaVisitable<T, P> v, P p) {
         return v.defaultValue(this, p);
     }
 
@@ -139,7 +139,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitAnnotatedType(this, p);
         }
 
@@ -205,7 +205,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitAnnotation(this, p);
         }
 
@@ -273,7 +273,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitArrayAccess(this, p);
         }
 
@@ -315,7 +315,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J, P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitArrayType(this, p);
         }
 
@@ -347,7 +347,7 @@ public interface J extends Tree {
         JLeftPadded<Expression> detail;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitAssert(this, p);
         }
 
@@ -409,7 +409,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitAssignment(this, p);
         }
 
@@ -498,7 +498,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitAssignmentOperation(this, p);
         }
 
@@ -601,7 +601,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitBinary(this, p);
         }
 
@@ -717,7 +717,7 @@ public interface J extends Tree {
         Space end;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitBlock(this, p);
         }
 
@@ -781,7 +781,7 @@ public interface J extends Tree {
         J.Identifier label;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitBreak(this, p);
         }
 
@@ -834,7 +834,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitCase(this, p);
         }
 
@@ -989,7 +989,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitClassDeclaration(this, p);
         }
 
@@ -1223,7 +1223,7 @@ public interface J extends Tree {
         Space eof;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitJavaSourceFile(this, p);
         }
 
@@ -1312,7 +1312,7 @@ public interface J extends Tree {
         J.Identifier label;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitContinue(this, p);
         }
 
@@ -1372,7 +1372,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitDoWhileLoop(this, p);
         }
 
@@ -1444,7 +1444,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitEmpty(this, p);
         }
 
@@ -1479,7 +1479,7 @@ public interface J extends Tree {
         NewClass initializer;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitEnumValue(this, p);
         }
 
@@ -1527,7 +1527,7 @@ public interface J extends Tree {
         boolean terminatedWithSemicolon;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitEnumValueSet(this, p);
         }
 
@@ -1607,7 +1607,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitFieldAccess(this, p);
         }
 
@@ -1734,7 +1734,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitForEachLoop(this, p);
         }
 
@@ -1786,7 +1786,7 @@ public interface J extends Tree {
             }
 
             @Override
-            public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+            public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
                 return v.visitForEachControl(this, p);
             }
 
@@ -1900,7 +1900,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitForLoop(this, p);
         }
 
@@ -1962,7 +1962,7 @@ public interface J extends Tree {
             }
 
             @Override
-            public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+            public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
                 return v.visitForControl(this, p);
             }
 
@@ -2068,7 +2068,7 @@ public interface J extends Tree {
         JavaType.Variable fieldType;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitIdentifier(this, p);
         }
 
@@ -2125,7 +2125,7 @@ public interface J extends Tree {
         Else elsePart;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitIf(this, p);
         }
 
@@ -2168,7 +2168,7 @@ public interface J extends Tree {
             }
 
             @Override
-            public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+            public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
                 return v.visitElse(this, p);
             }
 
@@ -2267,7 +2267,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitImport(this, p);
         }
 
@@ -2461,7 +2461,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitInstanceOf(this, p);
         }
 
@@ -2539,7 +2539,7 @@ public interface J extends Tree {
         Statement statement;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitLabel(this, p);
         }
 
@@ -2610,7 +2610,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitLambda(this, p);
         }
 
@@ -2734,7 +2734,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitLiteral(this, p);
         }
 
@@ -2839,7 +2839,7 @@ public interface J extends Tree {
         JavaType.Variable variableType;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitMemberReference(this, p);
         }
 
@@ -3039,7 +3039,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitMethodDeclaration(this, p);
         }
 
@@ -3292,7 +3292,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitMethodInvocation(this, p);
         }
 
@@ -3451,7 +3451,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitMultiCatch(this, p);
         }
 
@@ -3554,7 +3554,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitNewArray(this, p);
         }
 
@@ -3621,7 +3621,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitArrayDimension(this, p);
         }
 
@@ -3750,7 +3750,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitNewClass(this, p);
         }
 
@@ -3829,7 +3829,7 @@ public interface J extends Tree {
         List<Annotation> annotations;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitPackage(this, p);
         }
 
@@ -3891,7 +3891,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitParameterizedType(this, p);
         }
 
@@ -3963,7 +3963,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitParentheses(this, p);
         }
 
@@ -4054,7 +4054,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitControlParentheses(this, p);
         }
 
@@ -4158,7 +4158,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitPrimitive(this, p);
         }
 
@@ -4187,7 +4187,7 @@ public interface J extends Tree {
         Expression expression;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitReturn(this, p);
         }
 
@@ -4223,7 +4223,7 @@ public interface J extends Tree {
         Block cases;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitSwitch(this, p);
         }
 
@@ -4254,7 +4254,7 @@ public interface J extends Tree {
         Block body;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitSynchronized(this, p);
         }
 
@@ -4316,7 +4316,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitTernary(this, p);
         }
 
@@ -4385,7 +4385,7 @@ public interface J extends Tree {
         Expression exception;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitThrow(this, p);
         }
 
@@ -4456,7 +4456,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitTry(this, p);
         }
 
@@ -4489,7 +4489,7 @@ public interface J extends Tree {
             boolean terminatedWithSemicolon;
 
             @Override
-            public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+            public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
                 return v.visitTryResource(this, p);
             }
         }
@@ -4515,7 +4515,7 @@ public interface J extends Tree {
             Block body;
 
             @Override
-            public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+            public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
                 return v.visitCatch(this, p);
             }
 
@@ -4596,7 +4596,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitTypeCast(this, p);
         }
 
@@ -4654,7 +4654,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitTypeParameter(this, p);
         }
 
@@ -4800,7 +4800,7 @@ public interface J extends Tree {
         JavaType type;
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitUnary(this, p);
         }
 
@@ -4914,7 +4914,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitVariableDeclarations(this, p);
         }
 
@@ -5023,7 +5023,7 @@ public interface J extends Tree {
             }
 
             @Override
-            public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+            public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
                 return v.visitVariable(this, p);
             }
 
@@ -5144,7 +5144,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitWhileLoop(this, p);
         }
 
@@ -5233,7 +5233,7 @@ public interface J extends Tree {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             return v.visitWildcard(this, p);
         }
 

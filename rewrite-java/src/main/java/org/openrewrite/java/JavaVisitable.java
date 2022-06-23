@@ -1,14 +1,13 @@
 package org.openrewrite.java;
 
 import org.openrewrite.Tree;
-import org.openrewrite.internal.lang.Nullable;
-import org.openrewrite.java.tree.*;
-
-import static com.sun.tools.javac.main.Option.G;
+import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.JavaSourceFile;
+import org.openrewrite.java.tree.JavaType;
 
 public interface JavaVisitable<T, P> {
 
-    T defaultValue(T tree, P p);
+    T defaultValue(J tree, P p);
 
     T visit(Tree tree, P p);
 
@@ -29,7 +28,7 @@ public interface JavaVisitable<T, P> {
     public T visitJavaSourceFile(JavaSourceFile cu, P p);
     public T visitCompilationUnit(J.CompilationUnit cu, P p);
     public T visitContinue(J.Continue continueStatement, P p);
-    public <T extends J> J visitControlParentheses(J.ControlParentheses<T> controlParens, P p);
+    public T visitControlParentheses(J.ControlParentheses controlParens, P p);
     public T visitDoWhileLoop(J.DoWhileLoop doWhileLoop, P p);
     public T visitEmpty(J.Empty empty, P p);
     public T visitEnumValue(J.EnumValue enoom, P p);
@@ -56,7 +55,7 @@ public interface JavaVisitable<T, P> {
     public T visitNewClass(J.NewClass newClass, P p);
     public T visitPackage(J.Package pkg, P p);
     public T visitParameterizedType(J.ParameterizedType type, P p);
-    public <T extends J> J visitParentheses(J.Parentheses<T> parens, P p);
+    public T visitParentheses(J.Parentheses parens, P p);
     public T visitPrimitive(J.Primitive primitive, P p);
     public T visitReturn(J.Return retrn, P p);
     public T visitSwitch(J.Switch switzh, P p);

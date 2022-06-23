@@ -121,8 +121,8 @@ public class JavaIsoVisitor<P> extends JavaVisitor<P> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends J> J.ControlParentheses<T> visitControlParentheses(J.ControlParentheses<T> controlParens, P p) {
-        return (J.ControlParentheses<T>) super.visitControlParentheses(controlParens, p);
+    public J.ControlParentheses visitControlParentheses(J.ControlParentheses controlParens, P p) {
+        return (J.ControlParentheses) super.visitControlParentheses(controlParens, p);
     }
 
     @Override
@@ -262,8 +262,8 @@ public class JavaIsoVisitor<P> extends JavaVisitor<P> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends J> J.Parentheses<T> visitParentheses(J.Parentheses<T> parens, P p) {
-        return (J.Parentheses<T>) super.visitParentheses(parens, p);
+    public J.Parentheses visitParentheses(J.Parentheses parens, P p) {
+        return (J.Parentheses) super.visitParentheses(parens, p);
     }
 
     @Override

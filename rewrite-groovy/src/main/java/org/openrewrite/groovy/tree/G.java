@@ -214,13 +214,13 @@ public interface G extends J {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
-            return new GroovyVisitor<P>() {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
+            return (T) new GroovyVisitor<P>() {
                 @Override
                 public J visit(@Nullable Tree tree, P p) {
-                    return tree instanceof G.CompilationUnit ?
-                            visitJavaSourceFile((JavaSourceFile) v.visitJavaSourceFile((G.CompilationUnit) tree, p), p) :
-                            v.visit(tree, p);
+                    return tree instanceof CompilationUnit ?
+                            visitJavaSourceFile((JavaSourceFile) v.visitJavaSourceFile((CompilationUnit) tree, p), p) :
+                            (J)v.visit(tree, p);
                 }
             }.visit(this, p);
         }
@@ -359,10 +359,10 @@ public interface G extends J {
         }
 
         @Override
-        public @Nullable <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             G.MapEntry m = this;
             m = m.withType(v.visitType(type, p));
-            return m;
+            return (T)m;
         }
 
         public Padding getPadding() {
@@ -439,10 +439,10 @@ public interface G extends J {
         }
 
         @Override
-        public @Nullable <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             G.MapLiteral m = this;
             m = m.withType(v.visitType(type, p));
-            return m;
+            return (T)m;
         }
 
         public Padding getPadding() {
@@ -518,10 +518,10 @@ public interface G extends J {
         }
 
         @Override
-        public @Nullable <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             ListLiteral l = this;
             l = l.withType(v.visitType(type, p));
-            return l;
+            return (T)l;
         }
 
         public Padding getPadding() {
@@ -572,11 +572,11 @@ public interface G extends J {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             GString g = this;
-            g = g.withStrings(ListUtils.map(strings, s -> v.visit(s, p)));
+            g = g.withStrings(ListUtils.map(strings, s -> (J) v.visit(s, p)));
             g = g.withType(v.visitType(type, p));
-            return g;
+            return (T)g;
         }
 
         @Override
@@ -659,10 +659,10 @@ public interface G extends J {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
+        public <T,P> T acceptJava(JavaVisitable<T,P> v, P p) {
             G.Binary b = this;
             b = b.withType(v.visitType(type, p));
-            return b;
+            return (T)b;
         }
 
 //        @Override
