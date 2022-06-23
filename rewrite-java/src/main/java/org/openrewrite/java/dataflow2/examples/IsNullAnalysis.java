@@ -30,13 +30,13 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
      */
     public ModalBoolean isNullBefore(Cursor programPoint, JavaType.Variable v)
     {
-        ProgramState<ModalBoolean> state = inputState(programPoint, new TraversalControl<>());
+        ProgramState<ModalBoolean> state = inputState2(programPoint, new TraversalControl<>());
         ModalBoolean result = state.get(v);
         return result;
     }
 
     @Override
-    public ProgramState join(Collection<ProgramState<ModalBoolean>> outs) {
+    public ProgramState join(List<ProgramState<ModalBoolean>> outs) {
         return ProgramState.join(JOINER, outs);
     }
 
@@ -66,37 +66,36 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
     }
 
     @Override
-    public ProgramState<ModalBoolean> defaultTransfer(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
-        return inputState(c, t);
+    public ProgramState<ModalBoolean> defaultTransfer(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
+        return inputState;
     }
 
     @Override
-    public ProgramState<ModalBoolean> transferBinary(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
-        return inputState(c, t).push(False);
+    public ProgramState<ModalBoolean> transferBinary(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
+        return inputState.push(False);
     }
 
     @Override
-    public ProgramState<ModalBoolean> transferNamedVariable(Cursor c, TraversalControl<ProgramState<ModalBoolean>> tc) {
+    public ProgramState<ModalBoolean> transferNamedVariable(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> tc) {
         J.VariableDeclarations.NamedVariable v = c.getValue();
         JavaType.Variable t = v.getVariableType();
         if(v.getInitializer() != null) {
-            ProgramState<ModalBoolean> s = analysis(v.getInitializer());
-            ModalBoolean e = s.expr();
-            return s.set(t, s.expr()).pop();
+            //ProgramState<ModalBoolean> s = analysis(v.getInitializer());
+            //ModalBoolean e = inputState.expr();
+            return inputState.set(t, inputState.expr()).pop();
         } else {
-            ProgramState s = inputState(c, tc);
-            assert !s.getMap().containsKey(t);
-            return s.set(t, True);
+            assert !inputState.getMap().containsKey(t);
+            return inputState.set(t, True);
         }
     }
 
     @Override
-    public ProgramState<ModalBoolean> transferAssignment(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
+    public ProgramState<ModalBoolean> transferAssignment(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
 
         J.Assignment a = c.getValue();
         if (a.getVariable() instanceof J.Identifier) {
             J.Identifier ident = (J.Identifier) a.getVariable();
-            ProgramState<ModalBoolean> s = analysis(a.getAssignment());
+            ProgramState<ModalBoolean> s = inputState; //analysis(a.getAssignment());
             return s.set(ident.getFieldType(), s.expr()).push(s.expr());
         } else {
             throw new UnsupportedOperationException();
@@ -111,59 +110,62 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
             Arrays.stream(definitelyNonNullReturningMethodSignatures).map(MethodMatcher::new).collect(Collectors.toList());
 
     @Override
-    public ProgramState<ModalBoolean> transferMethodInvocation(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
+    public ProgramState<ModalBoolean> transferMethodInvocation(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.MethodInvocation method = c.getValue();
         for(MethodMatcher matcher : definitelyNonNullReturningMethodMatchers) {
             if (matcher.matches(method)) {
-                return inputState(c, t).push(False);
+                return inputState.push(False);
             }
         }
-        return inputState(c, t).push(NoIdea);
+        return inputState.push(NoIdea);
     }
 
     @Override
-    public ProgramState<ModalBoolean> transferLiteral(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
+    public ProgramState<ModalBoolean> transferLiteral(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.Literal pp = c.getValue();
-        ProgramState<ModalBoolean> s = inputState(c, t);
+        //ProgramState<ModalBoolean> s = inputState(c, t);
         if (pp.getValue() == null) {
-            return s.push(True);
+            return inputState.push(True);
         } else {
-            return s.push(False);
+            return inputState.push(False);
         }
     }
 
     @Override
-    public ProgramState<ModalBoolean> transferIdentifier(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
+    public ProgramState<ModalBoolean> transferIdentifier(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.Identifier i = c.getValue();
-        ProgramState<ModalBoolean> s = inputState(c, t);
-        ModalBoolean v = s.get(i.getFieldType());
-        return inputState(c, t).push(v);
+        //ProgramState<ModalBoolean> s = inputState(c, t);
+        ModalBoolean v = inputState.get(i.getFieldType());
+        return inputState.push(v);
     }
 
     @Override
-    public ProgramState<ModalBoolean> transferIfElse(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
+    public ProgramState<ModalBoolean> transferIfElse(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
         J.If.Else ifElse = c.getValue();
-        ProgramPoint body = ifElse.getBody();
-        return analysis(body);
+        //ProgramPoint body = ifElse.getBody();
+        //return analysis(body);
+        return inputState;
     }
 
     @Override
-    public ProgramState<ModalBoolean> transferBlock(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
-        J.Block block = c.getValue();
-        List<Statement> stmts = block.getStatements();
-        if (stmts.size() > 0) {
-            ProgramPoint stmt = stmts.get(stmts.size() - 1);
-            return analysis(stmt);
-        } else {
-            throw new UnsupportedOperationException(); // TODO
-        }
+    public ProgramState<ModalBoolean> transferBlock(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
+        return inputState;
+//        J.Block block = c.getValue();
+//        List<Statement> stmts = block.getStatements();
+//        if (stmts.size() > 0) {
+//            ProgramPoint stmt = stmts.get(stmts.size() - 1);
+//            return analysis(stmt);
+//        } else {
+//            throw new UnsupportedOperationException(); // TODO
+//        }
     }
 
     @Override
-    public ProgramState<ModalBoolean> transferParentheses(Cursor c, TraversalControl<ProgramState<ModalBoolean>> t) {
-        J.Parentheses<?> paren = c.getValue();
-        ProgramPoint tree = (ProgramPoint) paren.getTree();
-        return analysis(tree);
+    public ProgramState<ModalBoolean> transferParentheses(Cursor c, ProgramState<ModalBoolean> inputState, TraversalControl<ProgramState<ModalBoolean>> t) {
+        return inputState;
+//        J.Parentheses<?> paren = c.getValue();
+//        ProgramPoint tree = (ProgramPoint) paren.getTree();
+//        return analysis(tree);
     }
 }
 

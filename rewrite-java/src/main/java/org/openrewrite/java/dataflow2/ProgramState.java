@@ -2,6 +2,7 @@ package org.openrewrite.java.dataflow2;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import lombok.*;
 import org.openrewrite.Incubating;
@@ -41,6 +42,14 @@ public class ProgramState<T> {
         return expressionStack.value;
     }
 
+    public T expr(int depth) {
+        LinkedListElement<T> s = expressionStack;
+        for(int i=0; i<depth; i++) {
+            s = s.previous;
+        }
+        return s.value;
+    }
+
     public ProgramState<T> push(T value) {
         return this.withExpressionStack(new LinkedListElement<>(expressionStack, value));
     }
@@ -60,7 +69,10 @@ public class ProgramState<T> {
         return this.withMap(m);
     }
 
-    public static <T> ProgramState<T> join(Joiner<T> joiner, Collection<ProgramState<T>> outs) {
+    public static <T> ProgramState<T> join(Joiner<T> joiner, List<ProgramState<T>> outs) {
+        if(outs.size() == 1) {
+            return outs.get(0);
+        }
         HashMap<JavaType.Variable, T> m = new HashMap<>();
         for(ProgramState<T> out : outs) {
             for(JavaType.Variable key : out.getMap().keySet()) {
@@ -72,6 +84,15 @@ public class ProgramState<T> {
                     m.put(key, joiner.join(v1, v2));
                 }
             }
+        }
+        // ... combine stacks : must have the same length ...
+        if(outs.size() > 0) {
+            int len = LinkedListElement.length(outs.get(0).expressionStack);
+            for (int i = 1; i < outs.size(); i++) {
+                assert len == LinkedListElement.length(outs.get(i).expressionStack);
+            }
+
+            assert len == 0; // TODO        }
         }
         return new ProgramState<>(m);
     }
@@ -108,6 +129,14 @@ public class ProgramState<T> {
                 return false;
             }
             return a.value == b.value && isEqual(a.previous, b.previous);
+        }
+
+        public static <T> int length(LinkedListElement<T> expressionStack) {
+            if(expressionStack == null) {
+                return 0;
+            } else {
+                return 1 + length(expressionStack.previous);
+            }
         }
     }
 }

@@ -211,8 +211,8 @@ public class DataFlowGraph {
         }
     }
 
-    public Collection<Cursor> previous(Cursor c) {
-        Collection<Cursor> prev = previousIn(c, EXIT);
+    public List<Cursor> previous(Cursor c) {
+        List<Cursor> prev = previousIn(c, EXIT);
         if(prev.size() == 1 && prev.contains(c)) {
             return previousIn(c, ENTRY);
         } else {
@@ -220,7 +220,7 @@ public class DataFlowGraph {
         }
     }
 
-    public Collection<Cursor> previous(Collection<Cursor> cs) {
+    public List<Cursor> previous(List<Cursor> cs) {
         return cs.stream().flatMap(c -> previous(c).stream()).collect(Collectors.toList());
     }
 

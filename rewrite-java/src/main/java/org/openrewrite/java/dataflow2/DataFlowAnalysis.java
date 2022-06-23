@@ -37,24 +37,27 @@ public abstract class DataFlowAnalysis<T> {
 
     Map<ProgramPoint, Cursor> cursors = new HashMap<>();
 
-    PriorityQueue<Cursor> workList = new PriorityQueue<>(new Comparator<Cursor>() {
-        @Override
-        public int compare(Cursor c1, Cursor c2) {
-            ProgramPoint p1 = c1.getValue();
-            ProgramPoint p2 = c2.getValue();
-            // least element is first in the list
-            if(nextsTransitiveClosure.get(p1) != null && nextsTransitiveClosure.get(p1).contains(p2)) {
-                return -1;
-            } else if(nextsTransitiveClosure.get(p2) != null && nextsTransitiveClosure.get(p2).contains(p1)) {
-                return 1;
-            } else {
-                return 0;
-            }
-        }
-    });
+//    PriorityQueue<Cursor> workList = new PriorityQueue<>(new Comparator<Cursor>() {
+//        @Override
+//        public int compare(Cursor c1, Cursor c2) {
+//            ProgramPoint p1 = c1.getValue();
+//            ProgramPoint p2 = c2.getValue();
+//            // least element is first in the list
+//            if(nextsTransitiveClosure.get(p1) != null && nextsTransitiveClosure.get(p1).contains(p2)) {
+//                return -1;
+//            } else if(nextsTransitiveClosure.get(p2) != null && nextsTransitiveClosure.get(p2).contains(p1)) {
+//                return 1;
+//            } else {
+//                return 0;
+//            }
+//        }
+//    });
+
+    Deque<Cursor> workList = new ArrayDeque<>();
 
     MultiMap<ProgramPoint, ProgramPoint> nexts = new MultiMap<>();
-    MultiMap<ProgramPoint, ProgramPoint> nextsTransitiveClosure = new MultiMap<>();
+
+//    MultiMap<ProgramPoint, ProgramPoint> nextsTransitiveClosure = new MultiMap<>();
 
     public DataFlowAnalysis(DataFlowGraph dfg, Joiner<T> joiner) {
         this.dfg = dfg;
@@ -64,7 +67,7 @@ public abstract class DataFlowAnalysis<T> {
     public void doAnalysis(Cursor from) {
 
         initNexts(from);
-        initClosure();
+        //initClosure();
         visited = new HashSet<>();
         initWorkList(from);
 
@@ -74,17 +77,18 @@ public abstract class DataFlowAnalysis<T> {
             Cursor c = workList.remove();
             ProgramPoint pp = c.getValue();
 
-            System.out.println(Utils.print(c));
+            System.out.println(pp.getClass().getSimpleName() + "   " + Utils.print(c));
 
-            if("(s = \"a\")".equals(Utils.print(c))) {
-                System.out.println();
-            }
+//            if("s = null".equals(Utils.print(c))) {
+//                System.out.println();
+//            }
 
-            ProgramState<T> previousState = analysisOrNull(pp);
-            ProgramState<T> newState = transfer(c, null);
+            ProgramState<T> previousState = analysisOrNull2(pp);
 
+            ProgramState<T> inputState = inputState2(c, null);
+            ProgramState<T> newState = transfer(c, inputState, null); // linearTransfer(c, null);
 
-            System.out.println(previousState + "  ->  " + newState);
+            System.out.println(inputState + "  ->  " + newState);
 
             if(previousState == null) {
                 analysis.put(pp, newState);
@@ -96,9 +100,19 @@ public abstract class DataFlowAnalysis<T> {
                         Cursor next = cursors.get(p);
                         workList.add(next);
                     }
-                }            }
+                }
+            }
         }
     }
+
+//    ProgramState<T> linearTransfer(Cursor c, TraversalControl<ProgramState<T>> t) {
+//        List<Cursor> prev = dfg.previous(c);
+//        if(prev.size() == 1) {
+//            return linearTransfer(prev.get(0), t);
+//        } else {
+//            return transfer(c, t);
+//        }
+//    }
 
     void initNexts(Cursor c) {
         ProgramPoint to = c.getValue();
@@ -106,7 +120,12 @@ public abstract class DataFlowAnalysis<T> {
         visited.add(to);
         cursors.put(to, c);
 
-        Collection<Cursor> sources = dfg.previous(c);
+        List<Cursor> sources = dfg.previous(c);
+
+//        while(sources.size() == 1) {
+//            sources = dfg.previous(sources.get(0));
+//        }
+
         for (Cursor source : sources) {
             ProgramPoint from = source.getValue();
             // There is a DFG edge from->to
@@ -116,42 +135,47 @@ public abstract class DataFlowAnalysis<T> {
         }
     }
 
-    void initClosure() {
-        for(ProgramPoint from : nexts.keySet()) {
-            addTransitiveClosure(from, nexts.get(from));
-        }
-    }
-
-    void addTransitiveClosure(ProgramPoint from, Collection<ProgramPoint> tos) {
-        ArrayList<ProgramPoint> trans = nextsTransitiveClosure.get(from);
-        if(tos != null) {
-            for(ProgramPoint to : tos) {
-                if(trans == null) {
-                    trans = new ArrayList<>();
-                    nextsTransitiveClosure.put(from, trans);
-                }
-                if(!trans.contains(to)) {
-                    nextsTransitiveClosure.add(from, to);
-                    addTransitiveClosure(from, nexts.get(to));
-                }
-            }
-        }
-    }
+//    void initClosure() {
+//        for(ProgramPoint from : nexts.keySet()) {
+//            addTransitiveClosure(from, nexts.get(from));
+//        }
+//    }
+//
+//    void addTransitiveClosure(ProgramPoint from, Collection<ProgramPoint> tos) {
+//        ArrayList<ProgramPoint> trans = nextsTransitiveClosure.get(from);
+//        if(tos != null) {
+//            for(ProgramPoint to : tos) {
+//                if(trans == null) {
+//                    trans = new ArrayList<>();
+//                    nextsTransitiveClosure.put(from, trans);
+//                }
+//                if(!trans.contains(to)) {
+//                    nextsTransitiveClosure.add(from, to);
+//                    addTransitiveClosure(from, nexts.get(to));
+//                }
+//            }
+//        }
+//    }
 
     void initWorkList(Cursor c) {
         ProgramPoint to = c.getValue();
         if(visited.contains(to)) return;
         visited.add(to);
-        workList.add(c);
+        workList.addFirst(c);
 
-        Collection<Cursor> sources = dfg.previous(c);
+        List<Cursor> sources = dfg.previous(c);
+
+//        while(sources.size() == 1) {
+//            sources = dfg.previous(sources.get(0));
+//        }
+
         for (Cursor source : sources) {
             ProgramPoint from = source.getValue();
             initWorkList(source);
         }
     }
 
-    public ProgramState<T> analysis(ProgramPoint p) {
+    public ProgramState<T> analysis2(ProgramPoint p) {
         ProgramState<T> res = analysis.get(p);
         if(res == null) {
             res = new ProgramState<>(joiner.lowerBound());
@@ -160,19 +184,19 @@ public abstract class DataFlowAnalysis<T> {
         return res;
     }
 
-    public ProgramState<T> analysisOrNull(ProgramPoint p) {
+    public ProgramState<T> analysisOrNull2(ProgramPoint p) {
         ProgramState<T> res = analysis.get(p);
         return res;
     }
-    public ProgramState<T> analysis(Cursor c) {
-        return analysis((ProgramPoint)c.getValue());
+    public ProgramState<T> analysis2(Cursor c) {
+        return analysis2((ProgramPoint)c.getValue());
     }
 
-    public ProgramState<T> inputState(Cursor c, TraversalControl<ProgramState<T>> t) {
+    public ProgramState<T> inputState2(Cursor c, TraversalControl<ProgramState<T>> t) {
         ProgramPoint pp = c.getValue();
 
         List<ProgramState<T>> outs = new ArrayList<>();
-        Collection<Cursor> sources = dfg.previousIn(c, ENTRY);
+        Collection<Cursor> sources = dfg.previous(c);
         for (Cursor source : sources) {
             // Since program points are represented by cursors with a tree node value,
             // it is impossible to add program points when there is no corresponding tree node.
@@ -181,18 +205,18 @@ public abstract class DataFlowAnalysis<T> {
 
             if (source.getMessage("ifThenElseBranch") != null) {
                 J.If ifThenElse = source.firstEnclosing(J.If.class);
-                ProgramState<T> s1 = analysis(source); // outputState(source, t, pp);
+                ProgramState<T> s1 = analysis2(source); // outputState(source, t, pp);
                 ProgramState<T> s2 = transferToIfThenElseBranches(ifThenElse, s1, source.getMessage("ifThenElseBranch"));
                 outs.add(s2);
             } else {
-                outs.add(analysis(source)); // outputState(source, t, pp));
+                outs.add(analysis2(source)); // outputState(source, t, pp));
             }
         }
         ProgramState<T> result = join(outs);
         return result;
     }
 
-    public abstract ProgramState<T> join(Collection<ProgramState<T>> outs);
+    public abstract ProgramState<T> join(List<ProgramState<T>> outs);
 
     @SafeVarargs
     public final ProgramState<T> join(ProgramState<T>... outs) {
@@ -214,50 +238,50 @@ public abstract class DataFlowAnalysis<T> {
 //        }
 //    }
 
-    public ProgramState<T> transfer(Cursor pp, TraversalControl<ProgramState<T>> t) {
+    public ProgramState<T> transfer(Cursor pp, ProgramState inputState, TraversalControl<ProgramState<T>> t) {
         switch (pp.getValue().getClass().getName().replaceAll("^org.openrewrite.java.tree.", "")) {
             case "J$MethodInvocation":
-                return transferMethodInvocation(pp, t);
+                return transferMethodInvocation(pp, inputState, t);
             case "J$ArrayAccess":
-                return transferArrayAccess(pp, t);
+                return transferArrayAccess(pp, inputState, t);
             case "J$Assert":
-                return transferAssert(pp, t);
+                return transferAssert(pp, inputState, t);
             case "J$NewClass":
-                return transferNewClass(pp, t);
+                return transferNewClass(pp, inputState, t);
             case "J$If":
-                return transferIf(pp, t);
+                return transferIf(pp, inputState, t);
             case "J$If$Else":
-                return transferIfElse(pp, t);
+                return transferIfElse(pp, inputState, t);
             case "J$WhileLoop":
-                return transferWhileLoop(pp, t);
+                return transferWhileLoop(pp, inputState, t);
             case "J$ForLoop":
-                return transferForLoop(pp, t);
+                return transferForLoop(pp, inputState, t);
             case "J$ForLoop$Control":
-                return transferForLoopControl(pp, t);
+                return transferForLoopControl(pp, inputState, t);
             case "J$Block":
-                return transferBlock(pp, t);
+                return transferBlock(pp, inputState, t);
             case "J$VariableDeclarations":
-                return transferVariableDeclarations(pp, t);
+                return transferVariableDeclarations(pp, inputState, t);
             case "J$VariableDeclarations$NamedVariable":
-                return transferNamedVariable(pp, t);
+                return transferNamedVariable(pp, inputState, t);
             case "J$Unary":
-                return transferUnary(pp, t);
+                return transferUnary(pp, inputState, t);
             case "J$Binary":
-                return transferBinary(pp, t);
+                return transferBinary(pp, inputState, t);
             case "J$Assignment":
-                return transferAssignment(pp, t);
+                return transferAssignment(pp, inputState, t);
             case "J$Parentheses":
-                return transferParentheses(pp, t);
+                return transferParentheses(pp, inputState, t);
             case "J$ControlParentheses":
-                return transferControlParentheses(pp, t);
+                return transferControlParentheses(pp, inputState, t);
             case "J$Literal":
-                return transferLiteral(pp, t);
+                return transferLiteral(pp, inputState, t);
             case "J$Identifier":
-                return transferIdentifier(pp, t);
+                return transferIdentifier(pp, inputState, t);
             case "J$Empty":
-                return transferEmpty(pp, t);
+                return transferEmpty(pp, inputState, t);
             case "J$FieldAccess":
-                return transferFieldAccess(pp, t);
+                return transferFieldAccess(pp, inputState, t);
             case "J$CompilationUnit":
             case "J$ClassDeclaration":
             case "J$MethodDeclaration":
@@ -289,96 +313,96 @@ public abstract class DataFlowAnalysis<T> {
         }
     }
 
-    public ProgramState<T> transferAssert(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferAssert(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
     public ProgramState<T> transferToIfThenElseBranches(J.If ifThenElse, ProgramState<T> s, String ifThenElseBranch) {
         return s;
     }
 
-    public abstract ProgramState<T> defaultTransfer(Cursor pp, TraversalControl<ProgramState<T>> t);
+    public abstract ProgramState<T> defaultTransfer(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t);
 
-    public ProgramState<T> transferMethodInvocation(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferMethodInvocation(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferArrayAccess(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferArrayAccess(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
-    public ProgramState<T> transferNewClass(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
-    }
-
-    public ProgramState<T> transferIf(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferNewClass(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferIfElse(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferIf(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferWhileLoop(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferIfElse(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferForLoop(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferWhileLoop(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferForLoopControl(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferForLoop(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferBlock(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferForLoopControl(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferVariableDeclarations(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferBlock(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferNamedVariable(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferVariableDeclarations(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferUnary(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferNamedVariable(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferBinary(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferUnary(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferAssignment(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferBinary(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferAssignmentOperation(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferAssignment(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferParentheses(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferAssignmentOperation(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferControlParentheses(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferParentheses(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferLiteral(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferControlParentheses(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferIdentifier(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferLiteral(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferEmpty(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferIdentifier(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 
-    public ProgramState<T> transferFieldAccess(Cursor pp, TraversalControl<ProgramState<T>> t) {
-        return defaultTransfer(pp, t);
+    public ProgramState<T> transferEmpty(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
+    }
+
+    public ProgramState<T> transferFieldAccess(Cursor pp, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
+        return defaultTransfer(pp, inputState, t);
     }
 }

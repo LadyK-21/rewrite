@@ -125,7 +125,7 @@ public class TestZipSlip {
 
                     zipSlip.doAnalysis(getCursor());
 
-                    ProgramState<ZipSlipValue> state = zipSlip.analysis(arg);
+                    ProgramState<ZipSlipValue> state = zipSlip.analysis2(arg);
 
                     ZipSlipValue actual = state.expr();
 

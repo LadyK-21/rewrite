@@ -18,8 +18,8 @@ public class TestNullAnalysis {
 
 //        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", CantTell);
 
-        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", False);
-        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", False);
+//        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", False);
+//        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", False);
 
         testIsSNull("String s = null; while(c) { s = \"a\"; }", Conflict);
         testIsSNull("String s = null; while(c) { s = null; }", True);
@@ -96,7 +96,7 @@ public class TestNullAnalysis {
         DataFlowGraph dfg = new DataFlowGraph(cu);
         IsNullAnalysis analysis = new IsNullAnalysis(dfg);
         analysis.doAnalysis(c1);
-        ProgramState state = analysis.analysis(c1);
+        ProgramState state = analysis.analysis2(c1);
 
 //
 //        IsNullAnalysis a = new IsNullAnalysis(dfg);

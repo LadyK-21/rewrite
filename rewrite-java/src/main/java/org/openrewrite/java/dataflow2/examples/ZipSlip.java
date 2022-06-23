@@ -81,42 +81,42 @@ public class ZipSlip extends ValueAnalysis<ZipSlipValue> {
 //            Arrays.stream(definitelyNonNullReturningMethodSignatures).map(MethodMatcher::new).collect(Collectors.toList());
 
     @Override
-    public ProgramState<ZipSlipValue> transferNewClass(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
+    public ProgramState<ZipSlipValue> transferNewClass(Cursor c, ProgramState<ZipSlipValue> inputState, TraversalControl<ProgramState<ZipSlipValue>> t) {
         J.NewClass newClass = c.getValue();
         // new File(dir, fileName)
         MethodMatcher m = new MethodMatcher("java.io.File <constructor>(java.io.File, java.lang.String)");
         if(m.matches(newClass)) {
             Expression dir = newClass.getArguments().get(0);
             Expression fileName = newClass.getArguments().get(1);
-            ZipSlipValue fileNameValue = analysis(fileName).expr();
-            ProgramState<ZipSlipValue> s = inputState(c, t);
+            ZipSlipValue fileNameValue = inputState.expr(0); //analysis(fileName).expr();
+            //ProgramState<ZipSlipValue> s = inputState(c, t);
             if(fileNameValue == ZipSlipValue.ZIP_ENTRY_NAME) {
                 // fileName has been obtained from ZipEntry.getName()
-                return s.push(new ZipSlipValue.NewFileFromZipEntry(dir));
+                return inputState.push(new ZipSlipValue.NewFileFromZipEntry(dir));
             }
         }
-        return super.transferNewClass(c, t);
+        return super.transferNewClass(c, inputState, t);
     }
 
     @Override
-    public ProgramState<ZipSlipValue> transferMethodInvocation(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
+    public ProgramState<ZipSlipValue> transferMethodInvocation(Cursor c, ProgramState<ZipSlipValue> inputState, TraversalControl<ProgramState<ZipSlipValue>> t) {
         J.MethodInvocation methodInvocation = c.getValue();
         // zipEntry.getName()
         MethodMatcher m = new MethodMatcher("java.util.zip.ZipEntry getName()");
         if(m.matches(methodInvocation)) {
-            return inputState(c, t).push(ZipSlipValue.ZIP_ENTRY_NAME);
+            return inputState.push(ZipSlipValue.ZIP_ENTRY_NAME);
         }
-        return super.transferMethodInvocation(c, t);
+        return super.transferMethodInvocation(c, inputState, t);
     }
 
     @Override
-    public ProgramState<ZipSlipValue> transferLiteral(Cursor c, TraversalControl<ProgramState<ZipSlipValue>> t) {
+    public ProgramState<ZipSlipValue> transferLiteral(Cursor c, ProgramState<ZipSlipValue> inputState, TraversalControl<ProgramState<ZipSlipValue>> t) {
         J.Literal literal = c.getValue();
         if(true) {
             // TODO Check if string literal is safe
-            return inputState(c, t).push(ZipSlipValue.SAFE);
+            return inputState.push(ZipSlipValue.SAFE);
         }
-        return super.transferLiteral(c, t);
+        return super.transferLiteral(c, inputState, t);
     }
 }
 

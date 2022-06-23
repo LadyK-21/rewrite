@@ -14,37 +14,37 @@ public class HttpAnalysis extends ValueAnalysis<HttpAnalysisValue> {
     }
 
     @Override
-    public ProgramState<HttpAnalysisValue> transferMethodInvocation(Cursor c, TraversalControl<ProgramState<HttpAnalysisValue>> t) {
+    public ProgramState<HttpAnalysisValue> transferMethodInvocation(Cursor c, ProgramState<HttpAnalysisValue> inputState, TraversalControl<ProgramState<HttpAnalysisValue>> t) {
         J.MethodInvocation mi = c.getValue();
         if (URI_CREATE_MATCHER.matches(mi)) {
-            return inputState(c, t).push(HttpAnalysisValue.UNKNOWN);
+            return inputState.push(HttpAnalysisValue.UNKNOWN);
         } else if (STRING_REPLACE.matches(mi)) {
-            ProgramPoint arg0 = mi.getArguments().get(0);
-            ProgramPoint arg1 = mi.getArguments().get(1);
-            ProgramState<HttpAnalysisValue> arg0State = analysis(arg0);
-            ProgramState<HttpAnalysisValue> arg1State = analysis(arg1);
-            if (arg0State.expr().getName() == HttpAnalysisValue.Understanding.NOT_SECURE
-                && arg1State.expr().getName() == HttpAnalysisValue.Understanding.SECURE) {
-                return inputState(c, t).push(HttpAnalysisValue.SECURE);
-            } else if (arg1State.expr().getName() == HttpAnalysisValue.Understanding.NOT_SECURE
-                    && arg0State.expr().getName() == HttpAnalysisValue.Understanding.SECURE)
-            return inputState(c, t).push(new HttpAnalysisValue(HttpAnalysisValue.Understanding.NOT_SECURE, mi.getArguments().get(1)));
+            //ProgramPoint arg0 = mi.getArguments().get(0);
+            //ProgramPoint arg1 = mi.getArguments().get(1);
+            HttpAnalysisValue arg0Value = inputState.expr(1); // analysis(arg0);
+            HttpAnalysisValue arg1Value = inputState.expr(0); // analysis(arg1);
+            if (arg0Value.getName() == HttpAnalysisValue.Understanding.NOT_SECURE
+                && arg1Value.getName() == HttpAnalysisValue.Understanding.SECURE) {
+                return inputState.push(HttpAnalysisValue.SECURE);
+            } else if (arg1Value.getName() == HttpAnalysisValue.Understanding.NOT_SECURE
+                    && arg0Value.getName() == HttpAnalysisValue.Understanding.SECURE)
+            return inputState.push(new HttpAnalysisValue(HttpAnalysisValue.Understanding.NOT_SECURE, mi.getArguments().get(1)));
         }
-        return super.transferMethodInvocation(c, t);
+        return super.transferMethodInvocation(c, inputState, t);
     }
 
     @Override
-    public ProgramState<HttpAnalysisValue> transferLiteral(Cursor c, TraversalControl<ProgramState<HttpAnalysisValue>> t) {
+    public ProgramState<HttpAnalysisValue> transferLiteral(Cursor c, ProgramState<HttpAnalysisValue> inputState, TraversalControl<ProgramState<HttpAnalysisValue>> t) {
         J.Literal literal = c.getValue();
         String value = literal.getValueSource();
         if(value != null) {
             if (value.startsWith("https")) {
-                return inputState(c, t).push(HttpAnalysisValue.SECURE);
+                return inputState.push(HttpAnalysisValue.SECURE);
             } else if (value.startsWith("http")) {
-                return inputState(c, t).push(new HttpAnalysisValue(HttpAnalysisValue.Understanding.NOT_SECURE, literal));
+                return inputState.push(new HttpAnalysisValue(HttpAnalysisValue.Understanding.NOT_SECURE, literal));
             }
         }
-        return super.transferLiteral(c, t);
+        return super.transferLiteral(c, inputState, t);
     }
 
     @Override
