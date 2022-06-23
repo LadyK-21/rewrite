@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-public class JavaVisitor<P> extends TreeVisitor<J, P> {
+public class JavaVisitor<P> extends TreeVisitor<J, P> implements JavaVisitable<J, P> {
 
     @Nullable
     protected JavadocVisitor<P> javadocVisitor;

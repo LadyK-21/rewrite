@@ -23,6 +23,7 @@ import org.openrewrite.groovy.GroovyPrinter;
 import org.openrewrite.groovy.GroovyVisitor;
 import org.openrewrite.internal.ListUtils;
 import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.java.JavaVisitable;
 import org.openrewrite.java.JavaVisitor;
 import org.openrewrite.java.internal.TypesInUse;
 import org.openrewrite.java.search.FindTypes;
@@ -213,7 +214,7 @@ public interface G extends J {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitor<P> v, P p) {
+        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
             return new GroovyVisitor<P>() {
                 @Override
                 public J visit(@Nullable Tree tree, P p) {
@@ -358,7 +359,7 @@ public interface G extends J {
         }
 
         @Override
-        public @Nullable <P> J acceptJava(JavaVisitor<P> v, P p) {
+        public @Nullable <P> J acceptJava(JavaVisitable<J,P> v, P p) {
             G.MapEntry m = this;
             m = m.withType(v.visitType(type, p));
             return m;
@@ -438,7 +439,7 @@ public interface G extends J {
         }
 
         @Override
-        public @Nullable <P> J acceptJava(JavaVisitor<P> v, P p) {
+        public @Nullable <P> J acceptJava(JavaVisitable<J,P> v, P p) {
             G.MapLiteral m = this;
             m = m.withType(v.visitType(type, p));
             return m;
@@ -517,7 +518,7 @@ public interface G extends J {
         }
 
         @Override
-        public @Nullable <P> J acceptJava(JavaVisitor<P> v, P p) {
+        public @Nullable <P> J acceptJava(JavaVisitable<J,P> v, P p) {
             ListLiteral l = this;
             l = l.withType(v.visitType(type, p));
             return l;
@@ -571,7 +572,7 @@ public interface G extends J {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitor<P> v, P p) {
+        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
             GString g = this;
             g = g.withStrings(ListUtils.map(strings, s -> v.visit(s, p)));
             g = g.withType(v.visitType(type, p));
@@ -658,7 +659,7 @@ public interface G extends J {
         }
 
         @Override
-        public <P> J acceptJava(JavaVisitor<P> v, P p) {
+        public <P> J acceptJava(JavaVisitable<J,P> v, P p) {
             G.Binary b = this;
             b = b.withType(v.visitType(type, p));
             return b;
