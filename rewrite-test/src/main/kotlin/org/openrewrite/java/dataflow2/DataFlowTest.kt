@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.stream.Collectors
 
 interface DataFlowTest {
+
     fun assertPrevious(cu: J.CompilationUnit, programPointSignature: String, entryOrExit: ProgramPoint, vararg previousSignatures: String) {
         assertPrevious(cu, programPointSignature, programPointInScopeOf = null, entryOrExit, *previousSignatures)
     }
@@ -74,19 +75,19 @@ interface DataFlowTest {
         }
 
         override fun visitLiteral(literal: J.Literal, p: AtomicReference<Cursor>): J.Literal {
-            val l = super.visitLiteral(literal, p)
-            if (isInScopeOfType(cursor, p) && ppToFind == l.value) {
+            super.visitLiteral(literal, p)
+            if (isInScopeOfType(cursor, p) && ppToFind == literal.value) {
                 p.set(cursor)
             }
-            return l
+            return literal
         }
 
         override fun visitIdentifier(identifier: J.Identifier, p: AtomicReference<Cursor>): J.Identifier {
-            val l = super.visitIdentifier(identifier, p)
-            if (isInScopeOfType(cursor, p) && l.printPP(cursor).equals(ppToFind)) {
+            super.visitIdentifier(identifier, p)
+            if (isInScopeOfType(cursor, p) && identifier.printPP(cursor).equals(ppToFind)) {
                 p.set(cursor)
             }
-            return l
+            return identifier
         }
 
         override fun visitStatement(statement: Statement, p: AtomicReference<Cursor>): Statement {
@@ -105,10 +106,7 @@ interface DataFlowTest {
             return expression
         }
 
-        override fun visitVariable(
-            variable: J.VariableDeclarations.NamedVariable,
-            p: AtomicReference<Cursor>
-        ): J.VariableDeclarations.NamedVariable {
+        override fun visitVariable(variable: J.VariableDeclarations.NamedVariable, p: AtomicReference<Cursor>): J.VariableDeclarations.NamedVariable {
             super.visitVariable(variable, p)
             if (isInScopeOfType(cursor, p) && ppToFind == printProgramPoint(variable, cursor)) {
                 p.set(cursor)
