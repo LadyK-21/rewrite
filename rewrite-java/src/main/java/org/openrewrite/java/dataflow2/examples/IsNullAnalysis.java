@@ -82,7 +82,7 @@ public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {
         if(v.getInitializer() != null) {
             //ProgramState<ModalBoolean> s = analysis(v.getInitializer());
             //ModalBoolean e = inputState.expr();
-            return inputState.set(t, inputState.expr()).pop();
+            return inputState.set(t, inputState.expr());
         } else {
             assert !inputState.getMap().containsKey(t);
             return inputState.set(t, True);

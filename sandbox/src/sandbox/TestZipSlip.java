@@ -21,52 +21,53 @@ public class TestZipSlip {
     }
 
     public static void testZipSlip() {
-        testZipSlip("source1", ZipSlipValue.NewFileFromZipEntry.class,
-                "import java.io.File; \n" +
-                        "import java.io.FileOutputStream; \n" +
-                        "import java.io.RandomAccessFile; \n" +
-                        "import java.io.FileWriter; \n" +
-                        "import java.util.zip.ZipEntry; \n" +
-                        "public class ZipTest { \n" +
-                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
-                        "        String name = entry.getName(); \n" +
-                        "        File file = new File(dir, name); \n" +
-                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
-                        "    } \n" +
-                        "} \n" +
-                        "");
 
-        testZipSlip("source2", ZipSlipValue.NewFileFromZipEntry.class,
-                "import java.io.File; \n" +
-                        "import java.io.FileOutputStream; \n" +
-                        "import java.io.RandomAccessFile; \n" +
-                        "import java.io.FileWriter; \n" +
-                        "import java.util.zip.ZipEntry; \n" +
-                        "public class ZipTest { \n" +
-                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
-                        "        String name1 = entry.getName(); \n" +
-                        "        String name2 = name1; \n" +
-                        "        File file = new File(dir, name2); \n" +
-                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
-                        "    } \n" +
-                        "} \n" +
-                        "");
-
-        testZipSlip("source3", ZipSlipValue.Unknown.class,
-                "import java.io.File; \n" +
-                        "import java.io.FileOutputStream; \n" +
-                        "import java.io.RandomAccessFile; \n" +
-                        "import java.io.FileWriter; \n" +
-                        "import java.util.zip.ZipEntry; \n" +
-                        "public class ZipTest { \n" +
-                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
-                        "        String name1 = entry.getName(); \n" +
-                        "        String name2 = name1 + \"/\"; \n" +
-                        "        File file = new File(dir, name2); \n" +
-                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
-                        "    } \n" +
-                        "} \n" +
-                        "");
+//        testZipSlip("source1", ZipSlipValue.NewFileFromZipEntry.class,
+//                "import java.io.File; \n" +
+//                        "import java.io.FileOutputStream; \n" +
+//                        "import java.io.RandomAccessFile; \n" +
+//                        "import java.io.FileWriter; \n" +
+//                        "import java.util.zip.ZipEntry; \n" +
+//                        "public class ZipTest { \n" +
+//                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+//                        "        String name = entry.getName(); \n" +
+//                        "        File file = new File(dir, name); \n" +
+//                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+//                        "    } \n" +
+//                        "} \n" +
+//                        "");
+//
+//        testZipSlip("source2", ZipSlipValue.NewFileFromZipEntry.class,
+//                "import java.io.File; \n" +
+//                        "import java.io.FileOutputStream; \n" +
+//                        "import java.io.RandomAccessFile; \n" +
+//                        "import java.io.FileWriter; \n" +
+//                        "import java.util.zip.ZipEntry; \n" +
+//                        "public class ZipTest { \n" +
+//                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+//                        "        String name1 = entry.getName(); \n" +
+//                        "        String name2 = name1; \n" +
+//                        "        File file = new File(dir, name2); \n" +
+//                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+//                        "    } \n" +
+//                        "} \n" +
+//                        "");
+//
+//        testZipSlip("source3", ZipSlipValue.Unknown.class,
+//                "import java.io.File; \n" +
+//                        "import java.io.FileOutputStream; \n" +
+//                        "import java.io.RandomAccessFile; \n" +
+//                        "import java.io.FileWriter; \n" +
+//                        "import java.util.zip.ZipEntry; \n" +
+//                        "public class ZipTest { \n" +
+//                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+//                        "        String name1 = entry.getName(); \n" +
+//                        "        String name2 = name1 + \"/\"; \n" +
+//                        "        File file = new File(dir, name2); \n" +
+//                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+//                        "    } \n" +
+//                        "} \n" +
+//                        "");
 
         testZipSlip("source4", ZipSlipValue.Unknown.class,
                 "import java.io.File; \n" +
@@ -108,51 +109,57 @@ public class TestZipSlip {
     public static void testZipSlip(String name, Class expectedClass, String source) {
 
         System.out.println("Processing test " + name);
-        MethodMatcher m = new MethodMatcher("java.io.FileOutputStream <constructor>(java.io.File)");
         J.CompilationUnit cu = parse(source);
 
-        JavaIsoVisitor myVisitor = new JavaIsoVisitor() {
+        FindConstructorInvocationVisitor visitor = new FindConstructorInvocationVisitor();
+        visitor.visit(cu, null);
 
-            @Override
-            public J.NewClass visitNewClass(J.NewClass newClass, Object o) {
-                if(m.matches(newClass)) {
-                    System.out.println("Found constructor invocation " + newClass.print(getCursor()));
+        Cursor newClassCursor = visitor.result;
+        J.NewClass newClass = newClassCursor.getValue();
 
-                    Expression arg = newClass.getArguments().get(0);
+        Expression file = newClass.getArguments().get(0);
+        Cursor fileCursor = new Cursor(newClassCursor, file);
 
-                    // We're interested in the expr() of the output state of arg
-                    ZipSlip zipSlip = new ZipSlip(new DataFlowGraph(cu));
+        // We're interested in the expr() of the output state of 'file'
+        ZipSlip zipSlip = new ZipSlip(new DataFlowGraph(cu));
+        zipSlip.doAnalysis(fileCursor);
 
-                    zipSlip.doAnalysis(getCursor());
+        ProgramState<ZipSlipValue> state = zipSlip.analysis2(file);
 
-                    ProgramState<ZipSlipValue> state = zipSlip.analysis2(arg);
+        ZipSlipValue actual = state.expr();
 
-                    ZipSlipValue actual = state.expr();
+        System.out.println("state.expr() = " + actual);
 
-                    System.out.println("state.expr() = " + actual);
+        if(actual instanceof ZipSlipValue.NewFileFromZipEntry) {
+            // unsafe, and we know the value of 'dir'
+            System.out.println(" -> requires a guard");
+        } else if(state.expr() == ZipSlipValue.UNKNOWN) {
+            System.out.println(" -> maybe requires a guard");
+        } else if(state.expr() == ZipSlipValue.SAFE) {
+            System.out.println(" -> does not require a guard");
+        } else if(state.expr() == ZipSlipValue.UNSAFE) {
+            System.out.println(" -> requires a guard");
+        }
 
-                    if(actual instanceof ZipSlipValue.NewFileFromZipEntry) {
-                        // unsafe, and we know the value of 'dir'
-                        System.out.println(" -> requires a guard");
-                    } else if(state.expr() == ZipSlipValue.UNKNOWN) {
-                        System.out.println(" -> maybe requires a guard");
-                    } else if(state.expr() == ZipSlipValue.SAFE) {
-                        System.out.println(" -> does not require a guard");
-                    } else if(state.expr() == ZipSlipValue.UNSAFE) {
-                        System.out.println(" -> requires a guard");
-                    }
-
-                    AssertionsForClassTypes.assertThat(actual.getClass())
-                            .withFailMessage("expected: " + expectedClass + "\n but was: " + actual)
-                            .isEqualTo(expectedClass);
-
-                }
-                return super.visitNewClass(newClass, o);
-            }
-        };
-
-        myVisitor.visit(cu, null);
+        AssertionsForClassTypes.assertThat(actual.getClass())
+                .withFailMessage("expected: " + expectedClass + "\n but was: " + actual)
+                .isEqualTo(expectedClass);
 
         System.out.println();
+    }
+
+    static class FindConstructorInvocationVisitor extends JavaIsoVisitor {
+        MethodMatcher m = new MethodMatcher("java.io.FileOutputStream <constructor>(java.io.File)");
+
+        Cursor result = null;
+
+        @Override
+        public J.NewClass visitNewClass(J.NewClass newClass, Object o) {
+            if(m.matches(newClass)) {
+                System.out.println("Found constructor invocation " + newClass.print(getCursor()));
+                result = getCursor();
+            }
+            return super.visitNewClass(newClass, o);
+        }
     }
 }

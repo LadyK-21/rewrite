@@ -21,10 +21,10 @@ public class TestNullAnalysis {
 //        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", False);
 //        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", False);
 
-        testIsSNull("String s = null; while(c) { s = \"a\"; }", Conflict);
-        testIsSNull("String s = null; while(c) { s = null; }", True);
-        testIsSNull("String s = \"a\"; while(c) { s = null; }", Conflict);
-        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", False);
+//        testIsSNull("String s = null; while(c) { s = \"a\"; }", Conflict);
+//        testIsSNull("String s = null; while(c) { s = null; }", True);
+//        testIsSNull("String s = \"a\"; while(c) { s = null; }", Conflict);
+//        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", False);
         testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", True);
         testIsSNull("String s; while((s = null) == null) { s = null; }", True);
 

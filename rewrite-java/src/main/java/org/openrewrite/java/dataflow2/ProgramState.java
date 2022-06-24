@@ -94,7 +94,7 @@ public class ProgramState<T> {
 
             assert len == 0; // TODO        }
         }
-        return new ProgramState<>(m);
+        return new ProgramState<>(new LinkedListElement<>(null, joiner.lowerBound()), m);
     }
 
     @Override

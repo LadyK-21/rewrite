@@ -33,7 +33,8 @@ public abstract class DataFlowAnalysis<T> {
     // The state AFTER given program point
     Map<ProgramPoint, ProgramState<T>> analysis = new HashMap<>();
 
-    Set<ProgramPoint> visited = new HashSet();
+    Set<ProgramPoint> nodesOfInterest = new HashSet();
+    Set<ProgramPoint> visited2 = new HashSet();
 
     Map<ProgramPoint, Cursor> cursors = new HashMap<>();
 
@@ -68,7 +69,7 @@ public abstract class DataFlowAnalysis<T> {
 
         initNexts(from);
         //initClosure();
-        visited = new HashSet<>();
+        visited2 = new HashSet<>();
         initWorkList(from);
 
         while(!workList.isEmpty()) {
@@ -79,14 +80,32 @@ public abstract class DataFlowAnalysis<T> {
 
             System.out.println(pp.getClass().getSimpleName() + "   " + Utils.print(c));
 
-//            if("s = null".equals(Utils.print(c))) {
-//                System.out.println();
-//            }
+            if("s = null".equals(Utils.print(c))) {
+                System.out.println();
+            }
 
             ProgramState<T> previousState = analysisOrNull2(pp);
 
+
+            Cursor previous = c;
+            Cursor last = c;
+            List<Cursor> sources;
+            Stack<Cursor> stack = new Stack<>();
+            while((sources = dfg.previous(previous)).size() == 1) {
+
+                System.out.println("previous(< " + Utils.print(previous) + " >) = < " + Utils.print(sources.get(0)) + " >");
+
+                previous = sources.get(0);
+                stack.push(previous);
+            }
+
             ProgramState<T> inputState = inputState2(c, null);
-            ProgramState<T> newState = transfer(c, inputState, null); // linearTransfer(c, null);
+            while(!stack.isEmpty()) {
+                previous = stack.pop();
+                inputState = transfer(previous, inputState, null);
+            }
+
+            ProgramState<T> newState = transfer(c, inputState, null);
 
             System.out.println(inputState + "  ->  " + newState);
 
@@ -98,6 +117,7 @@ public abstract class DataFlowAnalysis<T> {
                 if(nn != null) {
                     for (ProgramPoint p : nn) {
                         Cursor next = cursors.get(p);
+                        assert nodesOfInterest.contains(next);
                         workList.add(next);
                     }
                 }
@@ -105,26 +125,26 @@ public abstract class DataFlowAnalysis<T> {
         }
     }
 
-//    ProgramState<T> linearTransfer(Cursor c, TraversalControl<ProgramState<T>> t) {
+//    ProgramState<T> linearTransfer(Cursor c, ProgramState<T> inputState, TraversalControl<ProgramState<T>> t) {
 //        List<Cursor> prev = dfg.previous(c);
 //        if(prev.size() == 1) {
-//            return linearTransfer(prev.get(0), t);
+//            return linearTransfer(prev.get(0), inputState, t);
 //        } else {
-//            return transfer(c, t);
+//            return transfer(c, inputState, t);
 //        }
 //    }
 
     void initNexts(Cursor c) {
         ProgramPoint to = c.getValue();
-        if(visited.contains(to)) return;
-        visited.add(to);
+        if(nodesOfInterest.contains(to)) return;
+        nodesOfInterest.add(to);
         cursors.put(to, c);
 
         List<Cursor> sources = dfg.previous(c);
 
-//        while(sources.size() == 1) {
-//            sources = dfg.previous(sources.get(0));
-//        }
+        while(sources.size() == 1) {
+            sources = dfg.previous(sources.get(0));
+        }
 
         for (Cursor source : sources) {
             ProgramPoint from = source.getValue();
@@ -159,20 +179,22 @@ public abstract class DataFlowAnalysis<T> {
 
     void initWorkList(Cursor c) {
         ProgramPoint to = c.getValue();
-        if(visited.contains(to)) return;
-        visited.add(to);
+        if(visited2.contains(to)) return;
+        visited2.add(to);
         workList.addFirst(c);
 
         List<Cursor> sources = dfg.previous(c);
 
-//        while(sources.size() == 1) {
-//            sources = dfg.previous(sources.get(0));
-//        }
+        while(sources.size() == 1) {
+            sources = dfg.previous(sources.get(0));
+        }
 
         for (Cursor source : sources) {
             ProgramPoint from = source.getValue();
             initWorkList(source);
         }
+
+        assert visited2.equals(nodesOfInterest);
     }
 
     public ProgramState<T> analysis2(ProgramPoint p) {
@@ -195,8 +217,13 @@ public abstract class DataFlowAnalysis<T> {
     public ProgramState<T> inputState2(Cursor c, TraversalControl<ProgramState<T>> t) {
         ProgramPoint pp = c.getValue();
 
+        List<Cursor> sources = dfg.previous(c);
+
+        if("s = null".equals(Utils.print(c))) {
+            System.out.println();
+        }
+
         List<ProgramState<T>> outs = new ArrayList<>();
-        Collection<Cursor> sources = dfg.previous(c);
         for (Cursor source : sources) {
             // Since program points are represented by cursors with a tree node value,
             // it is impossible to add program points when there is no corresponding tree node.
