@@ -20,8 +20,10 @@ import org.openrewrite.Incubating;
 import org.openrewrite.java.tree.J;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
+import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
 
 @Incubating(since = "7.25.0")
 public abstract class DataFlowAnalysis<T> {
@@ -80,9 +82,9 @@ public abstract class DataFlowAnalysis<T> {
 
             System.out.println(pp.getClass().getSimpleName() + "   " + Utils.print(c));
 
-            if("s = null".equals(Utils.print(c))) {
-                System.out.println();
-            }
+//            if("s = null".equals(Utils.print(c))) {
+//                System.out.println();
+//            }
 
             ProgramState<T> previousState = analysisOrNull2(pp);
 
@@ -93,13 +95,15 @@ public abstract class DataFlowAnalysis<T> {
             Stack<Cursor> stack = new Stack<>();
             while((sources = dfg.previous(previous)).size() == 1) {
 
-                System.out.println("previous(< " + Utils.print(previous) + " >) = < " + Utils.print(sources.get(0)) + " >");
+                //System.out.println("previous(< " + Utils.print(previous) + " >) = < " + Utils.print(sources.get(0)) + " >");
 
                 previous = sources.get(0);
                 stack.push(previous);
             }
 
-            ProgramState<T> inputState = inputState2(c, null);
+            List<Cursor> primitivesSources = sources.stream().flatMap(s -> dfg.previousIn(s, EXIT).stream()).collect(Collectors.toList());
+
+            ProgramState<T> inputState = inputState2(primitivesSources,null);
             while(!stack.isEmpty()) {
                 previous = stack.pop();
                 inputState = transfer(previous, inputState, null);
@@ -111,8 +115,8 @@ public abstract class DataFlowAnalysis<T> {
 
             if(previousState == null) {
                 analysis.put(pp, newState);
+                // no need to add the nexts since they're necessarily already in the worklist
             } else if(!previousState.equals(newState)) {
-                analysis.put(pp, newState);
                 ArrayList<ProgramPoint> nn = nexts.get(pp);
                 if(nn != null) {
                     for (ProgramPoint p : nn) {
@@ -142,11 +146,14 @@ public abstract class DataFlowAnalysis<T> {
 
         List<Cursor> sources = dfg.previous(c);
 
+        // This loop must terminate because every node is reachable from the entry node.
         while(sources.size() == 1) {
             sources = dfg.previous(sources.get(0));
         }
 
-        for (Cursor source : sources) {
+        List<Cursor> primitivesSources = sources.stream().flatMap(s -> dfg.previousIn(s, EXIT).stream()).collect(Collectors.toList());
+
+        for (Cursor source : primitivesSources) {
             ProgramPoint from = source.getValue();
             // There is a DFG edge from->to
             // The analysis at 'to' depends on the analysis at 'from'
@@ -189,7 +196,9 @@ public abstract class DataFlowAnalysis<T> {
             sources = dfg.previous(sources.get(0));
         }
 
-        for (Cursor source : sources) {
+        List<Cursor> primitivesSources = sources.stream().flatMap(s -> dfg.previousIn(s, EXIT).stream()).collect(Collectors.toList());
+
+        for (Cursor source : primitivesSources) {
             ProgramPoint from = source.getValue();
             initWorkList(source);
         }
@@ -200,6 +209,9 @@ public abstract class DataFlowAnalysis<T> {
     public ProgramState<T> analysis2(ProgramPoint p) {
         ProgramState<T> res = analysis.get(p);
         if(res == null) {
+            // it is a mistake to ask the analysis for a node not of interest
+            assert nodesOfInterest.contains(p);
+
             res = new ProgramState<>(joiner.lowerBound());
             analysis.put(p, res);
         }
@@ -215,13 +227,18 @@ public abstract class DataFlowAnalysis<T> {
     }
 
     public ProgramState<T> inputState2(Cursor c, TraversalControl<ProgramState<T>> t) {
-        ProgramPoint pp = c.getValue();
-
         List<Cursor> sources = dfg.previous(c);
+        return inputState2(sources, t);
+    }
 
-        if("s = null".equals(Utils.print(c))) {
-            System.out.println();
-        }
+    public ProgramState<T> inputState2(List<Cursor> sources, TraversalControl<ProgramState<T>> t) {
+        //ProgramPoint pp = c.getValue();
+
+        //List<Cursor> sources = dfg.previous(c);
+
+//        if("s = null".equals(Utils.print(c))) {
+//            System.out.println();
+//        }
 
         List<ProgramState<T>> outs = new ArrayList<>();
         for (Cursor source : sources) {

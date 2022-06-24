@@ -16,15 +16,15 @@ public class TestNullAnalysis {
     {
         // Test the value of 's' at the end of given code fragment.
 
-//        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", CantTell);
+        testIsSNull("String s = null; while(x == 0) { s = \"a\"; }", Conflict);
 
-//        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", False);
-//        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", False);
+        testIsSNull("String s; while((s = \"a\") == null) { s = null; }", False);
+        testIsSNull("String s; while((s = \"a\") == null) { s = \"b\"; }", False);
 
-//        testIsSNull("String s = null; while(c) { s = \"a\"; }", Conflict);
-//        testIsSNull("String s = null; while(c) { s = null; }", True);
-//        testIsSNull("String s = \"a\"; while(c) { s = null; }", Conflict);
-//        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", False);
+        testIsSNull("String s = null; while(c) { s = \"a\"; }", Conflict);
+        testIsSNull("String s = null; while(c) { s = null; }", True);
+        testIsSNull("String s = \"a\"; while(c) { s = null; }", Conflict);
+        testIsSNull("String s = \"a\"; while(c) { s = \"b\"; }", False);
         testIsSNull("String s; while((s = null) == null) { s = \"a\"; }", True);
         testIsSNull("String s; while((s = null) == null) { s = null; }", True);
 
