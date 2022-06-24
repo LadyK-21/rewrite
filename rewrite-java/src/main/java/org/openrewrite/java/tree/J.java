@@ -147,14 +147,6 @@ public interface J extends Tree {
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
-
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -254,14 +246,6 @@ public interface J extends Tree {
                 return t.arguments == arguments ? t : new Annotation(t.id, t.prefix, t.markers, t.annotationType, arguments);
             }
         }
-
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -296,25 +280,6 @@ public interface J extends Tree {
         @Override
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
-        }
-
-        @Override
-        public  boolean reads(JavaType.Variable v) {
-            return reads(v, Side.RVALUE);
-        }
-
-        @Override
-        public  boolean writes(JavaType.Variable v) {
-            return writes(v, Side.RVALUE);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-            return getIndexed().reads(v, s) || getDimension().getIndex().reads(v, Side.RVALUE);
-        }
-
-        public boolean writes(JavaType.Variable v, Side s) {
-            return getIndexed().writes(v, s) || getDimension().getIndex().writes(v, Side.RVALUE);
         }
     }
 
@@ -358,14 +323,6 @@ public interface J extends Tree {
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
-
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -392,16 +349,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitAssert(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -470,18 +417,6 @@ public interface J extends Tree {
         public List<J> getSideEffects() {
             return singletonList(this);
         }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return variable.reads(v, Side.LVALUE) || getAssignment().reads(v, Side.RVALUE);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return variable.writes(v, Side.LVALUE) || getAssignment().writes(v, Side.RVALUE);
-        }
-
-
 
         public Padding getPadding() {
             Padding p;
@@ -623,16 +558,6 @@ public interface J extends Tree {
                 return t.operator == operator ? t : new AssignmentOperation(t.id, t.prefix, t.markers, t.variable, operator, t.assignment, t.type);
             }
         }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return variable.reads(v, Side.LVALUE) || assignment.reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return variable.writes(v, Side.LVALUE) || assignment.writes(v);
-        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -686,16 +611,6 @@ public interface J extends Tree {
             sideEffects.addAll(left.getSideEffects());
             sideEffects.addAll(right.getSideEffects());
             return sideEffects;
-        }
-
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getLeft().reads(v) || getRight().reads(v);
-        }
-
-        public boolean writes(JavaType.Variable v) {
-            return getLeft().writes(v) || getRight().writes(v);
         }
 
         public enum Type {
@@ -805,16 +720,6 @@ public interface J extends Tree {
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitBlock(this, p);
         }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getStatements().stream().map(s -> s.reads(v)).reduce(false, (a,b) -> a|b);
-        }
-
-        public boolean writes(JavaType.Variable v) {
-            return getStatements().stream().map(s -> s.writes(v)).reduce(false, (a,b) -> a|b);
-        }
-
         public CoordinateBuilder.Block getCoordinates() {
             return new CoordinateBuilder.Block(this);
         }
@@ -888,15 +793,6 @@ public interface J extends Tree {
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return false;
-        }
-
-        public boolean writes(JavaType.Variable v) {
-            return false;
-        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -939,15 +835,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitCase(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getStatements().stream().map(s -> s.reads(v)).reduce(false, (a,b) -> a|b);
-        }
-
-        public boolean writes(JavaType.Variable v) {
-            return getStatements().stream().map(s -> s.writes(v)).reduce(false, (a,b) -> a|b);
         }
 
         @Override
@@ -1103,16 +990,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitClassDeclaration(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
         }
 
         // gather annotations from everywhere they may occur
@@ -1439,16 +1316,6 @@ public interface J extends Tree {
         }
 
         @Override
-        public boolean reads(JavaType.Variable v) {
-            return false;
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return false;
-        }
-
-        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -1506,16 +1373,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitDoWhileLoop(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getWhileCondition().reads(v) || getBody().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getWhileCondition().writes(v) || getBody().writes(v);
         }
 
         @Override
@@ -1594,16 +1451,6 @@ public interface J extends Tree {
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -1681,16 +1528,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitEnumValueSet(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getEnums().stream().map(n -> n.getInitializer() != null && n.getInitializer().reads(v)).reduce(false, (a, b) -> a|b);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getEnums().stream().map(n -> n.getInitializer() != null && n.getInitializer().writes(v)).reduce(false, (a, b) -> a|b);
         }
 
         @Override
@@ -1780,24 +1617,6 @@ public interface J extends Tree {
         @Override
         public List<J> getSideEffects() {
             return target.getSideEffects();
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return reads(v, Side.RVALUE);
-        }
-
-        public boolean writes(JavaType.Variable v) {
-            return writes(v, Side.RVALUE);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-            return (s == Side.RVALUE && type != null && type.equals(v)) || getTarget().reads(v, s);
-        }
-
-        public boolean writes(JavaType.Variable v, Side s) {
-            return (s == Side.LVALUE && type != null && type.equals(v)) || getTarget().reads(v, s);
         }
 
         /**
@@ -1919,16 +1738,6 @@ public interface J extends Tree {
         }
 
         @Override
-        public boolean reads(JavaType.Variable v) {
-            return getControl().reads(v) || getBody().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getControl().writes(v) || getBody().writes(v);
-        }
-
-        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -1978,13 +1787,6 @@ public interface J extends Tree {
             @Override
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitForEachControl(this, p);
-            }
-
-            public boolean reads(JavaType.Variable v) {
-                return getVariable().reads(v) || getIterable().reads(v);
-            }
-            public boolean writes(JavaType.Variable v) {
-                return getVariable().writes(v) || getIterable().writes(v);
             }
 
             public Padding getPadding() {
@@ -2102,16 +1904,6 @@ public interface J extends Tree {
         }
 
         @Override
-        public boolean reads(JavaType.Variable v) {
-            return getControl().reads(v) || getBody().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getControl().writes(v) || getBody().writes(v);
-        }
-
-        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -2171,17 +1963,6 @@ public interface J extends Tree {
             @Override
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitForControl(this, p);
-            }
-
-            public boolean reads(JavaType.Variable v) {
-                return getInit().stream().map(s -> s.reads(v)).reduce(false, (a,b) -> a|b)
-                        || getUpdate().stream().map(s -> s.reads(v)).reduce(false, (a,b) -> a|b)
-                        || getCondition().reads(v);
-            }
-            public boolean writes(JavaType.Variable v) {
-                return getInit().stream().map(s -> s.writes(v)).reduce(false, (a,b) -> a|b)
-                        || getUpdate().stream().map(s -> s.writes(v)).reduce(false, (a,b) -> a|b)
-                        || getCondition().writes(v);
             }
 
             public Padding getPadding() {
@@ -2298,26 +2079,6 @@ public interface J extends Tree {
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return reads(v, Side.RVALUE);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return writes(v, Side.RVALUE);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-            return (s == Side.RVALUE) && fieldType != null && fieldType.equals(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v, Side s) {
-            return (s == Side.LVALUE) && fieldType != null && fieldType.equals(v);
-        }
     }
 
     @ToString
@@ -2365,16 +2126,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitIf(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getIfCondition().reads(v) || getThenPart().reads(v) || (getElsePart() != null && getElsePart().getBody().reads(v));
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getIfCondition().writes(v) || getThenPart().writes(v) || (getElsePart() != null && getElsePart().getBody().writes(v));
         }
 
         @Override
@@ -2517,16 +2268,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitImport(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
         }
 
         /**
@@ -2755,16 +2496,6 @@ public interface J extends Tree {
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getExpression().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getExpression().writes(v);
-        }
     }
 
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
@@ -2809,16 +2540,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitLabel(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return false;
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return false;
         }
 
         @Override
@@ -2886,16 +2607,6 @@ public interface J extends Tree {
         @With
         @Nullable
         JavaType type;
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getBody() instanceof Expression && ((Expression) getBody()).reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getBody() instanceof Expression && ((Expression) getBody()).writes(v);
-        }
 
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
@@ -3026,16 +2737,6 @@ public interface J extends Tree {
             return v.visitLiteral(this, p);
         }
 
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return false;
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return false;
-        }
-
         /**
          * See <a href="https://docs.oracle.com/javase/specs/jls/se7/html/jls-3.html#jls-3.3">jls-3.3</a>.
          * <p>
@@ -3141,20 +2842,6 @@ public interface J extends Tree {
             return v.visitMemberReference(this, p);
         }
 
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            // Here we assume that v is a local variable, so it cannot be referenced by a member reference.
-            // However there might be references to v in the expression.
-            return getContaining().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            // Here we assume that v is a local variable, so it cannot be referenced by a member reference.
-            // However there might be references to v in the expression.
-            return getContaining().writes(v);
-        }
-
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -3173,16 +2860,6 @@ public interface J extends Tree {
         @Override
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-           throw new UnsupportedOperationException("TODO");
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v, Side s) {
-            throw new UnsupportedOperationException("TODO");
         }
 
         @RequiredArgsConstructor
@@ -3363,16 +3040,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitMethodDeclaration(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
         }
 
         public boolean isAbstract() {
@@ -3648,24 +3315,6 @@ public interface J extends Tree {
             return singletonList(this);
         }
 
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            // This does not take into account the effects inside the method body.
-            // As long as v is a local variable, we are guaranteed that it cannot be affected
-            // as a side-effect of the method invocation.
-            return (getSelect() != null && getSelect().reads(v))
-                    || getArguments().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            // This does not take into account the effects inside the method body.
-            // As long as v is a local variable, we are guaranteed that it cannot be affected
-            // as a side-effect of the method invocation.
-            return (getSelect() != null && getSelect().writes(v))
-                    || getArguments().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b);
-        }
-
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -3908,28 +3557,6 @@ public interface J extends Tree {
             return v.visitNewArray(this, p);
         }
 
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return (getInitializer() != null && getInitializer().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b))
-                    || getDimensions().stream().map(e -> e.getIndex().reads(v)).reduce(false, (a,b) -> a|b);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return (getInitializer() != null && getInitializer().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b))
-                    || getDimensions().stream().map(e -> e.getIndex().writes(v)).reduce(false, (a,b) -> a|b);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-            throw new UnsupportedOperationException("TODO");
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v, Side s) {
-            throw new UnsupportedOperationException("TODO");
-        }
-
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -4136,20 +3763,6 @@ public interface J extends Tree {
             return singletonList(this);
         }
 
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return (getEnclosing() != null && getEnclosing().reads(v))
-                    || (getArguments() != null && getArguments().stream().map(e -> e.reads(v)).reduce(false, (a,b) -> a|b))
-                    || (getBody() != null && getBody().reads(v));
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return (getEnclosing() != null && getEnclosing().writes(v))
-                    || (getArguments() != null && getArguments().stream().map(e -> e.writes(v)).reduce(false, (a,b) -> a|b))
-                    || (getBody() != null && getBody().writes(v));
-        }
-
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -4219,17 +3832,6 @@ public interface J extends Tree {
             return v.visitPackage(this, p);
         }
 
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-
         public CoordinateBuilder.Package getCoordinates() {
             return new CoordinateBuilder.Package(this);
         }
@@ -4292,16 +3894,6 @@ public interface J extends Tree {
             return v.visitParameterizedType(this, p);
         }
 
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
         public Padding getPadding() {
             Padding p;
             if (this.padding == null) {
@@ -4334,16 +3926,6 @@ public interface J extends Tree {
             public ParameterizedType withTypeParameters(@Nullable JContainer<Expression> typeParameters) {
                 return t.typeParameters == typeParameters ? t : new ParameterizedType(t.id, t.prefix, t.markers, t.clazz, typeParameters);
             }
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v, Side s) {
-            throw new UnsupportedOperationException();
         }
     }
 
@@ -4402,16 +3984,6 @@ public interface J extends Tree {
             return tree.getElement() instanceof Expression ? withTree(((Expression) tree.getElement()).withType(type)) :
                     tree.getElement() instanceof NameTree ? withTree(((NameTree) tree.getElement()).withType(type)) :
                             this;
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-           return ((Expression)getTree()).reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return ((Expression)getTree()).reads(v);
         }
 
         public Padding<J2> getPadding() {
@@ -4483,16 +4055,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitControlParentheses(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getTree() instanceof Expression && ((Expression) getTree()).reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getTree() instanceof Expression && ((Expression) getTree()).writes(v);
         }
 
         @Override
@@ -4600,16 +4162,6 @@ public interface J extends Tree {
         }
 
         @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public String toString() {
             return withPrefix(Space.EMPTY).printTrimmed(new JavaPrinter<>());
         }
@@ -4636,16 +4188,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitReturn(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getExpression() != null && getExpression().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getExpression() != null && getExpression().writes(v);
         }
 
         @Override
@@ -4685,16 +4227,6 @@ public interface J extends Tree {
         }
 
         @Override
-        public boolean reads(JavaType.Variable v) {
-            return getSelector().reads(v) || getCases().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getSelector().writes(v) || getCases().writes(v);
-        }
-
-        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -4723,16 +4255,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitSynchronized(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getLock().reads(v) || getBody().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getLock().writes(v) || getBody().writes(v);
         }
 
         @Override
@@ -4795,16 +4317,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitTernary(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getCondition().reads(v) || getTruePart().reads(v) || getFalsePart().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getCondition().writes(v) || getTruePart().writes(v) || getFalsePart().writes(v);
         }
 
         public Padding getPadding() {
@@ -4874,16 +4386,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitThrow(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getException().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getException().writes(v);
         }
 
         @Override
@@ -4958,22 +4460,6 @@ public interface J extends Tree {
         }
 
         @Override
-        public boolean reads(JavaType.Variable v) {
-            return (getResources() != null && getResources().stream().map(c -> c.reads(v)).reduce(false, (a,b) -> a|b))
-                    || getBody().reads(v)
-                    || getCatches().stream().map(c -> c.getBody().reads(v)).reduce(false, (a,b) -> a|b)
-                    || (getFinally() != null && getFinally().reads(v));
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return (getResources() != null && getResources().stream().map(c -> c.writes(v)).reduce(false, (a,b) -> a|b))
-                    || getBody().reads(v)
-                    || getCatches().stream().map(c -> c.getBody().writes(v)).reduce(false, (a,b) -> a|b)
-                    || (getFinally() != null && getFinally().writes(v));
-        }
-
-        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -5004,14 +4490,6 @@ public interface J extends Tree {
             @Override
             public <P> J acceptJava(JavaVisitor<P> v, P p) {
                 return v.visitTryResource(this, p);
-            }
-
-            public boolean reads(JavaType.Variable v) {
-                return variableDeclarations instanceof VariableDeclarations && ((VariableDeclarations) variableDeclarations).reads(v);
-            }
-
-            public boolean writes(JavaType.Variable v) {
-                return variableDeclarations instanceof VariableDeclarations && ((VariableDeclarations) variableDeclarations).writes(v);
             }
         }
 
@@ -5119,28 +4597,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitTypeCast(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getExpression().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getExpression().writes(v);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v, Side s) {
-            if(s == Side.LVALUE) throw new NodeCannotBeAnLValueException();
-            return expression.reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v, Side s) {
-            if(s == Side.LVALUE) throw new NodeCannotBeAnLValueException();
-            return expression.writes(v);
         }
 
         @Override
@@ -5357,21 +4813,6 @@ public interface J extends Tree {
             return expression.getSideEffects();
         }
 
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return expression.reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            if(Arrays.asList(new Type[]{ Type.PreIncrement, Type.PreDecrement, Type. PostIncrement, Type.PostDecrement })
-                        .contains(getOperator())) {
-                // expr = expr + 1, expr = 1 + expr, ...: expr appears on both sides
-                return expression.writes(v, Side.LVALUE) || expression.writes(v, Side.RVALUE);
-            }
-            return expression.writes(v);
-        }
-
         public enum Type {
             PreIncrement,
             PreDecrement,
@@ -5474,16 +4915,6 @@ public interface J extends Tree {
         @Override
         public <P> J acceptJava(JavaVisitor<P> v, P p) {
             return v.visitVariableDeclarations(this, p);
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            return getVariables().stream().map(n -> n.getInitializer() != null && n.getInitializer().reads(v)).reduce(false, (a,b) -> a|b);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getVariables().stream().map(n -> n.getInitializer() != null && n.getInitializer().writes(v)).reduce(false, (a,b) -> a|b);
         }
 
         @Override
@@ -5717,16 +5148,6 @@ public interface J extends Tree {
         }
 
         @Override
-        public boolean reads(JavaType.Variable v) {
-            return getCondition().reads(v) || getBody().reads(v);
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            return getCondition().writes(v) || getBody().writes(v);
-        }
-
-        @Override
         public CoordinateBuilder.Statement getCoordinates() {
             return new CoordinateBuilder.Statement(this);
         }
@@ -5852,16 +5273,6 @@ public interface J extends Tree {
             public Wildcard withBound(@Nullable JLeftPadded<Bound> bound) {
                 return t.bound == bound ? t : new Wildcard(t.id, t.prefix, t.markers, bound, t.boundedType);
             }
-        }
-
-        @Override
-        public boolean reads(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean writes(JavaType.Variable v) {
-            throw new UnsupportedOperationException();
         }
     }
 }

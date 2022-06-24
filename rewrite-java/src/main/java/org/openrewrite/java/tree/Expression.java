@@ -36,20 +36,4 @@ public interface Expression extends J, ProgramPoint {
     default List<J> getSideEffects() {
         return emptyList();
     }
-
-    /** @return True if this expression, when evaluated, may read variable v. */
-    boolean reads(JavaType.Variable v);
-    /** @return True if this expression, when evaluated, may write variable v. */
-    boolean writes(JavaType.Variable v);
-
-    /** @return True if this expression, when in `side` position, may read variable v. */
-    default boolean reads(JavaType.Variable v, Side s) {
-        if(s == Side.LVALUE) throw new NodeCannotBeAnLValueException();
-        return reads(v);
-    }
-    /** @return True if this expression, when in `side` position, may write variable v. */
-    default boolean writes(JavaType.Variable v, Side s) {
-        if(s == Side.LVALUE) throw new NodeCannotBeAnLValueException();
-        return writes(v);
-    }
 }
