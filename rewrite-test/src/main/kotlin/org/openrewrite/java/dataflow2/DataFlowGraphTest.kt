@@ -34,33 +34,63 @@ interface DataFlowGraphTest : DataFlowTest {
             class A {
                 void a(){};
                 void b(){};
-                void m(String u, String v, Integer w) {
+                void m(String u, String v, int w) {
                     a();
                     /*__FRAGMENT__*/
                     b();
                 }
+                void c(){}
             }
         """.trimIndent()
 
     @Test
     fun assertTest(jp: JavaParser) {
-        val ac = "assert w == 1 : \"w is invalid\""
+        val ac = "assert(w == 1)"
+        val cu :J.CompilationUnit = compile("$ac;", jp)
+
+        assertPrevious(cu, "assert(w == 1)", ENTRY, "(w == 1)")
+        assertPrevious(cu, "assert(w == 1)", EXIT, "(w == 1)")
+
+        assertPrevious(cu, "(w == 1)", ENTRY, "w == 1")
+        assertPrevious(cu, "(w == 1)", EXIT, "(w == 1)")
+
+        assertPrevious(cu, "b()", ENTRY, "(w == 1)")
+        assertPrevious(cu, "b()", EXIT, "b()")
+    }
+
+    @Test
+    fun assertWithDetailTest(jp: JavaParser) {
+        val ac = "assert w == 1 : \"invalid\""
         val cu :J.CompilationUnit = compile("$ac;", jp)
 
         assertPrevious(cu, ac, ENTRY, "w == 1")
-        assertPrevious(cu, ac, EXIT, ac)
+        assertPrevious(cu, ac, EXIT, "w == 1", "\"invalid\"")
 
-        assertPrevious(cu, "w == 1", ENTRY, "1")
-        assertPrevious(cu, "w == 1", EXIT, "w == 1")
+        assertPrevious(cu, "\"invalid\"", ENTRY, "w == 1")
+        assertPrevious(cu, "\"invalid\"", EXIT, "\"invalid\"")
 
-        assertPrevious(cu, "1", ENTRY, "w")
-        assertPrevious(cu, "1", EXIT, "1")
+        assertPrevious(cu, "w", J.Binary::class.java, ENTRY, "\"invalid\"")
+        assertPrevious(cu, "w", J.Binary::class.java, EXIT, "w")
 
-        assertPrevious(cu, "w", J.Binary::class.java, ENTRY, "\"w is invalid\"")
-        assertPrevious(cu, "w", EXIT, "w")
+        assertPrevious(cu, "b()", ENTRY, "w == 1", "\"invalid\"")
+        assertPrevious(cu, "b()", EXIT, "b()")
+    }
 
-        assertPrevious(cu, "w is invalid", J.Assert::class.java, ENTRY, "a()")
-        assertPrevious(cu, "w is invalid", J.Assert::class.java, EXIT, "\"w is invalid\"")
+    @Test
+    fun inIfTest(jp:JavaParser) {
+        val stub = "if (w > 0) { w = -1; } c();"
+        val cu :J.CompilationUnit = compile(stub, jp)
+        assertPrevious(cu,"if (w > 0) { w = -1; }", ENTRY, "a()")
+        assertPrevious(cu,"if (w > 0) { w = -1; }", EXIT, "{ w = -1; }", "(w > 0)")
+
+        assertPrevious(cu, "(w > 0)", ENTRY, "w > 0")
+        assertPrevious(cu, "(w > 0)", EXIT, "(w > 0)")
+
+        assertPrevious(cu, "w > 0", ENTRY, "0")
+        assertPrevious(cu, "w > 0", EXIT, "w > 0")
+
+        assertPrevious(cu, "c()", J.MethodInvocation::class.java, ENTRY, "{ w = -1; }", "(w > 0)")
+        assertPrevious(cu, "c()", J.MethodInvocation::class.java, EXIT, "c()")
     }
 
     @Test

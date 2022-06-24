@@ -279,20 +279,6 @@ public class DataFlowGraph {
         }
     }
 
-    List<Cursor> previousInAssert(Cursor parentCursor, ProgramPoint p) {
-        J.Assert assrt = parentCursor.getValue();
-        if (p == EXIT) {
-            return Collections.singletonList(parentCursor);
-        } else if (p == ENTRY) {
-            return previousIn(new Cursor(parentCursor, assrt.getCondition()), EXIT);
-        } else if (p == assrt.getCondition() && assrt.getDetail() != null) {
-            return previousIn(new Cursor(parentCursor, assrt.getDetail().getElement()), EXIT);
-        } else if (assrt.getDetail() != null && p == assrt.getDetail().getElement()) {
-            return previousIn(parentCursor.getParentOrThrow(), assrt);
-        }
-        throw new UnsupportedOperationException();
-    }
-
     List<Cursor> previousInArrayAccess(Cursor parentCursor, ProgramPoint p) {
         J.ArrayAccess ac = parentCursor.getValue();
         if (p == EXIT) {
@@ -381,6 +367,29 @@ public class DataFlowGraph {
                 throw new IllegalStateException();
             }
         }
+    }
+
+    List<Cursor> previousInAssert(Cursor parentCursor, ProgramPoint p) {
+        J.Assert assrt = parentCursor.getValue();
+        if (p == EXIT) {
+            List<Cursor> result = new ArrayList<>();
+            result.add(new Cursor(parentCursor, assrt.getCondition()));
+            if (assrt.getDetail() != null && assrt.getDetail().getElement() != null) {
+                result.add(new Cursor(parentCursor, assrt.getDetail().getElement()));
+            }
+            return result;
+        } else if (p == ENTRY) {
+            return previousIn(new Cursor(parentCursor, assrt.getCondition()), EXIT);
+        } else if (p == assrt.getCondition()) {
+            if (assrt.getDetail() != null) {
+                return previousIn(new Cursor(parentCursor, assrt.getDetail()), EXIT);
+            } else {
+                return previousIn(new Cursor(parentCursor, assrt), EXIT);
+            }
+        } else if (assrt.getDetail() != null && p == assrt.getDetail().getElement()) {
+            return previousIn(new Cursor(parentCursor, assrt), ENTRY);
+        }
+        throw new UnsupportedOperationException();
     }
 
     List<Cursor> previousInIf(Cursor ifCursor, ProgramPoint p) {
