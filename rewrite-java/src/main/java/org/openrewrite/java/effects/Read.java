@@ -7,7 +7,7 @@ import org.openrewrite.java.tree.JavaType;
 
 import java.util.Arrays;
 
-public class Read extends JavaVisitableAdapter<Boolean, JavaType.Variable> {
+public class Read implements JavaVisitable<Boolean, JavaType.Variable> {
 
     public static final ReadSided readSided = new ReadSided();
 

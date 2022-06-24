@@ -1,11 +1,11 @@
 package org.openrewrite.java.effects;
 
 import org.openrewrite.Tree;
-import org.openrewrite.java.JavaVisitableAdapter;
+import org.openrewrite.java.JavaVisitable;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
-public class ReadSided extends JavaVisitableAdapter<Boolean, VariableSide> {
+public class ReadSided implements JavaVisitable<Boolean, VariableSide> {
 
     public static final Read read = new Read();
 
