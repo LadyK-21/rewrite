@@ -7,7 +7,7 @@ import org.openrewrite.java.tree.JavaType;
 
 public class JavaVisitableAdapter<T, P> implements JavaVisitable<T, P> {
 
-    public T defaultValue(J tree, P p) {
+    public T defaultValue(Tree tree, P p) {
         throw new UnsupportedOperationException();
     }
 
@@ -32,7 +32,7 @@ public class JavaVisitableAdapter<T, P> implements JavaVisitable<T, P> {
     public T visitJavaSourceFile(JavaSourceFile cu, P p) { return defaultValue(cu, p); }
     public T visitCompilationUnit(J.CompilationUnit cu, P p) { return defaultValue(cu, p); }
     public T visitContinue(J.Continue continueStatement, P p) { return defaultValue(continueStatement, p); }
-    public T visitControlParentheses(J.ControlParentheses controlParens, P p) { return defaultValue(controlParens, p); }
+    public <J2 extends J> T visitControlParentheses(J.ControlParentheses<J2> controlParens, P p) { return defaultValue(controlParens, p); }
     public T visitDoWhileLoop(J.DoWhileLoop doWhileLoop, P p) { return defaultValue(doWhileLoop, p); }
     public T visitEmpty(J.Empty empty, P p) { return defaultValue(empty, p); }
     public T visitEnumValue(J.EnumValue enoom, P p) { return defaultValue(enoom, p); }
@@ -59,7 +59,7 @@ public class JavaVisitableAdapter<T, P> implements JavaVisitable<T, P> {
     public T visitNewClass(J.NewClass newClass, P p) { return defaultValue(newClass, p); }
     public T visitPackage(J.Package pkg, P p) { return defaultValue(pkg, p); }
     public T visitParameterizedType(J.ParameterizedType type, P p) { return defaultValue(type, p); }
-    public T visitParentheses(J.Parentheses parens, P p) { return defaultValue(parens, p); }
+    public <J2 extends J> T visitParentheses(J.Parentheses<J2> parens, P p) { return defaultValue(parens, p); }
     public T visitPrimitive(J.Primitive primitive, P p) { return defaultValue(primitive, p); }
     public T visitReturn(J.Return retrn, P p) { return defaultValue(retrn, p); }
     public T visitSwitch(J.Switch switzh, P p) { return defaultValue(switzh, p); }

@@ -1,5 +1,6 @@
 package org.openrewrite.java.effects;
 
+import org.openrewrite.Tree;
 import org.openrewrite.java.JavaVisitableAdapter;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
@@ -9,7 +10,7 @@ public class ReadSided extends JavaVisitableAdapter<Boolean, VariableSide> {
     public static final Read read = new Read();
 
     @Override
-    public Boolean defaultValue(J tree, VariableSide vs) {
+    public Boolean defaultValue(Tree tree, VariableSide vs) {
         throw new UnsupportedOperationException();
     }
 

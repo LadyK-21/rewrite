@@ -270,7 +270,7 @@ public abstract class TreeVisitor<T extends Tree, P> {
 
     @SuppressWarnings("unused")
     @Nullable
-    public T defaultValue(@Nullable T tree, P p) {
+    public T defaultValue(@Nullable Tree tree, P p) {
         //noinspection unchecked
         return (T) tree;
     }
