@@ -22,52 +22,52 @@ public class TestZipSlip {
 
     public static void testZipSlip() {
 
-//        testZipSlip("source1", ZipSlipValue.NewFileFromZipEntry.class,
-//                "import java.io.File; \n" +
-//                        "import java.io.FileOutputStream; \n" +
-//                        "import java.io.RandomAccessFile; \n" +
-//                        "import java.io.FileWriter; \n" +
-//                        "import java.util.zip.ZipEntry; \n" +
-//                        "public class ZipTest { \n" +
-//                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
-//                        "        String name = entry.getName(); \n" +
-//                        "        File file = new File(dir, name); \n" +
-//                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
-//                        "    } \n" +
-//                        "} \n" +
-//                        "");
-//
-//        testZipSlip("source2", ZipSlipValue.NewFileFromZipEntry.class,
-//                "import java.io.File; \n" +
-//                        "import java.io.FileOutputStream; \n" +
-//                        "import java.io.RandomAccessFile; \n" +
-//                        "import java.io.FileWriter; \n" +
-//                        "import java.util.zip.ZipEntry; \n" +
-//                        "public class ZipTest { \n" +
-//                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
-//                        "        String name1 = entry.getName(); \n" +
-//                        "        String name2 = name1; \n" +
-//                        "        File file = new File(dir, name2); \n" +
-//                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
-//                        "    } \n" +
-//                        "} \n" +
-//                        "");
-//
-//        testZipSlip("source3", ZipSlipValue.Unknown.class,
-//                "import java.io.File; \n" +
-//                        "import java.io.FileOutputStream; \n" +
-//                        "import java.io.RandomAccessFile; \n" +
-//                        "import java.io.FileWriter; \n" +
-//                        "import java.util.zip.ZipEntry; \n" +
-//                        "public class ZipTest { \n" +
-//                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
-//                        "        String name1 = entry.getName(); \n" +
-//                        "        String name2 = name1 + \"/\"; \n" +
-//                        "        File file = new File(dir, name2); \n" +
-//                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
-//                        "    } \n" +
-//                        "} \n" +
-//                        "");
+        testZipSlip("source1", ZipSlipValue.NewFileFromZipEntry.class,
+                "import java.io.File; \n" +
+                        "import java.io.FileOutputStream; \n" +
+                        "import java.io.RandomAccessFile; \n" +
+                        "import java.io.FileWriter; \n" +
+                        "import java.util.zip.ZipEntry; \n" +
+                        "public class ZipTest { \n" +
+                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+                        "        String name = entry.getName(); \n" +
+                        "        File file = new File(dir, name); \n" +
+                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+                        "    } \n" +
+                        "} \n" +
+                        "");
+
+        testZipSlip("source2", ZipSlipValue.NewFileFromZipEntry.class,
+                "import java.io.File; \n" +
+                        "import java.io.FileOutputStream; \n" +
+                        "import java.io.RandomAccessFile; \n" +
+                        "import java.io.FileWriter; \n" +
+                        "import java.util.zip.ZipEntry; \n" +
+                        "public class ZipTest { \n" +
+                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+                        "        String name1 = entry.getName(); \n" +
+                        "        String name2 = name1; \n" +
+                        "        File file = new File(dir, name2); \n" +
+                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+                        "    } \n" +
+                        "} \n" +
+                        "");
+
+        testZipSlip("source3", ZipSlipValue.Unknown.class,
+                "import java.io.File; \n" +
+                        "import java.io.FileOutputStream; \n" +
+                        "import java.io.RandomAccessFile; \n" +
+                        "import java.io.FileWriter; \n" +
+                        "import java.util.zip.ZipEntry; \n" +
+                        "public class ZipTest { \n" +
+                        "    public void m1(ZipEntry entry, File dir) throws Exception { \n" +
+                        "        String name1 = entry.getName(); \n" +
+                        "        String name2 = name1 + \"/\"; \n" +
+                        "        File file = new File(dir, name2); \n" +
+                        "        FileOutputStream os = new FileOutputStream(file); // ZipSlip \n" +
+                        "    } \n" +
+                        "} \n" +
+                        "");
 
         testZipSlip("source4", ZipSlipValue.Unknown.class,
                 "import java.io.File; \n" +

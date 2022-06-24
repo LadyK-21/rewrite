@@ -334,7 +334,7 @@ public class DataFlowGraph {
                     return Collections.singletonList(new Cursor(parentCursor, parent.getSelect()));
                 } else {
                     // implicit this
-                    return previous(parentCursor);
+                    return previousIn(parentCursor.getParent(), parent);
                 }
             } else {
                 throw new IllegalStateException();
