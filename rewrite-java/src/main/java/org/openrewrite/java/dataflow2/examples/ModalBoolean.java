@@ -1,8 +1,8 @@
-package org.openrewrite.java.dataflow2;
+package org.openrewrite.java.dataflow2.examples;
 
 import org.openrewrite.Incubating;
+import org.openrewrite.java.dataflow2.Joiner;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 /**

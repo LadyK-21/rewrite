@@ -11,9 +11,10 @@ public class Main {
 
     public static void main(String[] args)
     {
-        TestPrevious.test();
-        TestNullAnalysis.test();
-        TestZipSlip.test();
+        TestConstantPropagation.test();
+//        TestPrevious.test();
+//        TestNullAnalysis.test();
+//        TestZipSlip.test();
     }
 
 

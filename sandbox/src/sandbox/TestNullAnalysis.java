@@ -3,12 +3,13 @@ package sandbox;
 import org.openrewrite.Cursor;
 import org.openrewrite.java.dataflow2.*;
 import org.openrewrite.java.dataflow2.examples.IsNullAnalysis;
+import org.openrewrite.java.dataflow2.examples.ModalBoolean;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.openrewrite.java.dataflow2.ModalBoolean.*;
-import static org.openrewrite.java.dataflow2.ModalBoolean.True;
+import static org.openrewrite.java.dataflow2.examples.ModalBoolean.*;
+import static org.openrewrite.java.dataflow2.examples.ModalBoolean.True;
 import static sandbox.TestUtils.parse;
 
 public class TestNullAnalysis {

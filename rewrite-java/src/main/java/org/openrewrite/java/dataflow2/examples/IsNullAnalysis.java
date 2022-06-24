@@ -7,14 +7,12 @@ import org.openrewrite.java.dataflow2.*;
 import org.openrewrite.java.tree.Expression;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
-import org.openrewrite.java.tree.Statement;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.openrewrite.java.dataflow2.ModalBoolean.*;
+import static org.openrewrite.java.dataflow2.examples.ModalBoolean.*;
 
 @Incubating(since = "7.25.0")
 public class IsNullAnalysis extends ValueAnalysis<ModalBoolean> {

@@ -5,7 +5,6 @@ import org.openrewrite.java.dataflow2.ProgramPoint;
 import org.openrewrite.java.dataflow2.Utils;
 import org.openrewrite.java.tree.J;
 
-import static org.openrewrite.java.dataflow2.ModalBoolean.False;
 import static org.openrewrite.java.dataflow2.ProgramPoint.ENTRY;
 import static org.openrewrite.java.dataflow2.ProgramPoint.EXIT;
 import static sandbox.TestUtils.parse;
