@@ -138,6 +138,18 @@ public class JavaPrinter<P> extends JavaVisitor<PrintOutputCapture<P>> {
             case Volatile:
                 keyword = "volatile";
                 break;
+            case Async:
+                keyword = "async";
+                break;
+            case Reified:
+                keyword = "reified";
+                break;
+            case Inline:
+                keyword = "inline";
+                break;
+            case LanguageExtension:
+                keyword = mod.getKeyword();
+                break;
         }
         beforeSyntax(mod, Space.Location.MODIFIER_PREFIX, p);
         p.append(keyword);
@@ -375,8 +387,11 @@ public class JavaPrinter<P> extends JavaVisitor<PrintOutputCapture<P>> {
 
         visit(paddedStat.getElement(), p);
         visitSpace(paddedStat.getAfter(), location.getAfterLocation(), p);
+        visitMarkers(paddedStat.getMarkers(), p);
+        printStatementTerminator(paddedStat.getElement(), p);
+    }
 
-        Statement s = paddedStat.getElement();
+    protected void printStatementTerminator(Statement s, PrintOutputCapture<P> p) {
         while (true) {
             if (s instanceof Assert ||
                 s instanceof Assignment ||
@@ -415,9 +430,9 @@ public class JavaPrinter<P> extends JavaVisitor<PrintOutputCapture<P>> {
                                                 c == Cursor.ROOT_VALUE
                                 )
                                 .getValue();
-                if (aSwitch instanceof J.SwitchExpression) {
+                if (aSwitch instanceof SwitchExpression) {
                     Case aCase = getCursor().getValue();
-                    if (!(aCase.getBody() instanceof J.Block)) {
+                    if (!(aCase.getBody() instanceof Block)) {
                         p.append(';');
                     }
                     return;
@@ -563,6 +578,7 @@ public class JavaPrinter<P> extends JavaVisitor<PrintOutputCapture<P>> {
         return else_;
     }
 
+    @Override
     public J visitEmpty(J.Empty empty, PrintOutputCapture<P> p) {
         beforeSyntax(empty, Space.Location.EMPTY_PREFIX, p);
         afterSyntax(empty, p);
@@ -1042,6 +1058,7 @@ public class JavaPrinter<P> extends JavaVisitor<PrintOutputCapture<P>> {
         return tryable;
     }
 
+    @Override
     public J visitTypeCast(J.TypeCast typeCast, PrintOutputCapture<P> p) {
         beforeSyntax(typeCast, Space.Location.TYPE_CAST_PREFIX, p);
         visit(typeCast.getClazz(), p);

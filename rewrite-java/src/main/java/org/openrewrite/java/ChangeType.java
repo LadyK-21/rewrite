@@ -99,8 +99,10 @@ public class ChangeType extends Recipe {
     private static class ChangeTypeVisitor extends JavaVisitor<ExecutionContext> {
         private final JavaType.Class originalType;
         private final JavaType targetType;
+
         @Nullable
         private J.Identifier importAlias;
+
         @Nullable
         private final Boolean ignoreDefinition;
 
@@ -306,6 +308,22 @@ public class ChangeType extends Recipe {
                         }
                     } else if (targetType instanceof JavaType.Primitive) {
                         ident = ident.withSimpleName(((JavaType.Primitive) targetType).getKeyword());
+                    }
+                }
+
+                // Recreate any static imports as needed
+                JavaSourceFile cu = getCursor().firstEnclosing(JavaSourceFile.class);
+                if (cu != null) {
+                    for (J.Import anImport : cu.getImports()) {
+                        if (anImport.isStatic() && anImport.getQualid().getTarget().getType() != null) {
+                            JavaType.FullyQualified fqn = TypeUtils.asFullyQualified(anImport.getQualid().getTarget().getType());
+                            if (fqn != null && TypeUtils.isOfClassType(fqn, originalType.getFullyQualifiedName()) &&
+                                ident.getSimpleName().equals(anImport.getQualid().getSimpleName())) {
+                                JavaType.FullyQualified targetFqn = (JavaType.FullyQualified) targetType;
+                                maybeAddImport((targetFqn).getFullyQualifiedName(), ident.getSimpleName());
+                                break;
+                            }
+                        }
                     }
                 }
             }

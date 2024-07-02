@@ -19,6 +19,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.openrewrite.*;
 import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.java.service.ImportService;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaCoordinates;
 import org.openrewrite.java.tree.TypeUtils;
@@ -39,9 +40,10 @@ public class ReplaceAnnotation extends Recipe {
 
     @Option(displayName = "Classpath resource",
             description = "If the annotation's type is defined by a jar within the META-INF/rewrite/classpath directory provide its name here " +
-                          "so that it can be loaded. " +
-                          "When this parameter is not passed the runtime classpath of the recipe is provided to the parser producing the new annotation. " +
-                          "This is necessary when the annotation is not on the runtime classpath of the recipe and isn't in the Java standard library.",
+                    "so that it can be loaded. " +
+                    "When this parameter is not passed the runtime classpath of the recipe is provided to the parser producing the new annotation. " +
+                    "This is necessary when the annotation is not on the runtime classpath of the recipe and isn't in the Java standard library.",
+            example = "annotations",
             required = false)
     @Nullable
     String classpathResourceName;
@@ -91,9 +93,8 @@ public class ReplaceAnnotation extends Recipe {
             maybeRemoveImport(TypeUtils.asFullyQualified(a.getType()));
             JavaCoordinates replaceCoordinate = a.getCoordinates().replace();
             a = replacement.apply(getCursor(), replaceCoordinate);
-            doAfterVisit(ShortenFullyQualifiedTypeReferences.modifyOnly(a));
+            doAfterVisit(service(ImportService.class).shortenFullyQualifiedTypeReferencesIn(a));
             return a;
         }
     }
 }
-

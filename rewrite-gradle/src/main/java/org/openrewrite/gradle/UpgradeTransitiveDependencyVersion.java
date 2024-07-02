@@ -46,6 +46,7 @@ import org.openrewrite.semver.Semver;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
 import static java.util.Objects.requireNonNull;
@@ -98,6 +99,13 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
     @Nullable
     String because;
 
+    @Option(displayName = "Include configurations",
+            description = "A list of configurations to consider during the upgrade. For example, For example using `implementation, runtimeOnly`, we could be responding to a deployable asset vulnerability only (ignoring test scoped vulnerabilities).",
+            required = false,
+            example = "implementation, runtimeOnly")
+    @Nullable
+    List<String> onlyForConfigurations;
+
     @Override
     public String getDisplayName() {
         return "Upgrade transitive Gradle dependencies";
@@ -132,7 +140,7 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
                 gradleProject = cu.getMarkers().findFirst(GradleProject.class)
                         .orElseThrow(() -> new IllegalStateException("Unable to find GradleProject marker."));
 
-                Map<GroupArtifact, Map<GradleDependencyConfiguration, String>> toUpdate = new HashMap<>();
+                Map<GroupArtifact, Map<GradleDependencyConfiguration, String>> toUpdate = new LinkedHashMap<>();
 
                 DependencyVersionSelector versionSelector = new DependencyVersionSelector(metadataFailures, gradleProject, null);
                 for (GradleDependencyConfiguration configuration : gradleProject.getConfigurations()) {
@@ -155,7 +163,7 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
                                         new GroupArtifact(resolved.getGroupId(), resolved.getArtifactId()),
                                         singletonMap(constraintConfig, selected),
                                         (existing, update) -> {
-                                            Map<GradleDependencyConfiguration, String> all = new HashMap<>(existing);
+                                            Map<GradleDependencyConfiguration, String> all = new LinkedHashMap<>(existing);
                                             all.putAll(update);
                                             all.keySet().removeIf(c -> {
                                                 if (c == null) {
@@ -203,9 +211,41 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
                                     update.getKey().getArtifactId(), config.getValue()), because).visitNonNull(cu, ctx);
                         }
                     }
+
+                    // Update dependency model so chained recipes will have correct information on what dependencies are present
+                    cu = cu.withMarkers(cu.getMarkers()
+                            .removeByType(GradleProject.class)
+                            .add(updatedModel(gradleProject, toUpdate, ctx)));
+
+                    // Spring dependency management plugin stomps on constraints. Use an alternative mechanism it does not override
+                    if (gradleProject.getPlugins().stream()
+                            .anyMatch(plugin -> "io.spring.dependency-management".equals(plugin.getId()))) {
+                        cu = (G.CompilationUnit) new DependencyConstraintToRule().getVisitor().visitNonNull(cu, ctx);
+                    }
                 }
 
                 return cu;
+            }
+
+            private GradleProject updatedModel(GradleProject gradleProject, Map<GroupArtifact, Map<GradleDependencyConfiguration, String>> toUpdate, ExecutionContext ctx) {
+                GradleProject gp = gradleProject;
+                Set<String> configNames = gp.getConfigurations().stream()
+                        .map(GradleDependencyConfiguration::getName)
+                        .collect(Collectors.toSet());
+                Set<GroupArtifactVersion> gavs = new LinkedHashSet<>();
+                for (Map.Entry<GroupArtifact, Map<GradleDependencyConfiguration, String>> update : toUpdate.entrySet()) {
+                    Map<GradleDependencyConfiguration, String> configs = update.getValue();
+                    String groupId = update.getKey().getGroupId();
+                    String artifactId = update.getKey().getArtifactId();
+                    for (Map.Entry<GradleDependencyConfiguration, String> configToVersion : configs.entrySet()) {
+                        String newVersion = configToVersion.getValue();
+                        gavs.add(new GroupArtifactVersion(groupId, artifactId, newVersion));
+                    }
+                }
+                for (GroupArtifactVersion gav : gavs) {
+                    gp = UpgradeDependencyVersion.replaceVersion(gp, ctx, gav, configNames);
+                }
+                return gp;
             }
 
             /*
@@ -253,10 +293,23 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
                         break;
                 }
 
+                if (onlyForConfigurations != null) {
+                    if (!onlyForConfigurations.contains(constraintConfigName)) {
+                        return null;
+                    }
+                } else {
+                    for (GradleDependencyConfiguration extended : config.getExtendsFrom()) {
+                        if (extended.getName().equals(constraintConfigName)) {
+                            return extended;
+                        }
+                    }
+                }
+
                 GradleDependencyConfiguration configuration = gradleProject.getConfiguration(constraintConfigName);
                 if (configuration != null && configuration.isTransitive()) {
                     return configuration;
                 }
+
                 return null;
             }
         });
@@ -362,10 +415,14 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
 
         String config;
         GroupArtifactVersion gav;
+
         @Nullable
         String because;
         @Override
         public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+            if ("version".equals(method.getSimpleName())) {
+                return method;
+            }
             J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
             Optional<G.CompilationUnit> withConstraint = GradleParser.builder().build().parse(String.format(
                     "plugins {\n" +
@@ -414,11 +471,15 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
     private static class UpdateConstraintVersionVisitor extends GroovyIsoVisitor<ExecutionContext> {
         GroupArtifactVersion gav;
         J.MethodInvocation existingConstraint;
+
         @Nullable
         String because;
 
         @Override
         public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+            if ("version".equals(method.getSimpleName())) {
+                return method;
+            }
             J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
             if(existingConstraint.isScope(m)) {
                 AtomicBoolean updatedBecause = new AtomicBoolean(false);
@@ -457,8 +518,8 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
     private static class RemoveVersionVisitor extends GroovyIsoVisitor<ExecutionContext> {
 
         @Override
-        public J.Return visitReturn(J.Return _return, ExecutionContext executionContext) {
-            J.Return r = super.visitReturn(_return, executionContext);
+        public J.Return visitReturn(J.Return _return, ExecutionContext ctx) {
+            J.Return r = super.visitReturn(_return, ctx);
             if(r.getExpression() == null) {
                 //noinspection DataFlowIssue
                 return null;
@@ -467,8 +528,8 @@ public class UpgradeTransitiveDependencyVersion extends Recipe {
         }
 
         @Override
-        public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext executionContext) {
-            J.MethodInvocation m = super.visitMethodInvocation(method, executionContext);
+        public J.MethodInvocation visitMethodInvocation(J.MethodInvocation method, ExecutionContext ctx) {
+            J.MethodInvocation m = super.visitMethodInvocation(method, ctx);
             if("version".equals(m.getSimpleName()) && m.getArguments().size() == 1 && m.getArguments().get(0) instanceof J.Lambda) {
                 //noinspection DataFlowIssue
                 return null;
